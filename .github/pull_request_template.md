@@ -12,6 +12,7 @@ The proposal itself should be in the PR as a markdown file to aid annotation and
 Put screenshots or other summary information here
 -->
 
+### Contributing
 
 <!--
 Please review the  [Contributing](http://openusd.org/docs/Contributing-to-USD.html) page in the
