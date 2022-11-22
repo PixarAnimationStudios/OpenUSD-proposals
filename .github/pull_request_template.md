@@ -18,7 +18,7 @@ Please review the  [Contributing](http://openusd.org/docs/Contributing-to-USD.ht
 documentation for the Supplemental Terms that apply to this repository.
 Place an X in the box when you are familiar with it.
 -->
-- [ ] I agree and accept to the Supplemental Terms on the [Contributing](http://openusd.org/docs/Contributing-to-USD.html) page.
+- [ ] I agree and accept to the Supplemental Terms on the [Contributing](https://graphics.pixar.com/usd/dev/contributing_to_usd.html) page.
 <!-- 
 Place an X in the box if you have submitted a signed Contributor License Agreement.
 A signed CLA must be received before pull requests can be merged.
