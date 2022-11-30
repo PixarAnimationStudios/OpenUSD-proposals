@@ -5,7 +5,7 @@ Welcome to USD-proposals, a forum for sharing and collaborating on proposals for
 Before getting started, please familiarize yourself with the Supplemental Terms on the [Contributing](https://graphics.pixar.com/usd/dev/contributing_to_usd.html) page.
 
 ## What is a proposal?
-
+sdfddfd
 - a new schema, such as "Level of Detail for Games"
 - an outline for a technical action, such as "Removing the usage of boost preprocessor macros"
 - a new development, such as "Evaluation of Hermite Patches"
