@@ -19,4 +19,4 @@ Please review the  [Contributing](https://graphics.pixar.com/usd/dev/contributin
 documentation for the Supplemental Terms that apply to this repository.
 Place an X in the box when you have reviewed and agree to the Supplemental Terms.
 -->
-- [ ] I agree to and accept the Supplemental Terms on the [Contributing](https://graphics.pixar.com/usd/dev/contributing_to_usd.html) page.
+- [ ] I agree to and accept the [Supplemental Terms](https://graphics.pixar.com/usd/dev/contributing_supplemental.html).
