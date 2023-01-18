@@ -2,7 +2,7 @@
 
 Welcome to USD-proposals, a forum for sharing and collaborating on proposals for the advancement of USD.
 
-Before getting started, please familiarize yourself with the Supplemental Terms on the [Contributing](https://graphics.pixar.com/usd/dev/contributing_to_usd.html) page.
+Before getting started, please familiarize yourself with the contents of the [Supplemental Terms](https://graphics.pixar.com/usd/dev/contributing_supplemental.html) page.
 
 ## What is a proposal?
 
