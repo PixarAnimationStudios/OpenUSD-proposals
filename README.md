@@ -25,11 +25,15 @@ When a proposal has taken enough shape that it warrants detailed feedback and it
 
 Fork this repo, create a directory within `proposals/` for the proposal and its materials, and a README.md, then submit a PR. Use the Pull Request Template, and fill in the requested details. The README.md document may contain the proposal, or at a minimum, it should announce the contents of the proposal and how to understand the materials within the proposal. The README.md should also contain notes the author considers important for anyone looking at the proposal, which could include notes that a proposal has been superceded by another, that the proposal resulted in a change to another project, and so on.
 
-The PR may contain other materials to support the proposal, such as white papers, diagrams, sample USD files, and pseudocode. 
+The PR may contain other materials to support the proposal, such as white papers, diagrams, sample USD files, and pseudocode.
+
+A new label should be suggested to track the new proposal ~ the label adopted for the proposal will be used to flag subsequent issues and discussion in order to facilitate searching relevant discussions.
 
 ### Discuss the proposal
 
 A typical workflow for the proposal PR will be have some initial discussion on the PR itself, and at some point, the PR may be landed here. Iteration of the proposal may proceed via subsequent PRs discussions in the corresponding issue, or using other tools available in github's interface.
+
+New issues and PRs related to the proposal should be labeled with the proposal's specific label.
 
 At any point, proposal text may be used in other contexts, for example, a proposal may be referenced when writing new schemas or code for USD, although there is no guarantee that any particular proposal will advance beyond a discussion stage.
 
