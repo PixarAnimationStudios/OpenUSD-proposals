@@ -211,7 +211,7 @@ The proposed implementation for Unicode strings is not exhaustive.  There are a 
 - String concatenation - Unicode normalization forms are not closed under string concatenation; specifically at least the area where the strings are joined need to be considered for composition
   - `TfStringJoin`
 
-It may be interesting to consider the impact of C++ 20's `std::u8string` type for the methods listed above.  Overloads of these methods that take a `std::u8string` parameter would provide very clear semantics to a developer about the treatment of string content.  While the use of `std:u8string` would really only affect the copmiler encoding of string literals, the burden is then placed on the developer to choose explicitly which of the methods to use.
+It may be interesting to consider the impact of C++ 20's `std::u8string` type for the methods listed above.  Overloads of these methods that take a `std::u8string` parameter would provide very clear semantics to a developer about the treatment of string content.  While the use of `std:u8string` would really only affect the compiler encoding of string literals, the burden is then placed on the developer to choose explicitly which of the methods to use.
 
 ## Identifier Sorting
 
