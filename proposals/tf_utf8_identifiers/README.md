@@ -15,7 +15,7 @@ Matthew Kuruc
     - [Core Identifier Validation](#core-identifier-validation)
     - [The Path and Text File Format Lexer / Parser](#the-path-and-text-file-format-lexer--parser)
     - [Case Mapping and other String Operations](#case-mapping-and-other-string-operations)
-    - [Identifier Collation](#identifier-collation)
+    - [Identifier Sorting](#identifier-sorting)
     - [Performance Measurements](#performance-measurements)
     - [Failing Tests](#failing-tests)
   - [Staged Rollout and Adoption](#staged-rollout-and-adoption)
