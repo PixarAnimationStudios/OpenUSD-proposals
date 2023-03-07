@@ -2,7 +2,7 @@
 
 Copyright &copy; 2022-2023, NVIDIA Corporation, version 1.1
 
-Edward Slavin
+Edward Slavin  
 Aaron Luk  
 Matthew Kuruc  
 
