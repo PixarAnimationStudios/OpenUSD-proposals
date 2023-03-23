@@ -12,4 +12,13 @@ The syntax for `SdfPath` matching is similar to that for `SdfPath` itself, with 
 - Double-slash `//` indicates arbitrary levels of hierarchy, e.g. `/World//cup` matches any prim named `cup` descendant to `/World`.
 
 ### Predicate Expressions
-Each path element in a Path Matching Pattern may optionally include a predicate-expression
+Each path element in a Path Matching Pattern may optionally include a Predicate Expression that can test object qualities. Predicate Expressions are introduced by braces: `{}`.
+- `//Robot*{kind:component}` select all prims whose name starts with `Robot` and have `kind=component`.
+- `//Robot*{kind:component}//{isa:Imageable purpose:guide}` select all imageable guides descendant to `Robot` components.
+
+These predicate functions take zero or more arguments, and may be invoked in three different ways:
+- `predicate` a bare invocation with no arguments.
+- `predicate:arg1,...,argN` invocation with unnamed positional arguments separated by commas with no spaces.
+- `predicate(arg1, keyword=value, ...)` invocation with multiple positional and keyword arguments, spaces allowed.
+
+The specific set of available predicate functions (like `isa`, `purpose`, and `kind` above) is domain-specific. That is, each domain that implements a pattern-based collection can register its own set of predicate functions, appropriate for the kinds of objects that the collection identifies.
