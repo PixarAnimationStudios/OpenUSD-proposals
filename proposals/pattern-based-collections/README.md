@@ -87,3 +87,13 @@ An `SdfPathExpression` object is in general incapable of evaluation.  Generally 
   - Also contains knowledge of how to obtain child objects (e.g. prim & property children) to facilitate searching for matches.
 - Contains the set of named predicate expression functions, their function signatures & implementations.
 - Contains functions that can answer whether or not a given predicate is "closed" over an interval in the domain.  For example, an `isModel` predicate is always false for descendants of `UsdPrim`s that are `component`s.  This will serve as the basis for important performance optimizations.
+- Provides API to:
+  - Validate and report errors. `SdfPathExpression` can validate _syntax_, but it cannot say whether the name of a predicate expression function is valid, for example, or if it has been passed the required number of arguments, etc.
+  - Test individual domain elements for matches
+  - Search a domain interval for matches
+    - Batch-compute all matches
+    - Generate matches incrementally
+
+### USD Support
+- Add custom USD value resolution support for `SdfPathExpression`-valued attributes. Primarily this means consuming opinions, applying the relevant path translations, and composing stronger over weaker until we have a complete expression.  That is, one that does not contain a reference to the next weaker expression: `%_`
+- Add custom API to `UsdCollectionAPI` for expressions to create `SdfPathExpressionEvaluator` objects for matching on the `UsdStage`
