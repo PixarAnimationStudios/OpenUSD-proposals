@@ -40,15 +40,15 @@ As a convenience, a predicate expression alone (without a Path Matching Pattern)
 - `variant(setName1 = selGlob1 .. selGlobN, ... setNameN = ...)` match prims that have matching selections for variant setNames 1..N.
 
 #### Matching Prims by Testing Properties, and Matching Properties
-We can expand the above syntax to support matching prims by testing their properties, and to match properties themselves, if desired.
+We can expand the above syntax to support matching prims by testing their properties, and to match properties themselves, if desired.  However, we may not support this in the first implementation.
 - `//Robot*//.*color` select all properties whose names end in "color" on prims whose names start with "Robot".
 - `//Robot*//{isa:Sphere .radius{value:default:closeTo:0}}` select all the `Sphere` prims beneath "Robot" prims whose `radius` attributes' `default` values are close to 0.
 - `//Robot*//{isa:Sphere}.radius{value:default:closeTo:0}` select all the `radius` attributes on `Sphere` prims beneath "Robot" prims whose `default` values are close to 0.
 
 ### Pattern-Based Collection Expressions
 A single Path Matching Pattern (with optional Predicate Expressions) is a Collection Expression, but several may also be combined using set-algebra operators.
-- Whitespace or the `+` operator forms the union of two Collections.
-- `&` forms the intersection of two Collections.
+- Whitespace or the `+` operator forms the set union of two Collections.
+- `&` forms the set intersection of two Collections.
 - `-` forms the set difference, the left hand Collection minus the right hand.
 - `~` complements a Collection.
 - `(` `)` may be used to group and enforce evaluation order.
@@ -60,4 +60,30 @@ In addition, collection references (starting with `%`) may be combined with Path
 - In the `UsdCollectionAPI` schema domain, `%/path/to:collectionName` refers to a specific collection on another prim.  For example, `%/House/Lights:KeyLights` refers to the collection `/House/Lights.collections:KeyLights`, and `%:collectionName` refers to a sibling collection on this prim.
   - Note that wildcards/patterns are not allowed in the names of collection references.
 
+### Future Possibilities
+As mentioned earlier, initially we may not support querying attribute values.  One concern is that we do not want collections (at least UsdCollectionAPI collections) to be time-varying.  We may consider supporting testing some kinds of attribute values at specific, nonvarying times.
 
+## Software Structure
+### New Sdf Attribute Value Type: `SdfPathExpression`
+- Contains the expression string as its fundamental data.
+- Provides API to:
+  - Compose over weaker `SdfPathExpressions`
+  - Support path translation across composition arcs: `SdfPathExpression::ReplacePrefix` (as employed by `PcpMapFunction`).
+    - In USD value resolution, we will path-translate any "non-speculative" prefixes (i.e. pattern-free elements) of Path Matching Patterns in the same way that relationship and connection target paths are translated today.
+    - For example, in `/CharacterGroup/Character//*_sbdv` we would path-translate the `/CharacterGroup/Character` prefix across composition arcs.
+    - Collection reference paths will be path-translated similarly.
+  - Parse, validate, and introspect.
+    - Provide syntax error feedback with source locations.
+  - Build expressions by set operations
+
+We will add a built-in attribute, `expression` to `UsdCollectionAPI` of this type.
+
+Note that `SdfPathExpression` can only syntactically validate the predicate expressions that appear within `{` `}`.  The language itself (e.g. the valid predicate function names and their signatures) must be provided externally, and can vary from domain to domain.  For example, in UsdCollectionAPI, the set of functions are those proposed above.  However, predicates in a Hydra Scene Index domain, or in a DCC GUI component may augment or modify these.
+
+### Evaluation Engine: `SdfPathExpressionEvaluator`
+An `SdfPathExpression` object is in general incapable of evaluation.  Generally the paths it matches against are only a property of the actual objects of interest.  For example, an expression that wants to test a UsdPrim's "kind" needs the `UsdPrim`, not only its path.  For this it needs to be told what its domain objects are, and how to obtain the SdfPath from a given domain object.  For example, a common case will have `UsdObject` as the domain and `UsdObject::GetPath()` as the means to obtain `SdfPaths`. It also needs to be given the names, signatures, and implementations of all the predicate expression functions.
+- Contains an `SdfPathExpression`
+- Contains knowledge of a functional domain (such as `UsdObject`, `SdfSpecHandle`, or `UI_Element`) and how to obtain `SdfPath`s from domain objects.
+  - Also contains knowledge of how to obtain child objects (e.g. prim & property children) to facilitate searching for matches.
+- Contains the set of named predicate expression functions, their function signatures & implementations.
+- Contains functions that can answer whether or not a given predicate is "closed" over an interval in the domain.  For example, an `isModel` predicate is always false for descendants of `UsdPrim`s that are `component`s.  This will serve as the basis for important performance optimizations.
