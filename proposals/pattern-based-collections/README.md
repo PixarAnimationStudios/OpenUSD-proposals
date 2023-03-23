@@ -1,1 +1,3 @@
-Hello World.
+# Pattern-Based Collections for OpenUSD
+The ability to identify collections of objects in scenes is crucial to many digital content workflows. OpenUSD has an existing applied API schema, [UsdCollectionAPI](https://openusd.org/dev/api/class_usd_collection_a_p_i.html) to do this, but it is limited to hierarchical include/exclude rules. This is inconvenient or insufficient for some tasks. So DCCs often provide richer ways to identify collections, allowing wildcard/glob style object name matching and predicate testing.  Just a couple of current examples are [Katana's CEL](https://learn.foundry.com/katana/dev-guide/CEL.html) and [Houdini Solaris' Prim Matching Patterns](https://www.sidefx.com/docs/houdini/solaris/pattern.html). Here we propose to add pattern-based collection support to OpenUSD.
+
