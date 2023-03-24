@@ -41,7 +41,7 @@ As a convenience, a predicate expression alone (without a Path Matching Pattern)
 
 #### Matching Prims by Testing Properties, and Matching Properties
 We can expand the above syntax to support matching prims by testing their properties, and to match properties themselves, if desired.  However, we may not support this in the first implementation.
-- `//Robot*//.*color` select all properties whose names end in "color" on prims whose names start with "Robot".
+- `//Robot*//.*color` select all properties whose names end in "color" descendant to prims whose names start with "Robot".
 - `//Robot*//{isa:Sphere .radius{value:default:closeTo:0}}` select all the `Sphere` prims beneath "Robot" prims whose `radius` attributes' `default` values are close to 0.
 - `//Robot*//{isa:Sphere}.radius{value:default:closeTo:0}` select all the `radius` attributes on `Sphere` prims beneath "Robot" prims whose `default` values are close to 0.
 
