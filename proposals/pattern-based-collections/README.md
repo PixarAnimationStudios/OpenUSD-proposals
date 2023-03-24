@@ -37,7 +37,7 @@ As a convenience, a predicate expression alone (without a Path Matching Pattern)
 - `specifier(specifier1, ... specifierN)` match prims with any of the given specifiers.
 - `isa(typeName1, ... typeNameN, strict=false)` match prims that are any typed schema typeName1..N or subtypes.  Disallow subtypes if `strict=true`.
 - `hasAPI(typeName1, ... typeNameN, instanceName='')` match prims that have any of the applied API schemas 1..N.  Limit matches by `instanceName` if supplied.
-  - Note that we will include support for queries that support schema versioning as well, the exact form of that to be determined.
+  - Note that we will include support for queries that reason about schema versioning as well, the exact form of that to be determined.
 - `variant(setName1 = selGlob1 .. selGlobN, ... setNameN = ...)` match prims that have matching selections for variant setNames 1..N.
 
 #### Matching Prims by Testing Properties, and Matching Properties
