@@ -97,3 +97,4 @@ An `SdfPathExpression` object is in general incapable of evaluation.  Generally 
 ### USD Support
 - Add custom USD value resolution support for `SdfPathExpression`-valued attributes. Primarily this means consuming opinions, applying the relevant path translations, and composing stronger over weaker until we have a complete expression.  That is, one that does not contain a reference to the next weaker expression: `%_`
 - Add custom API to `UsdCollectionAPI` for expressions to create `SdfPathExpressionEvaluator` objects for matching on the `UsdStage`
+- Modify `UsdCollectionMembershipQuery` to be able to serve queries from both the includes/excludes relationships and expressions.
