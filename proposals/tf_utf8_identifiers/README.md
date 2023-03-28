@@ -215,13 +215,39 @@ It may be interesting to consider the impact of C++ 20's `std::u8string` type fo
 
 ## Identifier Sorting
 
-Be far the most difficult operation to support in Unicode is *collation*, the process of providing an ordering to a set of strings.  This is not only due to the need to integrate additional information from Unicode tables, but also because it inherently affects the run-time performance of certain frequently invoked operations (specifically prim and property ordering).  USD core requires some notion of ordering for prims in a layer and properties on a prim for both internal consistency and to provide the opportunity for tools on top of USD to perform intelligent operations (like finding the difference between two USD files) more easily.  To continue support for some notion of ordering, we consider several options that seek to balance between "correctness" of the collated results and run-time performance of the algorithm, which is often called in tight loops that use `GetPropertiesInNamespace` kinds of queries.  To that end, this proposal enumerates three options for collating UTF-8 strings that range from least correct / most performance to most correct / least performant:
+Be far the most difficult operation to support in Unicode is *collation*, the process of providing an ordering to a set of strings.  This is not only due to the need to integrate additional information from Unicode tables, but also because it inherently affects the run-time performance of certain frequently invoked operations (specifically prim and property ordering).  USD core requires some notion of ordering for prims in a layer and properties on a prim for both internal consistency and to provide the opportunity for tools on top of USD to perform intelligent operations (like finding the difference between two USD files) more easily.  To continue support for some notion of ordering, we consider several options that seek to balance between "correctness" of the collated results and run-time performance of the algorithm, which is often called in tight loops that use `GetPropertiesInNamespace` kinds of queries.  To that end, this proposal enumerates four options for sorting UTF-8 strings:
 
+- Standard ASCII dictionary ordering + UTF-8 byte sort
 - Simple code point based sorting
 - Optimistic ASCII sorting
 - Unicode conformant Unicode Collation Algorithm (UCA) sorting
 
-Note that there are other ways that a sort algorithm can provide acceptable collation (for example, using Python's built-in `locale.strcoll` at the UI level) - this proposal is not exhaustive with respect to the sorting algorithms one can use, but does make a few suggestions that are discussed in further detail below.
+Note that there are other ways that a sort algorithm can provide acceptable collation (for example, using Python's built-in `locale.strcoll` at the UI level) - this proposal is not exhaustive with respect to the sorting algorithms one can use, but does make a few suggestions that are discussed in further detail below.  Although the PR contains proposed implementation for some of these, ultimately the chosen implementation is the second - Standard ASCII dictionary ordering + UTF-8 byte sort.  The sections below enumerate the challenges and trade offs with the different approaches.
+
+## Standard ASCII Dictionary Ordering + UTF-8 Byte Sort
+
+__This is the algorithm that is chosen for implementation__
+
+Currently, the USD runtime implements sorting according to ASCII dictionary rules where the following items are taken into account:
+
+- `_` are sorted before letters / digits
+- lower case ASCII characters are sorted before upper case ASCII characters
+- digit strings are sorted in numerical order (rather than the order of the characters that make up the string)
+- digits with non-significant leading zeros are considered equivalent if the numeric value of their significant digits are equivalent
+- if the strings are otherwise equal, differing only in non-significant leading zeros on digit components, the one with less non-significant leading zeros is sorted before the one with more non-significant leading zeros
+
+Integrating Unicode UTF-8 characters into this sequence is challenging due to deciding a proper ordering of each code point that makes lexicographic sense and case mapping challenges discussed further below.  The Optimistic ASCII Sorting section below enumerates some of these challenges.  However in this algorithm, the approach to integrate UTF-8 characters into the sort sequence is to "do nothing".  That is, ASCII strings that derive a certain sort order will remain that way.  Any non-ASCII character present in a string will simply be byte compared between the bytes of the string.  This is similar to how existing symbols (e.g., `+`, etc.) would be sorted today using the algorithm.  Although the ordering might not make lexicographic sense, using this algorithm guarantees a deterministic sort, meaning that the USD runtime would sort the same set of strings the same way every time.  We derive three advantages from this approach:
+
+- The existing algorithm needs minimal changes
+- The sort order of existing strings is preserved
+- The sort order of strings containing non-ASCII characters is deterministic, and can still enable downstream use cases such as layer diffs, etc.
+
+In reality, the sorting algorithm would change slightly, but only in a way that checked the presence of a leading bit to determine whether the character was a multi-byte UTF-8 encoded character or not (to avoid performing logic specific to `_`, lower case, and upper case ASCII characters).
+
+This does necessitate the following in the documentation:
+
+- Documenting that the sort order used is for the USD runtime.  While applications may use this sort order for display, no guarantees are made that it makes lexicographic sense in languages that are Unicode based.
+- Documenting that additional sorting algorithms could be used at the UI layer to enable a sort order more consistent with that of a correct lexicographic ordering expected for languages that are Unicode based.
 
 ### Code Point Sorting
 
