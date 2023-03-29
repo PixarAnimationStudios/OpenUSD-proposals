@@ -222,11 +222,11 @@ By far the most difficult operation to support in Unicode is *collation*, the pr
 - Optimistic ASCII sorting
 - Unicode conformant Unicode Collation Algorithm (UCA) sorting
 
-Note that there are other ways that a sort algorithm can provide acceptable collation (for example, using Python's built-in `locale.strcoll` at the UI level) - this proposal is not exhaustive with respect to the sorting algorithms one can use, but does make a few suggestions that are discussed in further detail below.  Although the PR contains proposed implementation for some of these, ultimately the chosen implementation is the second - Standard ASCII dictionary ordering + UTF-8 byte sort.  The sections below enumerate the challenges and trade offs with the different approaches.
+Note that there are other ways that a sort algorithm can provide acceptable collation (for example, using Python's built-in `locale.strcoll` at the UI level) - this proposal is not exhaustive with respect to the sorting algorithms one can use, but does make a few suggestions that are discussed in further detail below.  The sections below enumerate the challenges and trade offs with the different approaches.
+
+__NOTE:__ The chosen algorithm for implementation is "Standard ASCII Dictionary Ordering + UTF-8 Byte Sorting"
 
 ### Standard ASCII Dictionary Ordering + UTF-8 Byte Sort
-
-__This is the algorithm that is chosen for implementation__
 
 Currently, the USD runtime implements sorting according to ASCII dictionary rules where the following items are taken into account:
 
@@ -251,9 +251,13 @@ This does necessitate the following in the documentation:
 
 ### Code Point Sorting
 
+__NOTE:__ This algorithm has not been selected for sorting, the following section is for discussion only.
+
 In code point sorting, UTF-8 identifiers are sorted according to the integer value of the Unicode code point representing each character.  The algorithm is very simple and performant, involving a single continuous iteration of the characters, extracting the code points one by one, and comparing them.  In practice for non-English languages, it also results an incorrect sort of most characters, since code points have no correlation to actual ordering strength of certain characters.  The result is also very different than the customized dictionary sorting algorithm currently in USD core, particularly with regard to reasoning about numeric subsequences as a unit (e.g., two numeric sequences `2000` and `4` would result in `2000` being sorted first due to code point value comparison of `2` and `4`).  That said, it provides a very definitive ordering that is stable for placing in sorted containers and differencing in files.
 
 ### Optimistic ASCII Sorting
+
+__NOTE:__ This algorithm has not been selected for sorting, the following section is for discussion only.
 
 In optimistic ASCII sorting, UTF-8 identifiers are optimistically treated as if they were ASCII identifiers and when non-ASCII characters are encountered the algorithm falls back to simple code point sorting.  There are a number of advantages for doing this:
 
@@ -299,6 +303,8 @@ The sub-strings `myString002` and `myString` can be formed for comparison purpos
 For an optimistic ASCII algorithm to be used in practice, it would be required to explicit lay out the context-sensitive rules being used by the existing dictionary ordering algorithm.  These rules would then have to be adjusted to allow for what happens when non-ASCII characters "break" the context - are they ignored?  do they contribute a new context?  does the algorithm terminate at that point on the basis of a code point ordering?  The answers to these questions are not straightforward, but need to be explicitly stated such that users of USD can be assured that whatever ordering is used, it can be understood.
 
 ### Unicode Collation Algorithm
+
+__NOTE:__ This algorithm has not been selected for sorting, the following section is for discussion only.
 
 Proper ordering of Unicode strings is a complex operation.  [UTS #10: Unicode Collation Algorithm](https://unicode.org/reports/tr10/) lays out the algorithm for how strings should be sorted and depends on [UAX #15: Unicode Normalization Forms](https://www.unicode.org/reports/tr15/) to define how strings must be normalized as the first part of the ordering process.  The advantage of using the Unicode Collation Algorithm (UCA) is the standardized correctness of the sort order across all Unicode strings.  The major disadvantage of the algorithm is the processing involved to ultimately form the sort key used to provide this correct ordering.  The proposed implementation includes a (unoptimized) version of UCA for comparison purposes with the other sorting approaches mentioned above.  The remainder of this section discusses the challenges in implementing UCA.
 
