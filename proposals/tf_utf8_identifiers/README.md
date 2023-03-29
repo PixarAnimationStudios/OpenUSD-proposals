@@ -224,7 +224,7 @@ Be far the most difficult operation to support in Unicode is *collation*, the pr
 
 Note that there are other ways that a sort algorithm can provide acceptable collation (for example, using Python's built-in `locale.strcoll` at the UI level) - this proposal is not exhaustive with respect to the sorting algorithms one can use, but does make a few suggestions that are discussed in further detail below.  Although the PR contains proposed implementation for some of these, ultimately the chosen implementation is the second - Standard ASCII dictionary ordering + UTF-8 byte sort.  The sections below enumerate the challenges and trade offs with the different approaches.
 
-## Standard ASCII Dictionary Ordering + UTF-8 Byte Sort
+### Standard ASCII Dictionary Ordering + UTF-8 Byte Sort
 
 __This is the algorithm that is chosen for implementation__
 
