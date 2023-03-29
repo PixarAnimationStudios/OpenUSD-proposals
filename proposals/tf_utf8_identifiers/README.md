@@ -298,7 +298,7 @@ The sub-strings `myString002` and `myString` can be formed for comparison purpos
 
 For an optimistic ASCII algorithm to be used in practice, it would be required to explicit lay out the context-sensitive rules being used by the existing dictionary ordering algorithm.  These rules would then have to be adjusted to allow for what happens when non-ASCII characters "break" the context - are they ignored?  do they contribute a new context?  does the algorithm terminate at that point on the basis of a code point ordering?  The answers to these questions are not straightforward, but need to be explicitly stated such that users of USD can be assured that whatever ordering is used, it can be understood.
 
-## Unicode Collation Algorithm
+### Unicode Collation Algorithm
 
 Proper ordering of Unicode strings is a complex operation.  [UTS #10: Unicode Collation Algorithm](https://unicode.org/reports/tr10/) lays out the algorithm for how strings should be sorted and depends on [UAX #15: Unicode Normalization Forms](https://www.unicode.org/reports/tr15/) to define how strings must be normalized as the first part of the ordering process.  The advantage of using the Unicode Collation Algorithm (UCA) is the standardized correctness of the sort order across all Unicode strings.  The major disadvantage of the algorithm is the processing involved to ultimately form the sort key used to provide this correct ordering.  The proposed implementation includes a (unoptimized) version of UCA for comparison purposes with the other sorting approaches mentioned above.  The remainder of this section discusses the challenges in implementing UCA.
 
