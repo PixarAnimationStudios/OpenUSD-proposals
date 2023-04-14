@@ -33,7 +33,6 @@ As a convenience, a predicate expression alone (without a Path Matching Pattern)
 - `model(bool=true)` match prims that are or are not considered models (`UsdPrim::IsModel`)
 - `group(bool=true)` match prims that are or are not considered groups (`UsdPrim::IsGroup`)
 - `kind(kind1, ... kindN, strict=false)` match prims of any of given kinds. If `strict=true` matching subkinds is not allowed, only exact matches pass.
-- `purpose(purpose1, ... purposeN)` match prims with any of the given purposes.
 - `specifier(specifier1, ... specifierN)` match prims with any of the given specifiers.
 - `isa(typeName1, ... typeNameN, strict=false)` match prims that are any typed schema typeName1..N or subtypes.  Disallow subtypes if `strict=true`.
 - `hasAPI(typeName1, ... typeNameN, instanceName='')` match prims that have any of the applied API schemas 1..N.  Limit matches by `instanceName` if supplied.
