@@ -120,10 +120,10 @@ primSpec.variantSelections['modelVariant'] = '`if(eq(${SHOT}, "01"), "shot_01_va
 ## Stage Variables
 
 Stage variables are the only scene description that expressions are allowed to
-refer to. These variables may be strings, bools, or ints and are stored in a
-dictionary-valued layer metadata field named ``stageVariables``. Stage variables
-may themselves be expressions, so that common logic can be factored into a
-single location for convenience and brevity.
+refer to. These variables may be strings, bools, integers, or lists of these
+types, and are stored in a dictionary-valued layer metadata field named
+``stageVariables``. Stage variables may themselves be expressions, so that
+common logic can be factored into a single location for convenience and brevity.
 
 As the name implies, stage variables are stage metadata, meaning they must be
 authored on either the root or session layer of a stage or in the root layer of
