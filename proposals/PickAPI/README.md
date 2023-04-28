@@ -23,7 +23,7 @@ To describe high level, customized primitive pick behavior, provide a `PickAPI` 
 
 This proposal distinguishes between pick specialization and [application selection modes](#relationship-to-application-selection-modes). Selection modes are user interface options that apply to the entire scene and cannot be practically encoded on every prim in the scene.
 
-The `PickAPI` should only be applied to `Imageable` prims (ie. `UsdGeom` and `UsdVol` but not `UsdShade`).
+The `PickAPI` should only be applied to `Imageable` prims (ie. `UsdGeom` and `UsdVol` but not `UsdShade`) and the `GeomSubset`s of `Gprim`s.
 
 ### Visibility
 ```
@@ -39,7 +39,7 @@ To make an object _unpickable_ but still participate in calculations as a matte 
 
 `pick:visibility` may not be animated.
 
-In this current proposal, sending geometry to a pick buffer that is not actively imaged is currently out of scope. One hypothetical use case would be interactive picking of volumetrics. A user might provide a mesh to be used as the pick target for a dense volumetric cloud. This proposal doesn't provide a path for including non-imageable geometry in picking because the semantics become somewhat confusing and complicates implementations leveraging rendering pipelines.
+In this current proposal, sending geometry to a pick buffer that is not actively imaged is currently out of scope. One hypothetical use case would be interactive picking of volumetrics. A user might provide a mesh to be used as the pick target for a dense volumetric cloud. This proposal doesn't provide a path for including non-imageable geometry in picking because the semantics quickly become confusing. It also complicates implementations leveraging the rendering pipeline.
 
 ### Retargeting
 
@@ -73,11 +73,36 @@ Implementing all these features as variants with different `PickAPI` settings wo
 
  Selection modes should in general operate on top of the `PickAPI`. Since pick visibility is pruning and respects all other visibility settings, the order of application doesn't strictly matter. Selection modes that engage in retargeting behavior should clearly document their relationship to the `PickAPI`. This proposal recommends that schema pick retargeting should be applied, followed by application selection mode. (ie. select bound materials of `/picked/prim.pick:targets` not `/picked/prim`). If there are practical reasons where the schema defined pick mode need to be ignored (ie. explicit point sculpting of meshes), the interface or documentation should aim to communicate that the `PickAPI` will intentionally be ignored.
 
-Applications that do not support the `PickAPI` and its features should try to issue warnings when they observe it being applied.
+Applications that do not support the `PickAPI` and its features should try to issue warnings when they observe its application.
 
 Implementers should consider the implications of this API being applied to a wide variety of prims in a hierarchy, assembly or component models, point instancers, gprims, and geom subsets.
 
 The `PickAPI` strictly customizes behavior from viewport picking. It should not be used to customize selection behavior in scene graph tree views and other widgets. However, widgets and interfaces may choose to reference the `PickAPI` in filtering and display of pickable scopes.
+
+### Subsets
+> **NOTE** `GeomSubset` picking is not currently supported in Hydra. This proposed usage is somewhat speculative and subject to revision.
+
+Subset support is challenging because there may be multiple subset families which may or may not be partioning. This proposal presupposes element index is easy to access when picking via ray hit or via a secondary element id pick buffer.
+
+The `PickAPI` only makes sense when applied to subsets whose elements have area. Faces have area. Edges do not. Points in the context of the `Mesh` and `BasisCurves` schemas do not. Points in the context of the `Points` schema have width and do have area.
+
+The proposal allows the `PickAPI` to be applied to any area based subset and does not require a specific picking partition (though users are free to set one up). The expectation is that users and applications will likely want to reuse subsets reserved for other purposes (like material binding) for picking.
+
+Just like applications may have special selection modes to restrict selection on prim type, it's reasonable for applications to have special selection modes to enable or disable picking of certain subset families separate from the `PickAPI`.
+
+#### Visibility
+Since we've chosen simple pruning visibility as our idiom, it is easy to reason about behavior. All subsets which have the `PickAPI` applied should be consulted. If an element invisible in any subset, it's invisible in all.
+
+#### Retargeting
+Retargeting is more complicated to reason about because of the non-partitioning nature of subsets. An element like a face may be a member of multiple subsets or none. As such, a single point-and-click pick event can actually result in multiple `GeomSubset`s being selected.
+
+How retargeting applies to `GeomSubset` picking must be approached from the point of view of the picked element. Map the picked element to all of its subsets that have the `PickAPI` applied with `pick:retargeting` enabled. If no such subset exists, its containing `Gprim` is picked. Otherwise, picking should union all of the `pick:targets` of the subsets with `pick:retargeting` enabled.
+
+To make the subset itself, pickable, its targets may be simply set to `<.>`. Subsets may retarget to any other prim.
+
+Since faces can be elements of multiple subsets, care must be taken to properly setup matte occluders. All subsets a face is an element in that have enabled `pick:retargeting` must be set to `[]`. One advantage of framing matte occlusion as a retargeting behavior is that it provides the implementation clarity in the unusual scenario where an element resides in multiple subsets with different opinions about matting.
+
+Such edge cases are specified only for completeness and to avoid ambiguity. It's expected that users will generally only have a single family of non-overlapping faces using the `PickAPI`.
 
 ## Applied Examples
 ### Fur (Visibility)
@@ -181,12 +206,46 @@ def Xform "Room" (
     }
 }
 ```
+### Terrain Trail (Matting with Subsets)
+In this example, to ensure picking follows the trail, the terrain is structured to be a matte occluder (its targets are empty). However, for elements in the `Trail` subset, this behavior is overridden to be self targeting.
+```
+def Mesh "HikingTerrain" (append apiSchemas = "PickAPI") {
+    uniform pick:retargeting = "replace"
+    rel pick:targets = []
+
+    ...
+
+    def GeomSubset "Trail" (append apiSchemas = "PickAPI"){
+        uniform pick:retargeting = "replace"
+        rel pick:targets = <.>
+
+        ...
+    }
+}
+```
+
+### Subset Puzzle
+Support for `GeomSubset` prims can result in some interesting scenarios. In this example, the odd numbered faces do not have the `PickAPI` applied. As such, they inherit the "replace with `</Root>`" behavior. The even number faces have the `PickAPI` applied but undo the retargeting behavior because the default value is `none`. As such, `</Root/Mesh>` will be picked for these faces.
+
+This puzzle exists not to demonstrate a user workflow but to demonstrate that the specification provides unambiguous picking behavior even in unusual scenarios.
+```
+def Xform "Root" (append apiSchemas = "PickAPI"){
+    uniform token pick:retargeting = "replace"
+    rel pick:targets = <.>
+    def Mesh "Mesh" {
+        def GeomSubset "even_numbered_faces" (
+            append apiSchemas = "PickAPI"
+        ) {}
+        def GeomSubset "odd_numbered_faces" () {}
+    }
+}
+```
 
 ## Questions
-* This proposal does not address support for `UsdGeomSubset`. Visibility and purpose are currently not supported by subsets, so it may be hard to support the visibility attribute. However, one can imagine a desire for using face sets to describe pick retargeting.
-* Should pick visibility and and pick retargeting be two separate APIs? One could imagine tools providing facility for controlling pick visibility but not supporting retargeting. One could also imagine prims like `UsdGeomSubset` not supporting pick visibility but supporting pick retageting. One challenge with this formulation is identifying whether the visibility or retargeting schemas are responsible for describing pick occluders without creating ambiguity.
-* Is `UsdUI` the right place for viewport behavior schemas?
+* Should pick visibility and and pick retargeting be two separate APIs? One could imagine tools providing facility for controlling pick visibility but not supporting retargeting. One challenge with this formulation is identifying whether the visibility or retargeting schemas are responsible for describing pick occluders without creating ambiguity.
 * Can the PickAPI subsume or clarify the responsibilities of the proxyPrim relationship? Does it conflict at all with that relationship?
 * Are the rules for hierarchies with multiple applied PickAPIs consistent and expressive?
 * This proposal considered an `append` retargeting mode to accumulate ancestral targets but didn't find a practical example. Relationship forwarding could be used to express this more explicitly in the current formulation. Are there other "retargeting" modes that would be useful?
+* This proposal considered explicit `self` and `matte` retargeting modes. They were dropped as they were redundant with certain values for relationships. Are they common enough that they warrant special enumeration?
+
 * This schema views picking through the lens of authoring static scenes and not on picking as a potential event trigger (say, playback of an animation when a scope is picked). Does this schema complicate event triggers? Does it complement it? Or would this schema simply not be used in those contexts?
