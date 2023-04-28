@@ -8,7 +8,7 @@ within the proposal.
 
 ## Current Proposals
 
-- [Pattern-based Collections](https://github.com/PixarAnimationStudios/USD-proposals/pull/4) ![Status:Draft](https://img.shields.io/badge/status-draft-blue)
-- [Pick API](https://github.com/PixarAnimationStudios/USD-proposals/pull/6) ![Status:Draft](https://img.shields.io/badge/status-draft-blue)
-- [Stage Variable Expressions](https://github.com/PixarAnimationStudios/USD-proposals/pull/8) ![Status:Draft](https://img.shields.io/badge/status-draft-blue)
-- [Unicode Identifiers in USD](https://github.com/PixarAnimationStudios/USD-proposals/pull/5) ![Status:Draft](https://img.shields.io/badge/status-draft-blue)
+- [Pattern-based Collections](https://github.com/PixarAnimationStudios/USD-proposals/pull/4) ![Status:Draft](https://img.shields.io/badge/draft-blue) ([current PRs and issues](https://github.com/PixarAnimationStudios/USD-proposals/pulls?q=is%3Apr+label%3Ausd-pattern-based-collections+))
+- [Pick API](https://github.com/PixarAnimationStudios/USD-proposals/pull/6) ![Status:Draft](https://img.shields.io/badge/draft-blue) ([current PRs and issues](https://github.com/PixarAnimationStudios/USD-proposals/pulls?q=is%3Apr+label%3Ausd-pickapi+))
+- [Stage Variable Expressions](https://github.com/PixarAnimationStudios/USD-proposals/tree/main/proposals/stage_variable_expressions) ![Status:Draft](https://img.shields.io/badge/draft-blue) ([current PRs and issues](https://github.com/PixarAnimationStudios/USD-proposals/pulls?q=is%3Apr+label%3Ausd-stage-variables))
+- [Unicode Identifiers in USD](https://github.com/PixarAnimationStudios/USD-proposals/tree/main/proposals/tf_utf8_identifiers) ![Status:Draft](https://img.shields.io/badge/draft-blue) ([current PRs and issues](https://github.com/PixarAnimationStudios/USD-proposals/pulls?q=is%3Apr++label%3Ausd-utf8-identifiers+))
