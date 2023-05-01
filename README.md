@@ -4,6 +4,8 @@ Welcome to USD-proposals, a forum for sharing and collaborating on proposals for
 
 Before getting started, please familiarize yourself with the contents of the [Supplemental Terms](https://graphics.pixar.com/usd/release/contributing_supplemental.html) page.
 
+If you are interested in browsing existing proposals, please proceed right to [the current list of proposals, with status information](./proposals/Readme.md).
+
 ## What is a proposal?
 
 - a new schema, such as "Level of Detail for Games"
