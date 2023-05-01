@@ -9,7 +9,7 @@ Matthew Kuruc
 # Contents
   - [Introduction](#introduction)
   - [Approximate Approaches](#approximate-approaches)
-  - [An Overivew of Identifiers in USD](#an-overview-of-identifiers-in-usd)
+  - [An Overivew of Identifiers and Prim Names in USD](#an-overview-of-identifiers-and-prim-names-in-usd)
   - [Considerations for Implementation](#considerations-for-implementation)
   - [The Proposed Implementation](#the-proposed-implementation)
     - [Core Identifier Validation](#core-identifier-validation)
@@ -41,7 +41,7 @@ When early requirements for UTF-8 identifiers in Omniverse arose from German use
 
 Finally, other languages do not have standard Romanizations, and in general a Romanized character does not have a 1:1 correspondence with its source character.  For example, the Jyutping Romanization "sam1" maps to several unrelated Cantonese characters such as 心, 森, and 深.  This further fences off content creators the world over from leveraging and improving upon USD as the canonical mechanism for scene interchange across an ever-expanding ecosystem of tooling and pipelines in the virtual space.
 
-# An Overview of Identifiers in USD
+# An Overview of Identifiers and Prim Names in USD
 
 Identifier syntax is currently enforced in USD by several different mechanisms.  The primary mechanism is the inlined function `TfIsValidIdentifier`, which states that "an identifier is valid if it follows the C/Python identifier convention; that is, it must be at least one character long, must start with a letter or underscore, and must contain only letters, underscores, and numerals".  However, there are several other code paths that validate different flavors of identifiers, including namespaced and variant identifiers, that use similar logic to achieve validation.  In particular, this means that any change to the logic governing core identifier validation in `TfIsValidIdentifier` necessitates change in several different similar validation functions across the `Sdf` module (for example, `SdfPath::IsValidNamespacedIdentifier`).
 
@@ -59,7 +59,18 @@ It is also necessary to define what we mean by *identifier*.  The current implem
 - **Prim names:** The name of a USD prim, differentiating one sibling prim from another and forming the hierarchical path from which a prim can be referenced
 - **Identifiers:** The identifying names given to USD schema types and properties, largely with the expectation that they can be syntactically combined to be compiled into APIs
 
-The current implementation treats these the same, and restricts both to the rules given above largely due to their use in compiling schema representations that must be compliant with C++ and Python.  However, there is little need to restrict prim names in the same way, and often the source of these names in industries such as AECO and manufacturing come from systems that are permissive in the way these names are represented (e.g. names in non-Latin based languages, spaces, all numerical names, etc.).  Below we discuss one possible approach to distinguish between the two concepts and what would need to change to support doing so.
+This proposal uses different rules to determine validity of each.   As described above, UTF-8 was chosen as the encoding format for Unicode strings.  While this encoding dictates how Unicode characters are represented, it does not dictate how those bytes should be interepreted to form higher level tokens like identifiers.  [PEP 3131](https://peps.python.org/pep-3131/) complies with [UAX31-R1: Default Identifiers](https://www.unicode.org/reports/tr31/#R1) by using Unicode's `XID_Start` and `XID_Continue` [derived core properties](https://www.unicode.org/Public/UCD/latest/ucd/DerivedCoreProperties.txt) that are defined per code unit, and by using a profile in which code point `005F` (the underscore or low line, `_`) is added to `XID_Start` as the set of code units that can begin a valid identifier.  The latest C++ standards also add support for Unicode identifiers based on `XID_Start` and `XID_Continue` (e.g., [C++ Standard Draft](https://github.com/cplusplus/draft/blob/main/source/lex.tex)), though compiler support may vary.  Specifically, g++ states conformance to the standard while msvc relies on rules that may or may not be the same as that specified in the standard through `XID_Start` / `XID_Continue` (see [Identifiers C++ | Microsoft Docs](https://docs.microsoft.com/en-us/cpp/cpp/identifiers-cpp?view=msvc-170)).
+
+Though support may vary, both the C++ standard and PEP 3131 have common definitions for what denotes an identifier and the recommendation is to follow this convention in USD, particularly since it must conform to these rules to enable successful compilation of code-based schemas.  One downside of this approach is that strings starting with digits (or indeed, all digit strings) could not be considered valid identifiers, but this no more restrictive than it is in today's implementation, is a reasonable restriction given that USD supports code-based schemas, and still allows for Unicode characters falling in those two classes (`XID_Start` / `XID_Continue`) to be supported.
+
+The current implementation in the associated PR acknowledges the fact that both C++ and Python provide support for identifiers using characters in the `XID_Start` / `XID_Continue` classes.  Validation rules for identifiers follow those supported by these compilers; that is, a valid identifier is a sequence of one or more characters where the first character falls in the `XID_Start` class and all subsequent characters fall in either the `XID_Start` class or the `XID_Continue` class.
+
+Restricting prim names in this way is largerly unnecessary given they are never used by compilers generating schema code.  In fact, it is entirely possible prim names could be any valid Unicode string (e.g., parentheses, spaces, etc.).  However, complete flexibility in the character set causes problems for the lexer and parser to tokenize and parse the remaining characters in context.  To not deviate too far from the existing implementation, this proposal grants more flexibility to prim names by allowing them to also start with any character in the `XID_Continue` class.  This opens up prim names to e.g., contain non-ASCII characters in these classes, start with digits, etc. while not drastically increasing the set of characters in such a way to cause collisions with other token definitions in the `usda` grammar.
+
+In summary, this proposal validates identifiers and prim names separately using the following rules:
+
+- **Identifiers:** `[XID_Start][XID_Start XID_Continue]*`
+- **Prim Names:** `[XID_Start XID_Continue][XID_Start XID_Continue]*`
 
 # Considerations for Implementation
 
@@ -92,15 +103,10 @@ Core identifier validation separately happens in two distinct places in USD:
 - Via a set of lexer / parser rules in flex / bison derived methods
 
 The distinction is important because before a string can be validated via `TfIsValidIdentifier` it has to be appropriately recognized to begin with from an arbitrary test file or path string.  The rules for acceptance of the string are governed by lexing rules that are in essence duplicating the code-based logic as a state machine.  Both validation paths rely on code that has low execution overhead.  The lexer rules are preprocessed into a state machine for low run-time string processing overhead and `TfIsValidIdentifier` and related methods rely on pointer-based validation routines and inline methods to ensure these commonly called routines have minimal overhead for processing large scenes.
- 
-As described above, UTF-8 was chosen as the encoding format for Unicode strings.  While this encoding dictates how Unicode characters are represented, it does not dictate how those bytes should be interepreted to form higher level tokens like identifiers.  [PEP 3131](https://peps.python.org/pep-3131/) complies with [UAX31-R1: Default Identifiers](https://www.unicode.org/reports/tr31/#R1) by using Unicode's `XID_Start` and `XID_Continue` [derived core properties](https://www.unicode.org/Public/UCD/latest/ucd/DerivedCoreProperties.txt) that are defined per code unit, and by using a profile in which code point `005F` (the underscore or low line, `_`) is added to `XID_Start` as the set of code units that can begin a valid identifier.  The latest C++ standards also add support for Unicode identifiers based on `XID_Start` and `XID_Continue` (e.g., [C++ Standard Draft](https://github.com/cplusplus/draft/blob/main/source/lex.tex)), though compiler support may vary.  Specifically, g++ states conformance to the standard while msvc relies on rules that may or may not be the same as that specified in the standard through `XID_Start` / `XID_Continue` (see [Identifiers C++ | Microsoft Docs](https://docs.microsoft.com/en-us/cpp/cpp/identifiers-cpp?view=msvc-170)).
-
-Though support may vary, both the C++ standard and PEP 3131 have common definitions for what denotes an identifier and the recommendation is to follow this convention in USD, particularly since it must conform to these rules to enable successful compilation of code-based schemas.  One downside of this approach is that strings starting with digits (or indeed, all digit strings) could not be considered valid identifiers, but this no more restrictive than it is in today's implementation, is a reasonable restriction given that USD supports code-based schemas, and still allows for Unicode characters falling in those two classes (`XID_Start` / `XID_Continue`) to be supported.
-
-**NOTE:** Restricting prim names in this way is largerly unnecessary given they are never used by compilers generating schema code.  In fact, it is entirely possible prim names could be any valid Unicode string (e.g., parentheses, spaces, etc.).  While this proposal does not specify the possible characters that could potentially make up a valid prim name, it does suggest a way to separate out the validation of identifiers and the validation of prim names such that it could be changed in the future.  For now, this proposal uses the same rule set for what makes a valid identifier and valid prim name.  If in the future the rules for validation of prim names change, a balance must be maintained between permissiveness and context-free parsability of a string.
 
 To realize this, many changes are required to the core `Tf` and `Sdf` modules.  Most of the core identifier logic ultimately flows through `TfIsValidIdentifier`, with auxiliary methods using this in some way to perform additional validation.  However, logic is also duplicated in a number of places, particulary when additional characters participate in the validation (e.g., `IsValidNamespacedIdentifier` and the tokenization around `:`).  The proposed implementation seeks to do two things:
-- Separate out the validation logic such that prim names and identifiers could be validated with separate rules (while they remain the same rule in the current proposal)
+
+- Separate out the validation logic such that prim names and identifiers could be validated with separate rules (using the rules described above)
 - Attempt to centralize the logic in other parts of the code base to use `Tf` validator methods as a single point of validation, rather than duplicating the logic in various forms across different USD methods (particularly in the `Sdf` module).
 
 ## Core Identifier Validation
@@ -127,7 +133,7 @@ In total, the validation replacese a string iteration and character range check 
 
 Finally, in order to attempt to centralize the validation logic to the `Tf` module, we propose introducing:
 
-- Separate methods to validate prim names and identifiers (even if prim names currently fall back to validating as identifiers)
+- Separate methods to validate prim names and identifiers (using the rules described above)
 - Extensions of these methods that take two iterators defining substrings of a given string to examine (for optimization such that substrings don't need to be formed when checking e.g., two sub-parts of a namespaced identifier)
 
 Providing the extensions allows using the core validation logic in methods that otherwise would need to tokenize the string, with the overhead of creating a new string to pass into the core validation methods.  For example, `IsValidNamespacedIdentifier` becomes a string iteration that keeps track of sub-indices of the string between the `:` character and calls core validation logic on the sub-indices of that string via iterators without having to create a new temporary string holding the substring (rather than the validation logic being duplicated inside `IsValidNamespacedIdentifier` as it is today).
@@ -215,19 +221,49 @@ It may be interesting to consider the impact of C++ 20's `std::u8string` type fo
 
 ## Identifier Sorting
 
-Be far the most difficult operation to support in Unicode is *collation*, the process of providing an ordering to a set of strings.  This is not only due to the need to integrate additional information from Unicode tables, but also because it inherently affects the run-time performance of certain frequently invoked operations (specifically prim and property ordering).  USD core requires some notion of ordering for prims in a layer and properties on a prim for both internal consistency and to provide the opportunity for tools on top of USD to perform intelligent operations (like finding the difference between two USD files) more easily.  To continue support for some notion of ordering, we consider several options that seek to balance between "correctness" of the collated results and run-time performance of the algorithm, which is often called in tight loops that use `GetPropertiesInNamespace` kinds of queries.  To that end, this proposal enumerates three options for collating UTF-8 strings that range from least correct / most performance to most correct / least performant:
+By far the most difficult operation to support in Unicode is *collation*, the process of providing an ordering to a set of strings.  This is not only due to the need to integrate additional information from Unicode tables, but also because it inherently affects the run-time performance of certain frequently invoked operations (specifically prim and property ordering).  USD core requires some notion of ordering for prims in a layer and properties on a prim for both internal consistency and to provide the opportunity for tools on top of USD to perform intelligent operations (like finding the difference between two USD files) more easily.  To continue support for some notion of ordering, we consider several options that seek to balance between "correctness" of the collated results and run-time performance of the algorithm, which is often called in tight loops that use `GetPropertiesInNamespace` kinds of queries.  To that end, this proposal enumerates four options for sorting UTF-8 strings:
 
+- Standard ASCII dictionary ordering + UTF-8 byte sort
 - Simple code point based sorting
 - Optimistic ASCII sorting
 - Unicode conformant Unicode Collation Algorithm (UCA) sorting
 
-Note that there are other ways that a sort algorithm can provide acceptable collation (for example, using Python's built-in `locale.strcoll` at the UI level) - this proposal is not exhaustive with respect to the sorting algorithms one can use, but does make a few suggestions that are discussed in further detail below.
+Note that there are other ways that a sort algorithm can provide acceptable collation (for example, using Python's built-in `locale.strcoll` at the UI level) - this proposal is not exhaustive with respect to the sorting algorithms one can use, but does make a few suggestions that are discussed in further detail below.  The sections below enumerate the challenges and trade offs with the different approaches.
+
+__NOTE:__ The chosen algorithm for implementation is "Standard ASCII Dictionary Ordering + UTF-8 Byte Sorting"
+
+### Standard ASCII Dictionary Ordering + UTF-8 Byte Sort
+
+Currently, the USD runtime implements sorting according to ASCII dictionary rules where the following items are taken into account:
+
+- `_` are sorted before letters / digits
+- lower case ASCII characters are sorted before upper case ASCII characters
+- digit strings are sorted in numerical order (rather than the order of the characters that make up the string)
+- digits with non-significant leading zeros are considered equivalent if the numeric value of their significant digits are equivalent
+- if the strings are otherwise equal, differing only in non-significant leading zeros on digit components, the one with less non-significant leading zeros is sorted before the one with more non-significant leading zeros
+
+Integrating Unicode UTF-8 characters into this sequence is challenging due to deciding a proper ordering of each code point that makes lexicographic sense and case mapping challenges discussed further below.  The Optimistic ASCII Sorting section below enumerates some of these challenges.  However in this algorithm, the approach to integrate UTF-8 characters into the sort sequence is to "do nothing".  That is, ASCII strings that derive a certain sort order will remain that way.  Any non-ASCII character present in a string will simply be byte compared between the bytes of the string.  This is similar to how existing symbols (e.g., `+`, etc.) would be sorted today using the algorithm.  Although the ordering might not make lexicographic sense, using this algorithm guarantees a deterministic sort, meaning that the USD runtime would sort the same set of strings the same way every time.  We derive three advantages from this approach:
+
+- The existing algorithm needs minimal changes
+- The sort order of existing strings is preserved
+- The sort order of strings containing non-ASCII characters is deterministic, and can still enable downstream use cases such as layer diffs, etc.
+
+In reality, the sorting algorithm would change slightly, but only in a way that checked the presence of a leading bit to determine whether the character was a multi-byte UTF-8 encoded character or not (to avoid performing logic specific to `_`, lower case, and upper case ASCII characters).
+
+This does necessitate the following in the documentation:
+
+- Documenting that the sort order used is for the USD runtime.  While applications may use this sort order for display, no guarantees are made that it makes lexicographic sense in languages that are Unicode based.
+- Documenting that additional sorting algorithms could be used at the UI layer to enable a sort order more consistent with that of a correct lexicographic ordering expected for languages that are Unicode based.
 
 ### Code Point Sorting
+
+__NOTE:__ This algorithm has not been selected for sorting, the following section is for discussion only.
 
 In code point sorting, UTF-8 identifiers are sorted according to the integer value of the Unicode code point representing each character.  The algorithm is very simple and performant, involving a single continuous iteration of the characters, extracting the code points one by one, and comparing them.  In practice for non-English languages, it also results an incorrect sort of most characters, since code points have no correlation to actual ordering strength of certain characters.  The result is also very different than the customized dictionary sorting algorithm currently in USD core, particularly with regard to reasoning about numeric subsequences as a unit (e.g., two numeric sequences `2000` and `4` would result in `2000` being sorted first due to code point value comparison of `2` and `4`).  That said, it provides a very definitive ordering that is stable for placing in sorted containers and differencing in files.
 
 ### Optimistic ASCII Sorting
+
+__NOTE:__ This algorithm has not been selected for sorting, the following section is for discussion only.
 
 In optimistic ASCII sorting, UTF-8 identifiers are optimistically treated as if they were ASCII identifiers and when non-ASCII characters are encountered the algorithm falls back to simple code point sorting.  There are a number of advantages for doing this:
 
@@ -272,7 +308,9 @@ The sub-strings `myString002` and `myString` can be formed for comparison purpos
 
 For an optimistic ASCII algorithm to be used in practice, it would be required to explicit lay out the context-sensitive rules being used by the existing dictionary ordering algorithm.  These rules would then have to be adjusted to allow for what happens when non-ASCII characters "break" the context - are they ignored?  do they contribute a new context?  does the algorithm terminate at that point on the basis of a code point ordering?  The answers to these questions are not straightforward, but need to be explicitly stated such that users of USD can be assured that whatever ordering is used, it can be understood.
 
-## Unicode Collation Algorithm
+### Unicode Collation Algorithm
+
+__NOTE:__ This algorithm has not been selected for sorting, the following section is for discussion only.
 
 Proper ordering of Unicode strings is a complex operation.  [UTS #10: Unicode Collation Algorithm](https://unicode.org/reports/tr10/) lays out the algorithm for how strings should be sorted and depends on [UAX #15: Unicode Normalization Forms](https://www.unicode.org/reports/tr15/) to define how strings must be normalized as the first part of the ordering process.  The advantage of using the Unicode Collation Algorithm (UCA) is the standardized correctness of the sort order across all Unicode strings.  The major disadvantage of the algorithm is the processing involved to ultimately form the sort key used to provide this correct ordering.  The proposed implementation includes a (unoptimized) version of UCA for comparison purposes with the other sorting approaches mentioned above.  The remainder of this section discusses the challenges in implementing UCA.
 
@@ -420,7 +458,7 @@ The UTF-8 byte parser as implemented is a "fail completely" parser in the sense 
 
 # Staged Rollout and Adoption
 
-Since there are potentally large code bases in the current ecosystem that rely on USD, this proposal currently lands changes behind a `TfEnvSetting` (`TF_UTF8_IDENTIFIERS`) such that Pixar and other VFX/animation stakeholders are not forced to adopt UTF-8 identifier support within their code bases right away.  This environment setting defaults to `false` such that current ASCII validation rules are used in USD core as they are today.  When this setting is `true`, access is provided to the new Unicode based validation rules.  This also allows us to measure the performance impact of different approaches to things such as normalization and collation.  This proposal seeks to phase out this environment setting over time, similar to the deprecation of Ar 1.0, to give all USD citizens time to adapt their pipelines to support UTF-8 identifiers accordingly.
+Since there are potentally large code bases in the current ecosystem that rely on USD, this proposal currently lands changes behind a `TfEnvSetting` (`TF_UTF8_IDENTIFIERS`) such that Pixar and other VFX/animation stakeholders are not forced to adopt UTF-8 identifier support within their code bases right away.  This environment setting defaults to `true` such that the new Unicode based validation rules are used.  Because ASCII encodings are the same as their UTF-8 counterparts, existing files should continue to work as they do today.  Defaulting this value to `true` ensures that by default the new code paths are used such that issues and / or performance bottlenecks not encountered during testing can be identified quickly.  Setting this option to `false` will use the current ASCII validation rules.  This proposal seeks to phase out this environment setting over time, similar to the deprecation of Ar 1.0, to give all USD citizens time to adapt their pipelines to support UTF-8 identifiers accordingly.
 
 Based on the analysis above, this environment setting must exist at the `Tf` module level rather than the `Sdf` module level, otherwise logic centralization becomes difficult and code duplication becomes pervasive with the potential of introducing errors in future modifications / enhancements.  Implementation will ensure that current validation logic is used with no change when the environment setting is disabled, however all `Sdf` level methods will funnel core identifier validation to string validation methods in `Tf`.  This ensures that existing modules that use `Sdf` level validation methods get appropriate validation depending on the environment settings while also ensuring these actors (e.g., `SdfLayer`) remain unaware of the underlying content encoding and avoiding duplication of identifier validation code.  Even the core path and text file parsers are separated such that the modified lex / parse rules are only used when the environment setting is turned on.
 
@@ -438,6 +476,6 @@ Our primary goal with scene interchange is to preserve the user's intent inheren
 
 While it is possible to approximate UTF-8 identifiers via Romanization and UTF-8 display names, such approaches are disruptive to source assets, do not apply to all human-readable languages, and hamper the ability to quickly navigate the scene hierarchy.
 
-Therefore we propose implementing native support for UTF-8 identifiers in USD with a `TfEnvSetting` to stage rollout over a grace period into DCCs and pipelines that do not already support UTF-8.  Prim and property name validation can be separated such that prim names are more permissive and property names adhere to Unicode standard identifier rules supported by C++ and Python.
+Therefore we propose implementing native support for UTF-8 identifiers in USD with a `TfEnvSetting` to stage rollout over a grace period into DCCs and pipelines that do not already support UTF-8.  Prim name validation can be separated such that prim names are more permissive and generic identifiers (e.g., property names that must be compiled by a C++ / Python compiler) validation remains the same as it does today.
 
 We recognize that UTF-8 adoption may be a large undertaking for many facilities.  We ourselves are on this journey, having originally advocated for the `displayName` approach.  But the more we thought about it, the more native UTF-8 identifier support aligns with the respective visions of both Omniverse and USD, where content creators of all backgrounds may craft virtual worlds without a high level of proficiency in English as a prerequisite.
