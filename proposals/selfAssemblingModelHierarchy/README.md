@@ -1,5 +1,5 @@
 # Self Assembling Model Hierarchy
-Copyright © 2023, NVIDIA Corporation, version 1.1
+Copyright © 2023, NVIDIA Corporation, version 1.2
 
 ## Goal
 Simplify correct model hierarchy construction through removal of the need for explicit `kind=group` tagging without incurring _any_ additional reads of `kind` metadata.
@@ -265,6 +265,13 @@ The `UsdPrimIsModel` predicate should be deprecated in favor of `UsdPrimIsModelH
 The USD core API could also provide ranges to iterate explicitly over `assembly` or `component`  prims, skipping over the intermediate prims. This might be easier to provide in C++20 (with the forthcoming ranges specification) and could be deferred until that point.
 
 An early version of this proposal considered whether some of these APIs should extend to the `subcomponent` kind, but given they aren't a part of model hierarchy and cannot be cached in the same way, that's been deferred.
+
+### Forward / Backwards Compatability
+Assets that don't use model hierarchy or that are both "complete" and "explicit" do not require any updates to be forward or backwards compatable.
+
+To make assets backwards compatible, implicit groups need to be made explicit. To make assets forward compatible, incompete model hierarchies need to author explicit `kind=""`. Both of these could be handled via a script.
+
+We can also enabling/disabling propagation through a feature flag to give sites time to test any unexpected impact on their assets.
 
 ## Summary
 Model hierarchy can become "self assembling" without intermediate `group` tags AND without additional `kind` reads.
