@@ -47,19 +47,19 @@ bool skel:applyAnimation (
 
 ### Proposal 2
 
-In this second proposal, we'd add a new property. A new `skel:animationSources` type would need to be added to `SkelBindingAPI` like below. It would be a list of sources while leaving the current animationSource as the active selection 
+In this second proposal, we'd add a new property. A new `skel:animationLibrary` type would need to be added to `SkelBindingAPI` like below. It would be a list of sources while leaving the current animationSource as the active selection 
 
 ```
-rel skel:animationSources (
+rel skel:animationLibrary (
     customData = {
-        string apiName = "animationSources"
+        string apiName = "animationLibrary"
     }
     doc = """An ordered list of skeletal animations that can be used for this skeleton.  
     """
 )
 ```
 
-In the interest of backwards compatibility, I propose that this live alongside the existing `skel:animationSourc`e. The singular one would be used as the default in places like usdview or runtimes that don’t support multiple clips.
+In the interest of backwards compatibility, I propose that this live alongside the existing `skel:animationSource`. The singular one would be used as the default in places like usdview or runtimes that don’t support multiple clips.
 
 If the singular `animationSource` is not specified, then no animation should be applied by default, falling back to the rest pose. This would maintain the current behaviour, and give the option to elide application of animations when undesired.
 
