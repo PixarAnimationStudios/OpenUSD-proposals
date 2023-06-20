@@ -1,8 +1,8 @@
 # Self Assembling Model Hierarchy
-Copyright © 2023, NVIDIA Corporation, version 1.2
+Copyright © 2023, NVIDIA Corporation, version 1.3
 
 ## Goal
-Simplify correct model hierarchy construction through removal of the need for explicit `kind=group` tagging without incurring _any_ additional reads of `kind` metadata.
+Simplify correct model hierarchy maintenance and construction through removal of the need for explicit `kind=group` tagging without incurring _any_ additional reads of `kind` metadata.
 
 ## Background
 USD presents "model hierarchy" as a mechanism for efficient traversal of a stage's "important" prims. This importance generally corresponds to the stage's referenced assets, but is pipeline independent, persistent under flattening of arcs, and allows for "casual" use of composition operators without implying "importance" (ie. using internal references to reuse scene description).
@@ -59,6 +59,36 @@ Prims with `kind=group` rarely correspond to assets. Their relevance to the mode
 ## Problem
 There aren't currently consequences to violating model hierarchy so it happens a lot. Model hierarchy doesn't affect rendering so tools and users may not be properly maintaining it. Even pipelines that attempt to honor model hierarchy may choose to repair model hierarchy only at specific validation points.
 
+Invalid model hierarchy can lead to inconsistent results when using the `UsdModelAPI`. Consider the following scene description
+```
+def "root" (kind="group") {
+    def "invalid_component_ancestor" {
+        def "component" (kind="component") {}
+    }
+
+    def "invalid_group_ancestor" (kind="component") {
+        def "group" (kind="group") {}
+    }
+}
+```
+
+Here is an example of how invalid model hierarchy behaves in the current state of the world.
+```
+>>> Usd.ModelAPI(stage.GetPrimAtPath("/root/invalid_component_ancestor/component")).GetKind()
+'component'
+>>> Usd.ModelAPI(stage.GetPrimAtPath("/root/invalid_component_ancestor/component")).IsModel()
+False
+>>> Usd.ModelAPI(stage.GetPrimAtPath("/root/invalid_component_ancestor/component")).IsKind("component")
+False
+>>> Usd.ModelAPI(stage.GetPrimAtPath("/root/invalid_group_ancestor/group")).GetKind()
+'group'
+>>> Usd.ModelAPI(stage.GetPrimAtPath("/root/invalid_group_ancestor/group")).IsGroup()
+False
+>>> Usd.ModelAPI(stage.GetPrimAtPath("/root/invalid_group_ancestor/group")).IsKind("group")
+False
+```
+The validating form of `IsKind` rejects invalid `group` and `component`  specifications while `GetKind` just returns the authored metadata. Local inspection of the prim's metadata will not reveal the cause of this discrepency. 
+
 What makes this especially worth addressing now is the new pattern based collection [proposal](https://github.com/PixarAnimationStudios/USD-proposals/pull/4) aims to leverage model hierarchy in its predicates. Model hierarchy will now affect (and potentially accelerate) collection membership computation. **Tagging a prim as an `assembly` or a `component` and failing to maintain proper `group` tagging could change the results of material bindings or light linking.**
 
 Proper maintenance of model hierarchy involves performing hygene up and down the hierarchy. For users to rely on model hierarchy in their predicates, model hierarchy maintenance can't be deferred to a validation script or ignored.
@@ -114,7 +144,7 @@ def Xform "DepartmentStore" (kind = "component") {
 }
 ```
 
-The authored `group` kind is ignored with respect to model hierarchy because its parent isn't a `group` or `assembly`. With minimal few trade-offs, this proposal argues that just as incorrect usage can be discarded, _correct `group` usage can be propagated_.
+The authored `group` kind is ignored with respect to model hierarchy because its parent isn't a `group` or `assembly`. With minimal trade-offs, this proposal argues that just as incorrect usage can be discarded by composition, _correct `group` usage can be propagated by composition_.
 
 More simply-- **untagged children of groups and assemblies are automatically groups**.
 
@@ -256,11 +286,13 @@ Until that fix is available, the best that can be done in both the current state
 
 ### Additional API
 
-To further simplify usage of model hierarchy for developers, this proposal also advocates introducing `IsAssembly` and `IsComponent` methods on `UsdModelAPI`, along with associated cached prim flags and traversal predicates.
+To further simplify usage of model hierarchy for developers, this proposal also advocates introducing `IsAssemblyModel` and `IsComponentModel` methods on `UsdModelAPI`, along with associated cached prim flags and traversal predicates.
 
-This proposal also recommends `IsModel` should be deprecated in favor of `IsModelHierarchy` and should be equivalent to (`IsGroup() || IsComponent()`).
+To better clarify what it means to be a "model group", this proposal recommends deprecating `IsGroup` in favor of `MayContainComponentModel`.
 
-The `UsdPrimIsModel` predicate should be deprecated in favor of `UsdPrimIsModelHierarchy` and should be equivalent to `UsdPrimIsGroup || UsdPrimIsComponent`.
+This proposal also recommends `IsModel` should be deprecated in favor of `MayContainOrIsComponentModel` and should be equivalent to (`MayContainComponentModel() || IsComponentModel()`).
+
+Prim flag predicates should be be added to match these APIs. 
 
 The USD core API could also provide ranges to iterate explicitly over `assembly` or `component`  prims, skipping over the intermediate prims. This might be easier to provide in C++20 (with the forthcoming ranges specification) and could be deferred until that point.
 
