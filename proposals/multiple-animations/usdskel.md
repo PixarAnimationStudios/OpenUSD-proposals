@@ -66,6 +66,15 @@ If the singular `animationSource` is not specified, then no animation should be 
 This should avoid the need to version the schema, and the Setter/Getter functions could handle this abstraction for developers.
 
 
+### Proposal 3
+
+In the third Proposal, we simply define conventions based on [the general proposal](general.md).
+
+Each of the general proposals can simply vary the existing `skel:animationSource`. 
+
+See the other file for concerns about bounding and storage.
+
+
 ## Naming
 
 One other nicety would be naming of the animations.

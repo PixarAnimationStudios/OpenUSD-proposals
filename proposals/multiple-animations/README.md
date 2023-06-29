@@ -7,4 +7,4 @@ For example, a game character may have multiple cycles like walk, run, idle. An 
 The proposal is split into two parts.
 
 1. [USDSkel support for multiple bound animations](usdskel.md)
-2. Generic support for all prim types - Will be uploaded later.
+2. [General support for all prim types](general.md)
