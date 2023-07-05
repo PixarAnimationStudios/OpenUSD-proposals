@@ -1,6 +1,6 @@
-# USD-proposals
+# OpenUSD-proposals
 
-Welcome to USD-proposals, a forum for sharing and collaborating on proposals for the advancement of USD.
+Welcome to OpenUSD-proposals, a forum for sharing and collaborating on proposals for the advancement of USD.
 
 Before getting started, please familiarize yourself with the contents of the [Supplemental Terms](https://graphics.pixar.com/usd/release/contributing_supplemental.html) page.
 
