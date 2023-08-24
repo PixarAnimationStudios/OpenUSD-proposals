@@ -2,32 +2,6 @@
 
 Copyright &copy; 2023, Pixar Animation Studios,  version 1.0
 
-
-Project Description
-===================
-
-
-
-
-| **Brief Description and/or Goal** | Add APIs to facilitate namespace editing in USD (e.g., renames, reparenting, etc.) |
-| **Team(s)/Developer(s)** | 
-  |
-| **Designer(s)** | *-* |
-| **Project Epic** | 
-Pixar JIRAissuekey,summary,issuetype,created,updated,duedate,assignee,reporter,priority,status,resolutionkey,summary,type,created,updated,due,assignee,reporter,priority,status,resolution5e843848-c397-323d-a8ef-e692b4e85ddaUSD-5295 |
-| **Proposal Task** | 
-Pixar JIRAissuekey,summary,issuetype,created,updated,duedate,assignee,reporter,priority,status,resolutionkey,summary,type,created,updated,due,assignee,reporter,priority,status,resolution5e843848-c397-323d-a8ef-e692b4e85ddaUSD-8204 |
-
-
-Background
-==========
-
-
-Robust and performant namespace editing on a UsdStage is one of a few remaining marquee features missing from USD's core featureset.  It is a prerequisite for our plans to replace Csd with USD, which is why it is not a "USDI" project; but at the same time, it is also a top request from software vendors Adobe and Autodesk.  A few of the issues that seem worth considering in research and design, here:
-
-
-* We *probably* need to support at least the same featureset as Csd
-
 Proposal
 ========
 
