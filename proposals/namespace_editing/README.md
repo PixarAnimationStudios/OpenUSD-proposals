@@ -24,24 +24,24 @@ The UsdNamespaceEditor class will provide the following editing operations that 
 
 
 * Delete[Prim/Property]AtPath(stage, path)
-+ Authors/deletes **all scene description in the layer stack of the current edit target necessary** to remove the prim or property at path from the composed stage.
+	+ Authors/deletes **all scene description in the layer stack of the current edit target necessary** to remove the prim or property at path from the composed stage.
 
 * Move[Prim/Property]AtPath(stage, currentPath, newPath)
-+ Authors/deletes all scene description in the layer stack of the current edit target necessary to make the composed prim or property at the currentPath instead exist at newPath.
+	+ Authors/deletes all scene description in the layer stack of the current edit target necessary to make the composed prim or property at the currentPath instead exist at newPath.
 
 Additionally, the class will provide operations that take UsdPrim or UsdProperty objects for additional convenience. For each of the following XXXPrim functions that take a UsdPrim, there will be an equivalent XXXPropertry function that takes a UsdProperty
 
 * DeletePrim(usdPrim)
-+ Authors/deletes all scene description in the layer stack of the current edit target necessary to remove the usdPrim from its composed stage.
+	+ Authors/deletes all scene description in the layer stack of the current edit target necessary to remove the usdPrim from its composed stage.
 
 * RenamePrim(usdPrim, newName)
-+ Authors all scene description in the layer stack of the current edit target necessary to change the name of the composed usdPrim to newName. The prim will retain its original parent prim.
+	+ Authors all scene description in the layer stack of the current edit target necessary to change the name of the composed usdPrim to newName. The prim will retain its original parent prim.
 
 * ReparentPrim(usdPrim, newPrimParent)
-+ Authors all scene description in the layer stack of the current edit target necessary to move the composed usdPrim from its original path to instead be a child of the composed prim, newPrimParent.
+	+ Authors all scene description in the layer stack of the current edit target necessary to move the composed usdPrim from its original path to instead be a child of the composed prim, newPrimParent.
 
 * ReparentPrim(usdPrim, newPrimParent, newName)
-+ Overload of ReparentPrim that also renames the composed prim to newName when moving it be a child of newParentPrim.
+	+ Overload of ReparentPrim that also renames the composed prim to newName when moving it be a child of newParentPrim.
 
 For each of the above functions on both paths and UsdObjects, we will provide a corresponding Can[Operation] function (e.g. CanDeletePrimAtPath, CanMovePrim, CanRenameProperty) that returns whether the operation can be successfully performed with the current edit settings (see Authoring Settings below).
 
@@ -458,7 +458,8 @@ For many namespace editing workflows we expect it will be desirable for UsdObjec
 
 The maintaining of object identities doesn’t come for free so we do not want to pay the cost for it in the majority of workflows which do not expect to perform namespace edits or do not care about UsdObject identities even in the presence of edits. Therefore we propose that the existing UsdObjects will not maintain their identities themselves; they will remain unchanged. Instead we will introduce a new UsdObjectHandle (plus the equivalent UsdPrimHandle, UsdPropertyHandle, etc.) that will hold a UsdObject and a persistent shared “identity” for the object. The handle will behave as a pointer to the underlying UsdObject and will update the underlying object when needed to refer to the composed object that is now represented by the handle’s identity. UsdObjectHandles will be able to be explicitly constructed from UsdObjects essentially creating identities “on demand”. If need be, we could additionally provide API on UsdStage for getting UsdObjectHandles (parallel to the ones that just return UsdObjects) but for now we expect the explicit construction of the handles to be sufficient.
 
-So for example, if a UsdStage has two prims </A> and its child </A/Child> and you were to get:```  
+So for example, if a UsdStage has two prims </A> and its child </A/Child> and you were to get:
+```  
 UsdPrim aPrim = stage.GetPrimAtPath(“/A”)
 UsdPrimHandle childHandle = stageGetPrimHandleAtPath(“/A/Child”)
 ```
