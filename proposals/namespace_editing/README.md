@@ -64,12 +64,12 @@ Say we have a UsdStage where the root layer defines two prims A and B that both 
 *root.usda*
 ```
 def “A” (
- references = @model.usda@</Model>
+    references = @model.usda@</Model>
 ) {
 }
 
 def “B” (
- references = @model.usda@</Model>
+    references = @model.usda@</Model>
 ) {
 }
 ```
@@ -77,9 +77,9 @@ def “B” (
 ```
 def Scope “Model” 
 {
- def Sphere “Child” 
- {
- }
+    def Sphere “Child” 
+    {
+    }
 }
 ```
 
@@ -90,12 +90,12 @@ For this case, we will provide the option (through Authoring Settings) to perfor
 *root.usda*
 ```
 def “A” (
- references = @model.usda@</Model>
+    references = @model.usda@</Model>
 ) {
- over “Child” (
- active = false
- ) {
- }
+    over “Child” (
+        active = false
+    ) {
+    }
 }
 ``` 
 
@@ -104,17 +104,17 @@ Now say instead of deleting /A/Child, we want to rename it to be /A/Ball on our 
 *root.usda*
 ```
 def “A” (
- references = @model.usda@</Model>
+    references = @model.usda@</Model>
 ) {
- over “Child” (
- active = false
- ) {
- }
+    over “Child” (
+        active = false
+    ) {
+    }
 
- def “Ball” (
- references = @model.usda@</Model/Child>
- ) {
- }
+    def “Ball” (
+        references = @model.usda@</Model/Child>
+    ) {
+    }
 }
 ```
 
@@ -125,10 +125,10 @@ The solution we use for these kinds of edits in Presto is relocates. Relocates a
 *root.usda*
 ```
 def “A” (
- references = @model.usda@</Model>
- relocates = { 
- <Child>: <Ball> 
- }
+    references = @model.usda@</Model>
+    relocates = { 
+        <Child>: <Ball> 
+    }
 ) {
 }
 ```
@@ -170,86 +170,86 @@ The fixup behaviors we implement in USD will be modeled off of what fixups we al
 *root.usda*
 ```
 def Scope "A" (
- references = @./b\_ref.usda@</B>
+    references = @./b_ref.usda@</B>
 ) {
- def Scope "A\_Child" {
- custom double a\_attr
- }
+    def Scope "A_Child" {
+        custom double a_attr
+    }
 
- custom double a\_attr\_connections
- prepend double a\_attr\_connections.connect = [
- </A/A\_Child.a\_attr>,
- </A/B\_Child.b\_attr>,
- </A/C\_Child\_ToRename.c\_attr> ]
+    custom double a_attr_connections
+    prepend double a_attr_connections.connect = [
+        </A/A_Child.a_attr>,
+        </A/B_Child.b_attr>,
+        </A/C_Child_ToRename.c_attr> ]
 
- custom rel a\_rel\_targets
- prepend rel a\_rel\_targets = [
- </A/C\_Child\_ToRename>,
- </A/B\_Child>,
- </A/A\_Child> ]
+    custom rel a_rel_targets
+    prepend rel a_rel_targets = [
+        </A/C_Child_ToRename>,
+        </A/B_Child>,
+        </A/A_Child> ]
 
- def Scope "A\_Child\_References" (
- references = [
- </A/C\_Child\_ToRename>,
- </A/B\_Child>,
- </A/A\_Child> ]
- ) {}
+    def Scope "A_Child_References" (
+        references = [
+            </A/C_Child_ToRename>,
+            </A/B_Child>,
+            </A/A_Child> ]
+    ) {}
 
- over "B\_Child" {}
+    over "B_Child" {}
 
- over "C\_Child\_ToRename" {}
+    over "C_Child_ToRename" {}
 }
 ```
 *b\_ref.usda*
 ```
 def Scope "B" (
- references = @./c\_ref.usda@</C>
+    references = @./c_ref.usda@</C>
 ) {
- def Scope "B\_Child" {
- custom double b\_attr
- }
+    def Scope "B_Child" {
+        custom double b_attr
+    }
 
- custom double b\_attr\_connections
- prepend double b\_attr\_connections.connect = [
- </B/B\_Child.b\_attr>,
- </B/C\_Child\_ToRename.c\_attr> ]
+    custom double b_attr_connections
+    prepend double b_attr_connections.connect = [
+        </B/B_Child.b_attr>,
+        </B/C_Child_ToRename.c_attr> ]
 
- custom rel b\_rel\_targets
- prepend rel b\_rel\_targets = [
- </B/C\_Child\_ToRename>,
- </B/B\_Child> ]
+    custom rel b_rel_targets
+    prepend rel b_rel_targets = [
+        </B/C_Child_ToRename>,
+        </B/B_Child> ]
 
- def Scope "B\_Child\_References" (
- references = [
- </B/C\_Child\_ToRename>,
- </B/B\_Child> ]
- ) {}
+    def Scope "B_Child_References" (
+        references = [
+            </B/C_Child_ToRename>,
+            </B/B_Child> ]
+    ) {}
 
- over "C\_Child\_ToRename" {}
+    over "C_Child_ToRename" {}
 }
 ```
 *c\_ref.usda*
 ```
 (
- defaultPrim = “C”
+    defaultPrim = “C”
 )
 
 def Scope "C" {
- def Scope "C\_Child\_ToRename" {
- custom double c\_attr = 1
- }
+    def Scope "C_Child_ToRename" {
+        custom double c_attr = 1
+    }
 
- custom double c\_attr\_connections
- prepend double c\_attr\_connections.connect = [
- </C/C\_Child\_ToRename.c\_attr> ]
+    custom double c_attr_connections
+    prepend double c_attr_connections.connect = [
+        </C/C_Child_ToRename.c_attr> ]
 
- custom rel c\_rel\_targets
- prepend rel c\_rel\_targets = [
- </C/C\_Child\_ToRename> ]
+    custom rel c_rel_targets
+    prepend rel c_rel_targets = [
+        </C/C_Child_ToRename> ]
 
- def Scope "C\_Child\_References" (
- references = </C/C\_Child\_ToRename>
- ) {}
+    def Scope "C_Child_References" (
+        references = </C/C_Child_ToRename>
+    ) {}
 }
 ```
 
@@ -262,25 +262,25 @@ Say we want to rename the prim “/C” to “/XXXX” on StageC. When we call R
 *c\_ref.usda*
 ```
 (
- defaultPrim = “XXXX”
+    defaultPrim = “XXXX”
 )
 
 def Scope "XXXX" {
- def Scope "C\_Child\_ToRename" {
- custom double c\_attr = 1
- }
+    def Scope "C_Child_ToRename" {
+        custom double c_attr = 1
+    }
  
- custom double c\_attr\_connections
- prepend double c\_attr\_connections.connect = [
- </XXXX/C\_Child\_ToRename.c\_attr> ]
+    custom double c_attr_connections
+    prepend double c_attr_connections.connect = [
+        </XXXX/C_Child_ToRename.c_attr> ]
 
- custom rel c\_rel\_targets
- prepend rel c\_rel\_targets = [
- </XXXX/C\_Child\_ToRename> ]
+    custom rel c_rel_targets
+    prepend rel c_rel_targets = [
+        </XXXX/C_Child_ToRename> ]
 
- def Scope "C\_Child\_References" (
- references = </XXXX/C\_Child\_ToRename>
- ) {}
+    def Scope "C_Child_References" (
+        references = </XXXX/C_Child_ToRename>
+    ) {}
 }
 ```
 
@@ -289,7 +289,7 @@ But additionally since StageB is open and b\_ref.usda has a prim “B” that re
 *b\_ref.usda*
 ```
 def Scope "B" (
- references = @./c\_ref.usda@</XXXX>
+    references = @./c_ref.usda@</XXXX>
 ) {
 …
 }
@@ -310,20 +310,20 @@ So, say we chose to use RenamePrimAtPath(StageC, “/C/C\_Child\_ToRename”, �
 *c\_ref.usda*
 ```
 def Scope "C" {
- def Scope "Renamed\_XXXX" {
- custom double c\_attr = 1
- }
+    def Scope "Renamed_XXXX" {
+        custom double c_attr = 1
+    }
 
- custom double c\_attr\_connections
- prepend double c\_attr\_connections.connect = </C/Renamed\_XXXX.c\_attr>
+    custom double c_attr_connections
+    prepend double c_attr_connections.connect = </C/Renamed_XXXX.c_attr>
 
- custom rel c\_rel\_targets
- prepend rel c\_rel\_targets = [
- </C/Renamed\_XXXX> ]
+    custom rel c_rel_targets
+    prepend rel c_rel_targets = [
+        </C/Renamed_XXXX> ]
 
- def Scope "C\_Child\_References" (
- references = </C/Renamed\_XXXX>
- ) {}
+    def Scope "C_Child_References" (
+        references = </C/Renamed_XXXX>
+    ) {}
 }
 ```
 
@@ -332,29 +332,29 @@ But additionally since StageB is open and b\_ref.usda has a prim “B” that re
 *b\_ref.usda*
 ```
 def Scope "B" (
- references = @./c\_ref.usda@</C>
+    references = @./c_ref.usda@</C>
 ) {
- def Scope "B\_Child" {
- custom double b\_attr
- }
+    def Scope "B_Child" {
+        custom double b_attr
+    }
 
- custom double b\_attr\_connections
- prepend double b\_attr\_connections.connect = [
- </B/B\_Child.b\_attr>,
- </B/Renamed\_XXXX.c\_attr> ]
+    custom double b_attr_connections
+    prepend double b_attr_connections.connect = [
+        </B/B_Child.b_attr>,
+        </B/Renamed_XXXX.c_attr> ]
 
- custom rel b\_rel\_targets
- prepend rel b\_rel\_targets = [
- </B/Renamed\_XXXX>,
- </B/B\_Child> ]
+    custom rel b_rel_targets
+    prepend rel b_rel_targets = [
+        </B/Renamed_XXXX>,
+        </B/B_Child> ]
 
- def Scope "B\_Child\_References" (
- references = [
- </B/Renamed\_XXXX>,
- </B/B\_Child> ]
- ) {}
+    def Scope "B_Child_References" (
+        references = [
+            </B/Renamed_XXXX>,
+            </B/B_Child> ]
+    ) {}
 
- over "Renamed\_XXXX" {}
+    over "Renamed_XXXX" {}
 }
 ```
 
@@ -363,34 +363,34 @@ But we’re not done; since StageA is open and root.usda has a prim “A” that
 *root.usda*
 ```
 def Scope "A" (
- references = @./b\_ref.usda@</B>
+    references = @./b_ref.usda@</B>
 ) {
- def Scope "A\_Child" {
- custom double a\_attr
- }
+    def Scope "A_Child" {
+        custom double a_attr
+    }
 
- custom double a\_attr\_connections
- prepend double a\_attr\_connections.connect = [
- </A/A\_Child.a\_attr>,
- </A/B\_Child.b\_attr>,
- </A/Renamed\_XXXX.c\_attr> ]
+    custom double a_attr_connections
+    prepend double a_attr_connections.connect = [
+        </A/A_Child.a_attr>,
+        </A/B_Child.b_attr>,
+        </A/Renamed_XXXX.c_attr> ]
 
- custom rel a\_rel\_targets
- prepend rel a\_rel\_targets = [
- </A/Renamed\_XXXX>,
- </A/B\_Child>,
- </A/A\_Child> ]
+    custom rel a_rel_targets
+    prepend rel a_rel_targets = [
+        </A/Renamed_XXXX>,
+        </A/B_Child>,
+        </A/A\_Child> ]
 
- def Scope "A\_Child\_References" (
- references = [
- </A/Renamed\_XXXX>,
- </A/B\_Child>,
- </A/A\_Child> ]
- ) {}
+    def Scope "A_Child_References" (
+        references = [
+            </A/Renamed_XXXX>,
+            </A/B_Child>,
+            </A/A_Child> ]
+    ) {}
 
- over "B\_Child" {}
+    over "B_Child" {}
 
- over "Renamed\_XXXX" {}
+    over "Renamed_XXXX" {}
 }
 ```
 
@@ -401,32 +401,32 @@ Now instead take the previous example and instead of doing the rename of C\_Chil
 *b\_ref.usda*
 ```
 def Scope "B" (
- references = @./c\_ref.usda@</C>
- relocates = {
- <C\_Child\_ToRename>: <Renamed\_XXXX>
- }
+    references = @./c_ref.usda@</C>
+    relocates = {
+        <C_Child_ToRename>: <Renamed_XXXX>
+    }
 ) {
- def Scope "B\_Child" {
- custom double b\_attr
- }
+    def Scope "B_Child" {
+        custom double b_attr
+    }
 
- custom double b\_attr\_connections
- prepend double b\_attr\_connections.connect = [
- </B/B\_Child.b\_attr>,
- </B/Renamed\_XXXX.c\_attr> ]
+    custom double b_attr_connections
+    prepend double b_attr_connections.connect = [
+        </B/B_Child.b_attr>,
+        </B/Renamed_XXXX.c_attr> ]
 
- custom rel b\_rel\_targets
- prepend rel b\_rel\_targets = [
- </B/Renamed\_XXXX>,
- </B/B\_Child\_ToRename> ]
+    custom rel b_rel_targets
+    prepend rel b_rel_targets = [
+        </B/Renamed_XXXX>,
+        </B/B_Child_ToRename> ]
 
- def Scope "B\_Child\_References" (
- references = [
- </B/Renamed\_XXXX>,
- </B/B\_Child> ]
- ) {}
+    def Scope "B_Child_References" (
+        references = [
+            </B/Renamed_XXXX>,
+            </B/B_Child> ]
+    ) {}
 
- over "Renamed\_XXXX" {}
+    over "Renamed_XXXX" {}
 }
 ```
 
@@ -459,8 +459,8 @@ For many namespace editing workflows we expect it will be desirable for UsdObjec
 The maintaining of object identities doesn’t come for free so we do not want to pay the cost for it in the majority of workflows which do not expect to perform namespace edits or do not care about UsdObject identities even in the presence of edits. Therefore we propose that the existing UsdObjects will not maintain their identities themselves; they will remain unchanged. Instead we will introduce a new UsdObjectHandle (plus the equivalent UsdPrimHandle, UsdPropertyHandle, etc.) that will hold a UsdObject and a persistent shared “identity” for the object. The handle will behave as a pointer to the underlying UsdObject and will update the underlying object when needed to refer to the composed object that is now represented by the handle’s identity. UsdObjectHandles will be able to be explicitly constructed from UsdObjects essentially creating identities “on demand”. If need be, we could additionally provide API on UsdStage for getting UsdObjectHandles (parallel to the ones that just return UsdObjects) but for now we expect the explicit construction of the handles to be sufficient.
 
 So for example, if a UsdStage has two prims </A> and its child </A/Child> and you were to get:```  
-  UsdPrim aPrim = stage.GetPrimAtPath(“/A”)
-  UsdPrimHandle childHandle = stageGetPrimHandleAtPath(“/A/Child”)
+UsdPrim aPrim = stage.GetPrimAtPath(“/A”)
+UsdPrimHandle childHandle = stageGetPrimHandleAtPath(“/A/Child”)
 ```
 
 Both aPrim and childHandle would start valid. If you use the namespace editing API to rename /A to /B, then aPrim will no longer be valid since UsdPrim doesn’t track identity. But childHandle will now hold the prim object that refers to /B/Child as UsdPrimHandle will have its shared identity updated. The same would be true if we had instead deleted /A and then performed some sort of “undo” that recreated /A and /A/Child again. aPrim would still be invalid even though a prim at /A exists again, but childHandle would become valid again and hold a UsdPrim representing the recreated /A/Child.
