@@ -22,7 +22,6 @@ To distinguish between composed namespace editing and the single layer edit targ
 
 The UsdNamespaceEditor class will provide the following editing operations that work on object paths:
 
-
 * Delete[Prim/Property]AtPath(stage, path)
 	+ Authors/deletes **all scene description in the layer stack of the current edit target necessary** to remove the prim or property at path from the composed stage.
 
@@ -44,6 +43,12 @@ Additionally, the class will provide operations that take UsdPrim or UsdProperty
 	+ Overload of ReparentPrim that also renames the composed prim to newName when moving it be a child of newParentPrim.
 
 For each of the above functions on both paths and UsdObjects, we will provide a corresponding Can[Operation] function (e.g. CanDeletePrimAtPath, CanMovePrim, CanRenameProperty) that returns whether the operation can be successfully performed with the current edit settings (see Authoring Settings below).
+
+#### Change Notifications
+
+Because namespace operations performed through the UsdNamespaceEditor API have a clear intent, we will be able to add the information about whether a UsdObject has been deleted, moved or renamed to UsdNotice::ObjectsChanged when edits are made through this API. In addition to the existing ObjectsChanged queries of `GetResyncedPaths()` and `GetChangedInfoOnlyPaths()`, we will add queries along the lines of `GetRenamedPaths()`, `GetMovedPaths()`, and `GetDeletedPaths()` to return what objects have been specifically edit using the UsdNamespaceEditor. We'll also provide the equivalent functions of `RenamedObject(UsdObject)`, `MovedObject(UsdObject)`, and `DeletedObject(UsdObject)` for querying a specific object as to whether it was namespace edited. Clients can make use of this new notice information to respond to changes a more efficient manner for namespace changes they know how to handle.
+
+Note that delete, rename, and reparent operations will only be treated as such when performed through the official UsdNamespaceEditor API. In other words, we will not try to figure out from the standard Sdf change notifications if some set of layer changes performed through other API could be equivalent to a delete, rename, or reparent when populating the OjbectsChanged notice.
 
 #### Batch Editing
 
@@ -471,6 +476,5 @@ Risks, Issues and Caveats
 
 * This namespace editing is an important component of adding an undo/redo system, but we will not be tackling undo/redo here.
 * There has been some debate as to whether copy/duplicate for composed prims and properties should be considered a “namespace editing” operation or if it’s truly its own thing entirely. Therefore, we will not be touching copy/duplicate as part of this namespace editing feature.
-* Rename and reparent operations will only be treated as such when performed through the official UsdNamespaceEditor API, i.e. we will not try to figure out if from generic Sdf change notification if some set of layer changes could be a rename or reparent.
 * Should we implement a different indication of "soft-delete" to distinguish it from "active = false"? Something that is maybe the equivalent of relocating a path to nothing. I don't know if it will be useful to distinguish between "delete" and "deactivate" which  is why this is mentioned here instead of in the Deactivate section.
 * There are some instances of string valued metadata (besides defaultPrim) that are used to represent namespace paths. An example is “renderSettingsPrimPath” which is stage level metadata that is defined as meaningful in usdRender. While a path like this is something that a user could conceivably expect to be fixed up if the prim it references is reparented or renamed, this would open up a whole can of worms with looking for string values that could possibly represent paths. Thus, we will not be attempting to fix up paths that come from string valued data.
