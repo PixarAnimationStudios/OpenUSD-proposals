@@ -46,7 +46,7 @@ For each of the above functions on both paths and UsdObjects, we will provide a 
 
 #### Change Notifications
 
-Because namespace operations performed through the UsdNamespaceEditor API have a clear intent, we will be able to add the information about whether a UsdObject has been deleted, moved or renamed to UsdNotice::ObjectsChanged when edits are made through this API. In addition to the existing ObjectsChanged queries of `GetResyncedPaths()` and `GetChangedInfoOnlyPaths()`, we will add queries along the lines of `GetRenamedPaths()`, `GetMovedPaths()`, and `GetDeletedPaths()` to return what objects have been specifically edit using the UsdNamespaceEditor. We'll also provide the equivalent functions of `RenamedObject(UsdObject)`, `MovedObject(UsdObject)`, and `DeletedObject(UsdObject)` for querying a specific object as to whether it was namespace edited. Clients can make use of this new notice information to respond to changes a more efficient manner for namespace changes they know how to handle.
+Because namespace operations performed through the UsdNamespaceEditor API have a clear intent, we will be able to add the information about whether a UsdObject has been deleted, moved or renamed to UsdNotice::ObjectsChanged when edits are made through this API. In addition to the existing ObjectsChanged queries of `GetResyncedPaths()` and `GetChangedInfoOnlyPaths()`, we will add queries along the lines of `GetRenamedPaths()`, `GetMovedPaths()`, and `GetDeletedPaths()` to return what objects have been specifically edited using the UsdNamespaceEditor. We'll also provide the equivalent functions of `RenamedObject(UsdObject)`, `MovedObject(UsdObject)`, and `DeletedObject(UsdObject)` for querying a specific object as to whether it was namespace edited. Clients can make use of this new notice information to respond to changes a more efficient manner for namespace changes they know how to handle.
 
 Note that delete, rename, and reparent operations will only be treated as such when performed through the official UsdNamespaceEditor API. In other words, we will not try to figure out from the standard Sdf change notifications if some set of layer changes performed through other API could be equivalent to a delete, rename, or reparent when populating the OjbectsChanged notice.
 
@@ -166,11 +166,11 @@ The types of paths in scene description that we will need to be able to fix up a
 * Composition arcs (references, payloads, inherits, specializes)
 * Overs in higher composition strength layer stacks
 * Layer metadata for default prim (which can be consumed by references and payloads)
-* Possibly internal path reliant structures (like a stage's current edit target which may have a path map function)
+* Possibly internal path reliant structures (like CollectionAPI MembershipQuery objects which hold collection paths or a stage's current edit target which may have a path map function)
 
 The paths that need to be fixed up after an edit will commonly come from the layers that comprise the UsdStage that is being edited itself. But it's also possible that the edits are being performed on layers that are part of the composition of other open USD stages (for instance via references or sublayers) and we would want those stages to be fixed up as well in response the namespace edits. Because of this we will provide the ability to **explicitly designate the list of open stages on which to perform namespace target fixups** in the UsdNamespaceEditor API. Any stages specified in this list will be check for any paths that need to be fixed up and will have those edits authored to the appropriate layers as well. 
 
-The fixup behaviors we implement in USD will be modeled off of what fixups we already do in Csd. These behaviors are best explained via examples. Here we’ll define three layers root.usda, b\_ref.usda, and c\_ref.usda. root.usda defines a prim “A” which references a prim “B” in b\_ref.usda which in turn references a prim “C” in c\_ref.usda. In each layer we define connections, relationships, overs, and references to a prim that we’ll rename.
+The fixup behaviors we implement in USD will be modeled off of what fixups we already do in Presto. These behaviors are best explained via examples. Here we’ll define three layers root.usda, b\_ref.usda, and c\_ref.usda. root.usda defines a prim “A” which references a prim “B” in b\_ref.usda which in turn references a prim “C” in c\_ref.usda. In each layer we define connections, relationships, overs, and references to a prim that we’ll rename.
 
 *root.usda*
 ```
