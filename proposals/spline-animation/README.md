@@ -1,4 +1,4 @@
-
+![Status:Published](https://img.shields.io/badge/Published-green)
 # Spline Animation in USD
 
 This project aims to support spline animation on USD attributes.  The project is
