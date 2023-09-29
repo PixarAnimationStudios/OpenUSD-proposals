@@ -1,3 +1,4 @@
+![Status:Implemented, 23.11](https://img.shields.io/badge/Implemented,%2023.11-blue)
 # Stage Variable Expressions
 
 Copyright &copy; 2022, Pixar Animation Studios,  version 1.0
