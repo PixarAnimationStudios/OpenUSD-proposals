@@ -1,3 +1,4 @@
+![Status:Implemented, 23.11](https://img.shields.io/badge/Implemented,%2023.11-blue)
 # Stage Variable Expressions
 
 Copyright &copy; 2022, Pixar Animation Studios,  version 1.0
@@ -5,6 +6,9 @@ Copyright &copy; 2022, Pixar Animation Studios,  version 1.0
 ## Contents
   - [Introduction](#introduction)
   - [Expressions](#expressions)
+    - [Syntax](#syntax)
+    - [Functions](#functions)
+    - [Grammar](#grammar)
   - [Stage Variables](#stage-variables)
     - [Stage Variables DO NOT Compose Across Sublayers](#stage-variables-do-not-compose-across-sublayers)
     - [Stage Variables DO Compose Across References and Payloads](#stage-variables-do-compose-across-references-and-payloads)
@@ -47,16 +51,16 @@ Support for these expressions will initially be limited to two specific areas:
    # Examples of expressions in sublayer asset paths.
    subLayers = [
         @`if(${IS_SPECIAL_SHOT}, "special_shot_overrides.usd")`@,
-        @`${PROD}_${SHOT}_fx.usd`@
+        @`"${PROD}_${SHOT}_fx.usd"`@
    ]
 )
  
 # Examples of expressions in references and asset-valued attributes.
 def "Sox" (
-    references = @`${PROD}/Sox/usd/Sox.usd`@</Sox>
+    references = @`"${PROD}/Sox/usd/Sox.usd"`@</Sox>
 )
 {
-    asset skinTexture = @`Sox_${SHOT}_Texture.png`@
+    asset skinTexture = @`"Sox_${SHOT}_Texture.png"`@
 }
 
 # Example of conditional variant selection
@@ -94,20 +98,10 @@ def "CrowdCharB" (
 
 ## Expressions
 
-Expressions are written in a custom domain-specific language. The syntax and
-initial set of operations is TBD. In particular, expressions should be
-functional and strongly-typed. The examples in this document are strawmen for
-discussion.
-
-Expressions are represented as strings that are surrounded with backticks
-("`"). This allows code to recognize expressions with a simple test, which helps
-minimize performance cost when this feature is not being used and allows better
-error messages. If we didn't explicitly identify expressions somehow, the only
-way we'd know it was an expression would be to try to evaluate it (or at least
-parse it).
-
-Since expressions are just decorated strings clients could just set them using
-existing API for authoring asset paths and variant selections. For example:
+Expressions are written in a custom domain-specific language. They are 
+represented in scene description as regular strings surrounded by backticks.
+Since they are just strings, clients can using existing API for authoring
+expressions for asset paths and variant selections. For example:
 
 ```
 # Asset Paths:
@@ -117,13 +111,162 @@ assetPathWithExpr = Sdf.AssetPath('`if(eq(${SHOT}, "01"), "shot_01.usd", "shot_o
 primSpec.variantSelections['modelVariant'] = '`if(eq(${SHOT}, "01"), "shot_01_variant", "shot_other_variant")`'
 ```
 
+Expressions are functional and strongly-typed. The supported value types are:
+
+- Integer (limited to the same minimum and maximum values as an int64_t)
+- Boolean
+- Strings (single or double quoted, using "\" as an escape character)
+- One-dimensional, homogenous arrays of the above types.
+
+#### Syntax
+
+Expressions are represented as strings that are surrounded with backticks
+("`"). This allows code to recognize expressions with a simple test, which helps
+minimize performance cost when this feature is not being used and allows better
+error messages. If we didn't explicitly identify expressions somehow, the only
+way we'd know it was an expression would be to try to evaluate it (or at least
+parse it).
+
+The following are some examples of expressions. The full grammar for these
+expressions is in the [Grammar](#grammar) section below.
+
+```
+`${X}`
+
+Evaluates to the exact value and type of the stage variable "X".
+```
+
+```
+`"string example"`
+`'string example'`
+
+Evaluates to the string "string example". Note that both single and double quotes are supported.
+```
+
+```
+`"string_with_stagevar_${X}"`
+
+Substitutes ${X} in the quoted string with the value of stage variable "X". For example,
+if the stage variable "X" has value "example", evaluates to "string_with_stagevar_example".
+If the stage variable "X" has a non-string value, evaluation fails.
+```
+
+```
+`"C:\\USD\\test.usd"`
+
+Evaluates to "C:\USD\test.usd" due to escaped backslashes.
+```
+
+```
+`"escaped_stagevar_\${X}"`
+
+Evaluates to "escaped_stagevar_${X}". No substitutions occur due to the escaped "$".
+```
+
+```
+`if(${BOOL_VAR}, "if_${A}.usd", "else_${B}.usd")`
+
+Given stage variables BOOL_VAR = True, A = "x", and B = "y", evaluates to
+"if_x.usd". If BOOL_VAR = False, evaluates to "else_y.usd". If BOOL_VAR is not
+specified or is not a boolean value, evaluation fails.
+```
+
+#### Functions
+
+Functions that will initially be supported in stage variable expressions
+include:
+
+```
+if(<bool>, <if-value>, <else-value>)
+if(<bool>, <if-value>)
+
+not(<expression>)
+or(<expression>, <expression>, ...)
+and(<expression>, <expression>, ...)
+defined(<stage var>)
+
+str_starts_with(<expression>, <expression>)
+str_ends_with(<expression>, <expression>)
+
+```
+
+We do not propose allowing plugins to define additional functions for use
+in expressions.
+
+#### Grammar
+
+The following is a pseudo-BNF grammar for the proposed syntax. Within the BNF:
+
+- "{" and "}" are groupings of non-optional elements
+- "[" and "]" are groupings of optional elements.
+- "*" indicates zero-or-more of the associated elements.
+- "+" indicates one-or-more of the associated elements.
+
+```
+; A stage variable expression is an expression surrounded by backticks.
+<stage-variable-expression> = "`" <expression> "`"
+
+; An expression can be a stage variable reference, a literal, a function,
+; or a list of these elements.
+<expression_no_list> = <stage-variable>
+                     | <literal>
+                     | <function>
+<expression> = <expression_no_list>
+             | <list>
+
+; A stage variable reference is the name of the stage variable surrounded
+; by "${" and "}". Note that stage variable names must be a valid identifier.
+<identifier> = {<letter> | "_"} [<letter> | <digit> | "_"]*
+<stage-variable> = "${" <identifier> "}"
+
+; A literal can be one of the supported value types.
+<literal> = <boolean>
+          | <integer>
+          | <string>
+
+; Integer values
+<integer> = ["-"] <digit>+
+
+; Boolean values in expressions may take any of these forms. These were
+; chosen since they are the representations used in the two languages
+; that USD primarily supports: C++ and Python.
+<boolean> = "true" | "True" | "false" | "False"
+
+; String values may be single (') or double (") quoted.
+;
+; Note that strings may have stage variable references embedded in them.
+; During evaluation, these references will be substituted with the value
+; of the named stage variable. 
+;
+; Strings use backslashes (\) to escape delimiters, including the leading
+; "$" in a stage variable reference.
+<string> = <single-quoted-string>
+         | <double-quoted-string>
+
+<single-quoted-string> = "'" <single-quoted-string-contents> "'"
+<single-quoted-string-contents> = [<single-quoted-escaped-char> | <char> | <stage-variable>]*
+<single-quoted-escape-char> = "\" ["'" | "$" | "\"]
+
+<double-quoted-string> = '"' <double-quoted-string-contents> '"' 
+<double-quoted-string-contents> = [<double-quoted-escaped-char> | <char> | <stage-variable>]*
+<double-quoted-escape-char> = "\" ['"' | "$" | "\"]
+
+; A function is an identifier followed by a comma-separated list of
+; expressions, surrounded by "(" and ")".
+<function> = <identifier> "(" [<expression> ["," <expression>]*] ")"
+
+; A list is a comma-separated list of non-list expressions, surrounded by
+; "[" and "]".
+<list> = "[" [<expression_no_list> ["," <expression_no_list>]*] "]"
+```
+
 ## Stage Variables
 
 Stage variables are the only scene description that expressions are allowed to
-refer to. These variables may be strings, bools, or ints and are stored in a
-dictionary-valued layer metadata field named ``stageVariables``. Stage variables
-may themselves be expressions, so that common logic can be factored into a
-single location for convenience and brevity.
+refer to. These variables may be strings, bools, integers, or lists of these
+types, and are stored in a dictionary-valued layer metadata field named
+``stageVariables``. Stage variables may themselves be expressions, so that
+common logic can be factored into a single location for convenience and brevity.
 
 As the name implies, stage variables are stage metadata, meaning they must be
 authored on either the root or session layer of a stage or in the root layer of
@@ -420,7 +563,7 @@ substitution in an asset path makes this impossible:
 )
  
 def "Asset" (
-    references = @`${VAR}.usd`@
+    references = @`"${VAR}.usd"`@
 )
 {
 }
@@ -480,7 +623,7 @@ def "Crowd"
 {
     def "Model_1" (
         variantSelection = {
-            string palette = "${COLOR_GROUP_1}"
+            string palette = "`${COLOR_GROUP_1}`"
         }
     )
     {
@@ -488,7 +631,7 @@ def "Crowd"
 
     def "Model_2" (
         variantSelection = {
-            string palette = "${COLOR_GROUP_2}"
+            string palette = "`${COLOR_GROUP_2}`"
         }
     )
     {
@@ -558,7 +701,7 @@ or perform other overrides specific to that pass. This might look like:
 #usda 1.0
 (
     subLayers = [
-        @render_pass_${RENDER_PASS}.usd@,
+        @`"render_pass_${RENDER_PASS}.usd"`@,
         ...
     ]
 )
