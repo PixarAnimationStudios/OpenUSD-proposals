@@ -41,6 +41,16 @@ At any point, proposal text may be used in other contexts, for example, a propos
 
 When a proposal advances beyond being a proposal, that should be noted here, and subsequent development should occur in the appropriate forums. For example, if a proposal has been developed into code and concrete schemas, that might become a pull against the main USD repo. Such a development should be noted in the proposal's README.md file here, with a link to the new pull request.
 
+### Proposal Status
+
+You can monitor and update your proposal status using the [OpenUSD Proposals Status page](https://github.com/orgs/PixarAnimationStudios/projects/1/views/2)
+
+A new proposal should be set to the **Draft** status. This indicates the proposal can be reviewed and discussed, however it is still work-in-progress and can be updated.
+
+Once a proposal is complete and fully reviewed, it will be merged and can be moved to **Published** status. This indicates the proposal can be used as a starting point for implementation.
+
+Once work implemention work has been complete, the proposal will be moved to **Implemented** status, with indication of which version of USD the proposal was implemented in.
+
 ## Code of Conduct
 
 The success of the forum is predicated on involvement and communication, so consider this an appeal to everyone's creativity and thoughtful consideration.
