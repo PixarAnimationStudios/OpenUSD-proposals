@@ -19,3 +19,5 @@ See the [OpenUSD Proposals Status](https://github.com/orgs/PixarAnimationStudios
 - [Namespace Editing](https://github.com/PixarAnimationStudios/OpenUSD-proposals/blob/main/proposals/namespace_editing/README.md) ![Status:Published](https://img.shields.io/badge/published-green) ([current PRs and issues](https://github.com/PixarAnimationStudios/USD-proposals/pulls?q=is%3Apr++label%3Ausd-namespace-editing+))
 - [Multiple Animation support](multiple-animations/README.md) ![Status:Draft](https://img.shields.io/badge/draft-blue) ([current PRs and issues](https://github.com/PixarAnimationStudios/USD-proposals/pulls?q=is%3Apr++label%3Ausd-multiple-animation-support+))
 - [Image plane support](image-planes/README.md) ![Status:Draft](https://img.shields.io/badge/draft-blue) ([current PRs and issues](https://github.com/PixarAnimationStudios/USD-proposals/pulls?q=is%3Apr++label%3Ausd-image-planes-support+))
+- [Line Style](LineStyle/README.md) ![Status:Draft](https://img.shields.io/badge/draft-blue) ([current PRs and issues](https://github.com/PixarAnimationStudios/USD-proposals/pulls?q=is%3Apr++label%3Ausd-line-style+))
+- 
