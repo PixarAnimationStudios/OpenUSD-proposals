@@ -115,6 +115,12 @@ It would be helpful to be able to view CG elements against a backdrop of the pro
 ### DCC Interchange
 Having a "UsdLux" style standard for Image Planes would be very useful when implementing importers and exporters for DCCs like Maya, Blender, Nuke, etc.
 
+### Photogrammetry
+Reasonably specific example:
+Load a mesh and array of cameras - provided by a company like Lidar Lounge - into Maya.
+Clean up / simplify the mesh and export as USD.
+Import into Mari, so as the cameras become projectors; with each having the path to an image plane's image, which can be projected onto the mesh.
+
 ## Alternative Implementation Strategies
 ### 1.) As a concrete prim type
 Here is a working implementation that was done before Multi-Apply schemas were added to USD.
