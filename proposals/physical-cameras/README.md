@@ -321,7 +321,7 @@ class PhysicalCameraExposure "PhysicalCameraExposure" (
 
     These settings are used to scale the brightness of the illumination incident
     on the camera system. The scaling factor, S, is computed as:
-       S = sensitivity_compensation * iso * 2^exposure_compensation / (100 * shutterspeed * fnumber^2)
+       S = exposure_time * iso * 2^exposure_compensation * responsivity_compensation / (100 * fnumber^2)
     """
     inherits = </APISchemaBase>
     customData = {
@@ -337,10 +337,8 @@ class PhysicalCameraExposure "PhysicalCameraExposure" (
         doc = """The speed rating of the sensor or film"""
     )
 
-    float physcam:exposure:shutterspeed = 1.0 (
-        doc = """The exposure time as fractions of a second, e.g. a value of 
-        100 corresponds to 1/100s
-        """
+    float physcam:exposure:exposure_time = 1.0 (
+        doc = """The exposure time in seconds"""
     )
 
     float physcam:exposure:exposure_compensation = 0.0 (
@@ -349,17 +347,17 @@ class PhysicalCameraExposure "PhysicalCameraExposure" (
         """
     )
 
-    float physcam:exposure:sensitivity_compensation = 1.0 (
+    float physcam:exposure:responsivity_compensation = 1.0 (
         doc = """Scalar multiplier that represents the overall scaling of incident
         exposure by the camera system, including loss by the lens and scaling
-        by the camera ISP
+        by the camera ISP to generate an output signal
         """       
     )
 }
 
-class PhysicalCameraSensorSensitivity "PhysicalCameraSensorSensitivity" (
+class PhysicalCameraSensorRGBResponsitivity "PhysicalCameraSensorRGBResponsitivity" (
     doc = """
-    Describes camera's native colour space in terms of the colour matching functions
+    Describes an RGB camera's native colour space in terms of the colour matching functions
     for the red, green and blue primaries, and a matrix for transforming from the resulting
     camera RGB value to CIE XYZ. For more information on the use of these values see
     https://github.com/wetadigital/physlight/blob/main/examples/physlight_camera_model.ipynb
@@ -370,7 +368,7 @@ class PhysicalCameraSensorSensitivity "PhysicalCameraSensorSensitivity" (
     }
 )
 {
-    float2[] physcam:sensitivity:red = [...default to XYZ X_bar] (
+    float2[] physcam:responsivity:red = [...default to XYZ X_bar] (
         doc = """Colour matching function for calculating the output of the camera
         RGB red value given an incident spectral exposure, by convolution. The CMF
         is represented as a list of [wavelength, value] pairs, where wavelength is
@@ -380,7 +378,7 @@ class PhysicalCameraSensorSensitivity "PhysicalCameraSensorSensitivity" (
         """
     )
 
-    float2[] physcam:sensitivity:green = [...default to XYZ Y_bar] (
+    float2[] physcam:responsivity:green = [...default to XYZ Y_bar] (
         doc = """Colour matching function for calculating the output of the camera
         RGB green value given an incident spectral exposure, by convolution. The CMF
         is represented as a list of [wavelength, value] pairs, where wavelength is
@@ -390,7 +388,7 @@ class PhysicalCameraSensorSensitivity "PhysicalCameraSensorSensitivity" (
         """
     )
 
-    float2[] physcam:sensitivity:blue = [...default to XYZ Z_bar] (
+    float2[] physcam:responsivity:blue = [...default to XYZ Z_bar] (
         doc = """Colour matching function for calculating the output of the camera
         RGB blue value given an incident spectral exposure, by convolution. The CMF
         is represented as a list of [wavelength, value] pairs, where wavelength is
@@ -400,7 +398,7 @@ class PhysicalCameraSensorSensitivity "PhysicalCameraSensorSensitivity" (
         """
     )
 
-    matrix3d physcam:sensitivity:cam_to_xyz = [1 0 0 0 1 0 0 0 1] (
+    matrix3d physcam:responsivity:cam_to_xyz = [1 0 0 0 1 0 0 0 1] (
         doc = """3x3 matrix representing the transformation from Camera RGB to 
         CIE XYZ
         """
