@@ -1,83 +1,80 @@
 # Introduction
-USD already has a primitive BasisCurves which is for rendering 3D curve-like geometries, such as hair or grass. In practice, we also need curves in sketch or design document. The curve may keep its width when we rotate or zoom the sketch, and it may have dash-dot patterns. We will extend the BasisCurves schema to implement this kind of curves.
+USD already has primitives to render 3D curve-like geometries, such as hair or grass. In practice, we also need curves in sketch or CAD document. The curve has uniform width, and its width will not change when we rotate or zoom the sketch. The curve may also have dash-dot patterns. We will provide a schema which could be applied to the curves primitive, and the primitive will become a uniform screen-width curve, and can have dash-dot patterns, or other type of patterns（such as waveline).
 
-Here is a picture of common line patterns.
+In this design, we don't consider any 3D-like curve styles, such as Blender's Grease Pencil or Tiltbrush.
 
-![image of line patterns](linePatterns.jpg)
+Here is a picture of common curve patterns.
+
+![image of curve patterns](linePatterns.jpg)
 
 # Requirements
 
-### Line Width
-The line width is a screen-space width. It will not change when we zoom in or zoom out. The line width is not needed to be uniform across the whole line. It can be different in different point.
+### Curve Width
+The curve width is a screen-space width. It will not change when we zoom in or zoom out. The curve width is uniform across the whole curve.
 
-### Line Caps
-The line cap is the shape at the start or end of a line, or a dash in line pattern. There are different type of line caps. The value can be different for the start and the end. But all the start caps in a curve should be the same, and all the end caps should be the same.
-The line cap will also impact the shape of the dot in a line pattern. The start cap is the shape of the left half of the dot, and the end cap is the shape of the right half of the dot.
+### Curve Caps
+The curve cap is the shape at the start or end of a curve or dash. There are different types of curve cap. The value can be different for the start and the end. But all the start caps in a curve should be the same, and all the end caps should be the same.
+The curve cap will also impact the shape of the dot in a curve pattern. The start cap is the shape of the left half of the dot, and the end cap is the shape of the right half of the dot.
 
 | cap type |   round   |  square  |  triangle  |
 |:--------:|:---------:|:-----------:|:----------:|
 |  figure  |![round](roundcap.png)|![square](rectanglecap.png)|![triangles](triangleoutcap.png)|
 
-### Line Joint
-The line joint is the shape at the joint of a polyline. It is only valid for polyline. The value is constant for the whole curve primitive.
+### Curve Joint
+The curve joint is the shape at the joint of two curves, or at the joint of a polyline. The value is constant for the whole primitive.
 
-![image of line joint](roundJoint.png)
+![image of curve joint](roundJoint.png)
 
-### Line Pattern
-The line pattern is a dash-dot pattern which is periodic in the curve. 
+### Curve Pattern
+A dash-dot pattern is a composite of dashes and dots and the composition is periodic. 
 
-# Modification to BasisCurves schema
-We will extend the schema of BasisCurves, and add the support for line styles,
+You can also define other type of patterns.
 
-We will add these properties:
-### style
-A string uniform, which determines if the curve is an original basis curve, a curve for sketch or a patterned curve for sketch. Its value can be "none", "sketch", and "patterned". The default value is "none".
-A curve for sketch is a curve whose width will not change when camera changes. This type of curve is commonly seen in a sketch file. It can have caps and joint. It doesn't have patterns.
-A patterned curve for sketch is a curve for sketch with line pattern. 
+# The CurveStyle schema
+A new schema called CurveStyle will be added. The schema could be applied to any curve primitives. It inherits from APISchemaBase.
 
-(NOTE: currently our implementation only supports the sketch curve or patterned curve when the curve type is "linear")
+The schema includes these properties:
+### patternType
+A string uniform, which determines the type of the pattern of the curve. Its value can be "none" or "dashDot". The default value is "none".
 
+No matter what value the patternType is, the curve's width will not change when camera changes. And it can have caps and joint. 
+
+If the value is "none", the curve has no patterns. If the value is "dashDot", the curve has a dash-dot pattern. 
 ### startCapType
 ### endCapType
-A token uniform. Valid only if the style is "sketch" and "patterned". It can be "round", "triangle" or "square". The default value is "round".
-
-(NOTE: currently our implementation only supports the start cap or end cap when the curve type is "linear")
+A token uniform. It can be "round", "triangle" or "square". The default value is "round".
 
 ### jointType
-A token uniform. Valid only if the style is "sketch" and "patterned" and the curve type is "linear". Currently it can only be "round". 
+A token uniform. Currently it can only be "round". 
 
 ### patternScale
-A float value. Valid only if the style is "patterned". The default value is 1.
+A float value. Valid when the patternType is not "none". The default value is 1.
 
-You can lengthen or compress the line pattern by setting this property. For example, if patternScale is set to 2, the length of each dash and each gap will be enlarged by 2 times. This value will not impact on the line width.
-
+You can lengthen or compress the curve pattern by setting this property. For example, if patternScale is set to 2, the length of each dash and each gap will be enlarged by 2 times. This value will not impact on the curve width.
 ### screenSpacePattern
-A bool uniform. Valid only if the style is "patterned" and the curve type is "linear". The default value is false. 
-If this value is false, the pattern will be based on world unit. So if we zoom in, the pattern on the line will not change, the dash size and the dash gap size in the screen will also be larger. If the value is true, the pattern will be based on screen unit. If we zoom in, the pattern on the line will change so that the dash size and the dash gap size in the screen will not change.
+A bool uniform. Valid when the patternType is not "none". The default value is false. 
+
+If this value is false, the pattern will be based on world unit. So if we zoom in, the pattern on the curve will not change, the dash size and the dash gap size in the screen will also be larger. If the value is true, the pattern will be based on screen unit. If we zoom in, the pattern on the curve will change so that the dash size and the dash gap size in the screen will not change.
 
 ![image of screenSpacePattern](screenSpacePattern.png)
 
-### The inherent properties 
-BasisCurves has the widths property. If the style is "sketch" or "patterned", the widths will be interpreted as screen-spaced width. That is, the value will be in pixels of the screen, and it will not change when we zoom or rotate.
+### Shader to support the curve style
+If the curve is applied with the CurveStyle schema, the curve can not bind to a normal material. Instead, we provide specific surface shader for the curve in the CurveStyle schema.
 
-(NOTE: currently our implementation only support a uniform width across the curve. In the future, we may add implementation so that the width can be varied in the curve.)
+The CurveStyle must contain a surface shader. If the patternType is "none", it must contain a CurveSketchSurface Shader. If the patternType is "dashDot", it must contain a CurveDashDotSurface Shader and CurveDashDotTexture shader.
 
-BasisCurves also has the screenspacewidths primvar. If the style is "sketch" or "patterned", the screenspacewidths will be interpreted as screen-spaced width, and the widths property will be ignored.
-The minScreenSpaceWidths primvar will not work if the style is "sketch" or "patterned".
+In the implementation, we will create material network and link the surface shader in CurveStyle into the shader of the curve primitive. If the curve itself binds to a material, the material will not take effect.
 
-# Material surface to support the line style
-If the curve style is "sketch" or "patterned", the curve can not bind to a normal material. Instead, we provide specific surface shader for the curve.
+### CurveSketchSurface
+The shader will decide the opacity of pixels around caps and joint. The materialTag for this material is translucent.
 
-### LineSketchSurface
-If the curve style is "sketch", it must bind to a material whose shader is "LineSketchSurface". The shader will decide the opacity of pixels around caps and joint. The materialTag for this material is translucent.
+### CurveDashDotSurface
+The shader will decide whether the pixel is within a dash or a gap, so that we can decide its opacity. It will also handle the caps and joint. The materialTag for this material is translucent.
 
-### LinePatternSurface
-If the curve style is "patterned", it must bind to a material whose shader is "LinePatternSurface". The shader will decide whether the pixel is within a dash or a gap, so that we can decide its opacity. It will also handle the caps and joint. The materialTag for this material is translucent.
+The CurveDashDotSurface must has a color input, which connects to another shader whose shader is "CurveDashDotTexture". The "CurveDashDotTexture" shader links to a texture which saves the information of the dash-dot pattern.
 
-The LinePatternSurface must has a color input, which connects to another shader whose shader is "LinePatternTexture". The "LinePatternTexture" shader links to a texture which saves the information of the line pattern.
-
-### The line pattern texture
-The line pattern texture is a texture that saves a type of line pattern. It has four channels for each pixel. The first channel saves the period of the pattern. The second channel saves the type of the current pixel. The third channel saves the start point of the dash which the current pixel is on. The last channel saves the end point of the dash which the current pixel is on. 
+### The curve dash-dot texture
+The curve dash-dot texture is a texture that saves a type of dash-dot pattern. It has four channels for each pixel. The first channel saves the period of the dash-dot pattern. The second channel saves the type of the current pixel. The third channel saves the start point of the dash which the current pixel is on. The last channel saves the end point of the dash which the current pixel is on. 
 
 The type of the current pixel can be:
 
