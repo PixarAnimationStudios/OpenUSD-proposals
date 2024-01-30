@@ -5,6 +5,7 @@ Copyright &copy; 2023, Pixar Animation Studios,  version 1.0
 ## Contents
   - [Introduction](#introduction)
   - [Layer Metadata](#layer-metadata)
+    - [Three Categories of Layer Metadata, by Use](#three-categories-of-layer-metadata-by-use)
 
 ## Introduction
 
@@ -31,7 +32,15 @@ look like in `usda` syntax.
 ```
 #usda 1.0
 (
-    # 'customLayerData'
+    # 'customLayerData' is a dictionary provided for ad hoc or pipeline/user-specific
+    # data, generally not associated with any schema.  It is the "layer equivalent" of
+    # 'customData' on prims and properties
+    customLayerData = {
+         string ORIGINAL_AUTHORING_DCC = "maya"
+         string AUTHOR = "spiff"
+         string LAST_MODIFIED_DATE = "12/26/23 08:04:08"
+         bool finaled = false
+    }
 
     # `defaultPrim` names a root-level prim on this STAGE for the composition engine to
     # target when no target is provided in a reference or payload arc to this layer.
@@ -41,9 +50,9 @@ look like in `usda` syntax.
     # geometry on this STAGE should be scaled
     metersPerUnit = .01
 
-    # 'stageVariables' is a core dictionary datum that provides named values
+    # 'expressionVariables' is a core dictionary datum that provides named values
     # associated with a STAGE
-    stageVariables = {
+    expressionVariables = {
          string PROD = "s101"
          string SHOT = "01"
          bool IS_SPECIAL_SHOT = "`in(${SHOT}, ['01', '03', '05'])`"
@@ -63,3 +72,8 @@ look like in `usda` syntax.
     upAxis = 'Z'
 )
 ```
+
+### Three Categories of Layer Metadata, by Use
+If we classify layer metadata by its intended use, we find three categories, one of which has proven problematic.
+
+#### 
