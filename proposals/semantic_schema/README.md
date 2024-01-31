@@ -1,6 +1,6 @@
 # Semantic data in USD
 
-Copyright &copy; 2022-2023, NVIDIA Corporation, version 1.0
+Copyright &copy; 2022-2024, NVIDIA Corporation, version 1.0
 
 
 Dennis Lynch  
@@ -133,13 +133,45 @@ string[] semantics:instance_name:labels = ["class:animal", "class:bird", "class:
 
 The proposed method has better performance as the number of labels of the same type increase on a prim to dozens, hundreds, or thousands of labels.
 
+### Semantic Aggregation
+
+"Aggregating" semantic data is essential to workflows.  A prim could have the semantic label of `door`, but that is missing wider context.  Is the prim a door inside of a room, on the exterior of a building, part of a vehicle?
+
+A method should be provided to "aggregate" parent semantics in a consistent way that allows users to understand the semantic heirarchy.
+
+Example prim setup:
+```
+└── xform - car
+    ├── wheel
+    ├── door
+    │   ├── window(glass)
+    │   └── handle
+    └── seat
+```
+Querying the semantic heirarchy should return an appended list/set of parents
+
+example results:
+```
+Aggregation query on handle: ['handle', 'door', 'car']
+Aggregation query on seat: ['seat', 'car']
+```
+
+### Proposed Methods
+
+The `primvarsAPI` has provided some inspiration for possible methods that would be used for semantics:
+
+```
+GetSemanticLabels() - Returns list of `labels` on prim
+GetSemanticInheritedLabels() - returns an aggregated ordered set of `labels` from the prim and its parent prims
+```
+
 ### Tokens vs Strings
 
 Consideration was taken for the datatype being tokens or strings.  Considering that semantic labels should be more read-intensive rarely (if ever) written/updated, tokens are thought to be the better representation.
 
 Some performance testing was done, and in some cases StringArray performed better than TokenArray in Python, the difference was negligible and could be attributed to the overhead of converting tokens to native Python strings.
 
-Tokes might also facilitate future expansion use of `allowedTokens` for contraining semantic labels, but that will not be a part of this proposal at this time.
+Tokens might also facilitate future expansion use of `allowedTokens` for contraining semantic labels, but that will not be a part of this proposal at this time.
 
 ## Out-of-Scope
 
