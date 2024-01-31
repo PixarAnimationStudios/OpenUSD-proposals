@@ -5,7 +5,7 @@ Copyright &copy; 2023, Pixar Animation Studios,  version 1.0
 ## Contents
   - [Introduction](#introduction)
   - [Layer Metadata](#layer-metadata)
-    - [Three Categories of Layer Metadata, by Use](#three-categories-of-layer-metadata-by-use)
+  - [Three Categories of Layer Metadata, by Use](#three-categories-of-layer-metadata-by-use)
 
 ## Introduction
 
@@ -73,7 +73,11 @@ look like in `usda` syntax.
 )
 ```
 
-### Three Categories of Layer Metadata, by Use
+## Three Categories of Layer Metadata, by Use
 If we classify layer metadata by its intended use, we find three categories, one of which has proven problematic.
 
-#### 
+### Advisory Layer Metadata
+Advisory layer metadata provides hints and ancillary data to clients and editors, but is generally not meaningfully consumed by the USD core. It can be _sually_ be reasonably interpreted as a statement about the stage _or_ about the root layer and, importantly, it does not critically matter which interpretation is applied.  We do not consider advisory layer metadata to be problematic; some examples of advisory layer metadata:
+* `documentation`/`comment` - any layer can have a "top-level" comment string that describes the layer's contents.
+* `customLayerData` - provides more structured advisory data for a layer than the comment field does.
+* `framesPerSecond` - meant to be a hint to playback consumers as to the optimal rate at which to temporally sample a scene
