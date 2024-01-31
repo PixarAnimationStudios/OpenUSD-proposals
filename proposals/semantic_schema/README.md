@@ -148,7 +148,7 @@ Example prim setup:
     │   └── handle
     └── seat
 ```
-Querying the semantic heirarchy should return an appended list/set of parents
+Querying the semantic hierarchy should return an appended list/set of parents
 
 example results:
 ```
