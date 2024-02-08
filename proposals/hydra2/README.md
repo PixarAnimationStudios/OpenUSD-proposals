@@ -15,4 +15,4 @@ ability to manipulate scene data. We also discuss how schemas can be used to
 give more meaning to data sources, how dependencies can be used across data 
 sources, and how to locate data sources.
 
-The full proposal may be viewed here: (Proposal PDF)[ModularSceneDelegationAndManipulationInHydra.pdf]
+The full proposal may be viewed here: [Proposal PDF](ModularSceneDelegationAndManipulationInHydra.pdf)
