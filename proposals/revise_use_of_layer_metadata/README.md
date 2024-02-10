@@ -132,8 +132,14 @@ even though the current equivalent feature in Presto was layer-metadata based, o
 informed us that a prim-based encoding would be superior, because we strongly desired:
 1. AssetInfo to persist at namespace asset-boundaries even when a stage is flattened
 2. A simple way to access AssetInfo for referenced assets in a composed stage, i.e. not
-   needing to manually inspect all of the layers in a prim's primIndex, as one **must** do
+   needing to manually inspect all of the layers in a prim's PrimStack, as one **must** do
    to retrieve stage metadata from a referenced layer.
 
 However, we did not apply this analysis to many other uses of stage metadata we selected for
-USD's design.
+USD's design.  Following is an enumeration of stage metadata we believe to be problematic, 
+and why (the reason is similar for most).
+* `metersPerUnit` - defines the linear metric by which to interpret geometric data in the 
+  scene.  When assets with different metrics are referenced into the same scene, we advise
+  applying a corrective scale on the referencing prim.  The potential inaccessibility of 
+  stage metadata on (initially) referenced assets makes this difficult to perform and maintain
+  in the face of asset changes or flattening.
