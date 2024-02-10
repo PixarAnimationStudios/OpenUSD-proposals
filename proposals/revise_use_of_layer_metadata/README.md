@@ -1,14 +1,15 @@
 # Revise Use of Layer Metadata in USD
 
-Copyright &copy; 2023, Pixar Animation Studios,  version 1.0
+Copyright &copy; 2024, Pixar Animation Studios,  version 1.0
 
 ## Contents
   - [Introduction](#introduction)
   - [Layer Metadata](#layer-metadata)
   - [Three Categories of Layer Metadata, by Use](#three-categories-of-layer-metadata-by-use)
     - [Advisory Layer Metadata](#advisory-layer-metadata)
-    - [Composition Metadata](composition-metadata)
-    - [Stage Metadata](stage-metadata)
+    - [Composition Metadata](#composition-metadata)
+    - [Stage Metadata](#stage-metadata)
+  - [Proposal to Evolve Stage Metadata to Applied Schemas](#proposal-to-evolve-stage-metadata-to-applied-schemas)
 
 ## Introduction
 
@@ -140,6 +141,39 @@ USD's design.  Following is an enumeration of stage metadata we believe to be pr
 and why (the reason is similar for most).
 * `metersPerUnit` - defines the linear metric by which to interpret geometric data in the 
   scene.  When assets with different metrics are referenced into the same scene, we advise
-  applying a corrective scale on the referencing prim.  The potential inaccessibility of 
-  stage metadata on (initially) referenced assets makes this difficult to perform and maintain
+  applying a corrective scale on the referencing prim.  The non-composed nature of 
+  stage metadata on referenced assets makes this difficult or impossible to perform and maintain
   in the face of asset changes or flattening.
+* `upAxis` - follows `metersPerUnit` logic, as it also implies a corrective transformation.
+* `kilogramsPerUnit` from the UsdPhysics schema domain suffers from the same non-composability
+  problems 
+* `startTimeCode` and `endTimeCode` - It is possible, with referencing and animated visibility,
+  to construct a scene comprised of other scenes, and when layerOffsets are applied on the
+  references, the animation will be adjusted accordingly; however, the animation _range_
+  encoded in these two non-composed data will not - nor will they be very accessible.
+* `colorConfiguration` and `colorManagementSystem` also suffer from the inaccessibility of
+  opinions in referenced assets.  It is unclear whether this is as inconvenient a situation
+  as for other data listed here, as it is typically not feasible to rectify a mismatch, but
+  at least mismatches could be more easily detectable.
+
+## Proposal to Evolve Stage Metadata to Applied Schemas
+In addition to promoting the guidance on what concepts are safe to encode in layer metadata,
+we propose to migrate, with backwards compatibility of existing core API (for at least a very 
+long deprecation interval, if not in perpetuity), the stage metadata enumerated above into
+appropriate Applied schemas that can be applied to any prim.  We will post followup proposals
+with specifics for the categories present above, which we believe are:
+* **UsdSceneAPI**, containing `startTimeCode` and `endTimeCode` as `timeCode`-valued **attributes**.
+  This schema will address other concerns the community has expressed about organizing
+  "top-level scene data" as well.
+* **UsdGeomMetricsAPI**, containing `metersPerUnit` and `upAxis` as attributes
+* **UsdPhysicsMetricsAPI** containing `kilogramsPerUnit` as an attribute
+
+And potentially:
+* **UsdColorConfigurationAPI** containing `colorConfiguration` and `colorManagementSystem`
+  as attributes
+
+Part of the backwards compatibility, and general guidance will be that whatever one _would_
+have authored into the stage metadata, one instead encodes in an application of the relevant
+schema **on the stage's defaultPrim**.  In this way, default references to any asset or scene
+"automatically" present their metrics/data on the referencing stage.  The schemas can, of
+course, be present on any prim, and it will often be necessary to do so when composing assets.
