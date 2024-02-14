@@ -179,7 +179,7 @@ All the "Validators" in a plugin can have a common set of keywords, keyed by
 dictionary other than "keywords" then represents a single TestName.
 
 Each test can have the following metadata:
- 1. **"docs"**: A required field for all tests, and provides the documentation
+ 1. **"doc"**: A required field for all tests, and provides the documentation
     for each test. This can help UI designers provide a tool tip for each test.
  2. **"keywords"**: Along with keywords inherited from plugin's validators
     keywords, each test can have optional keywords specific to that test.
@@ -204,7 +204,7 @@ metadata field:
     "TestName1":
     {
         # Required documentation for this "TestName1" test
-        "docs": ""
+        "doc": ""
 
         # Optional metadata field, list of schemaTypes this "TestName1" test is 
         # applicable to.
@@ -221,7 +221,7 @@ metadata field:
     # dictionary of metadata values keyed on a named test.
     "TestName2": 
     { 
-        "docs": ....
+        "doc": ....
         ....
         ....
     }
@@ -247,18 +247,18 @@ Example of plugInfo.json showing test metadata:
             "keywords" : ["UsdCoreValidators"]
             "ShaderEncapsulationTest": {
                 "schemaType": "Shader"
-                "docs": "Test to make sure Shader prims are encapsulated 
+                "doc": "Test to make sure Shader prims are encapsulated 
                          under a Material prim's scope"
             },
             "CollectionBasedBindingRelTargetTest": {
                 "schemaType": "MaterialBindingAPI"
-                "docs": "A test to make sure a collection based binding
+                "doc": "A test to make sure a collection based binding
                          relationship, if present must have exactly 2
                          targets, one for collectionPath and other for
                          UsdShadeMaterial"
             },
             "SomeOtherGenericUsdShadeTest": {
-                "docs": "Testing some generic UsdShade inter schema rule."
+                "doc": "Testing some generic UsdShade inter schema rule."
             },
             ...
             ...
@@ -425,11 +425,11 @@ registration:
         "Validators": {
             "keywords" : ["MyAwesomeRendererTests"]
             "SpecificTestForMyAwesomeRendere": {
-                 "docs": "This test checks for a specific requirement for a
+                 "doc": "This test checks for a specific requirement for a
                  stage to be valid to be renderable with MyAwesomeRenderer"
             },
             "MyAwesomeRendererTestSuite": {
-                "docs": "This test is a collection of all tests which must be
+                "doc": "This test is a collection of all tests which must be
                 satisfied for an asset to be deemed renderable using
                 MyAwesomeRenderer"
             },
@@ -671,10 +671,10 @@ Following shows an example of registration of a couple of tests,
         "Validators": {
             "keywords" : ["UsdCoreValidators"]
             "CompositionErrorTest": {
-                "docs": "Test to report composition errors."
+                "doc": "Test to report composition errors."
             },
             "ExpressionSyntaxErrorTest": {
-                "docs": "Test to report syntax errors in expression
+                "doc": "Test to report syntax errors in expression
                         evaluations."
         },
         ...
