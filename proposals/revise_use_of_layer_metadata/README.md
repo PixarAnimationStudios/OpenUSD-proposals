@@ -83,7 +83,7 @@ which has proven problematic.
 
 ### Advisory Layer Metadata
 Advisory layer metadata provides hints and ancillary data to clients and editors, but 
-is generally not meaningfully consumed by the USD core. It can be _sually_ be reasonably 
+is generally not meaningfully consumed by the USD core. It can _usually_ be reasonably 
 interpreted as a statement about the stage _or_ about the root layer and, importantly, it 
 does not critically matter which interpretation is applied.  We do not consider advisory 
 layer metadata to be problematic; some examples of advisory layer metadata:
