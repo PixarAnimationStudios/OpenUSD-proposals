@@ -133,6 +133,27 @@ string[] semantics:instance_name:labels = ["class:animal", "class:bird", "class:
 
 The proposed method has better performance as the number of labels of the same type increase on a prim to dozens, hundreds, or thousands of labels.
 
+### Multiple Taxonomies
+
+The combination of a MultipleApply schema and using prim instance names as "special" identifiers allows semantic information to be stored in USD from multiple sources of taxonomy, while still retaining additional existing taxonomy.
+
+Example of a "police car" prim semantics from different taxonomy sources:
+```
+omniverse-simready: ['emergency_vehicle']
+
+# COCO has no special taxonomy for police vehicles so "car" might be most appropriate
+ms-coco-stuff: ['car'] 
+
+kitti: ['vehicle-other']
+
+ImageNet_classID: ['734']
+
+ImageNet_className: ['police van', 'police wagon', 'paddy wagon', 'patrol wagon', 'wagon', 'black Maria']
+```
+Here, a user would "query" for semantic prim data of only the specific taxonomy that is relevant to their needs. (ex: `ImageNet_classID`)
+
+Users can also later add additional semantics for new or missing taxonomies to the prim data.
+
 ### Semantic Aggregation
 
 "Aggregating" semantic data is essential to workflows.  A prim could have the semantic label of `door`, but that is missing wider context.  Is the prim a door inside of a room, on the exterior of a building, part of a vehicle?
@@ -148,7 +169,7 @@ Example prim setup:
     │   └── handle
     └── seat
 ```
-Querying the semantic hierarchy should return an appended list/set of parents
+Querying the semantic hierarchy should should return a uniquified list(Set) of labels, where ordering is determined by ancestral distance from the prim being queried, and the first time a label is encountered in the ancestors-walk determines its position in the list.
 
 example results:
 ```
