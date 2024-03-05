@@ -86,6 +86,8 @@ This is improved over other encoding methods, i.e. base62, where every case is o
 Disadvantages:
 - **Querying**, unfortunately encoding the search term and doing character comparison will not work as this is not a 
 byte-aligned encoding.This will require all paths to be decoded as they are traversed.
+- **Prefix**, to give a hint of transcoding we add a prefix `tn__`, in similar fashion to `xn--` in Punycode. 
+For short identifiers this may be big overhead.
 
 # Proposed API
 
@@ -93,15 +95,18 @@ As the Bootstring implementation is reversible, we can add now a function to rev
 For a proposed API we expect to have three functions: 
 
 * `std::string SdfBoostringEncodeAsciiIdentifier(const std::string&)`
-  * Transform any UTF-8 string into a valid OpenUSD identifier using the character set `[A-Za-z0-9_]`. Mostly used for 
-  backwards compatibility (OpenUSD less than 24.03).
+  * Transform any valid UTF-8 string into a valid OpenUSD identifier using the character set `[A-Za-z0-9_]`. 
+  Mostly used for  backwards compatibility (OpenUSD less than 24.03). Invalid UTF-8 strings (i.e. strings with 
+  invalid UTF-8 code points) will return an empty string, we rely on `TfUtf8CodePoint` for the implementation.
 
 * `std::string SdfBoostringEncodeIdentifier(const std::string&)`
-  + Transform any UTF-8 string into a valid OpenUSD XID identifier. Mostly used for OpenUSD 24.03 and higher.
+  + Transform any valid UTF-8 string into a valid OpenUSD XID identifier. Mostly used for OpenUSD 24.03 and higher. 
+  Invalid UTF-8 strings (i.e. strings with invalid UTF-8 code points) will return an empty string, we rely on 
+  `TfUtf8CodePoint` for the implementation.
 
 * `std::string SdfBootstringDecodeIdentifier(const std::string&)`
   * Transform the results of either `SdfBoostringEncodeAsciiIdentifier` or `SdfBoostringEncodeIdentifier` into the 
-  original UTF-8 string.
+  original valid UTF-8 string. Decoding invalid encoded identifiers will return an empty string.
 
 # Proposed algorithm
 
@@ -152,9 +157,9 @@ This helps to reduce the number of encoded bytes.
 | Characters sorted | Value to encode                            |
 |-------------------|--------------------------------------------|
 | `-`               | 45                                         |
-| `-`               | 0 (ASCII value 45, same as previous)       |
-| `.`               | 1 (ASCII value 46, one more than previous) |
-| `/`               | 1 (ASCII value 47, one more than previous) |
+| `-`               | 0 (UTF-8 value 45, same as previous)       |
+| `.`               | 1 (UTF-8 value 46, one more than previous) |
+| `/`               | 1 (UTF-8 value 47, one more than previous) |
 
 
 One difference in this implementation is that delta encoding starts at character `0`. In Punycode, 
