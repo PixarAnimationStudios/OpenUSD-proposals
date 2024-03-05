@@ -87,7 +87,7 @@ Disadvantages:
 - **Querying**, unfortunately encoding the search term and doing character comparison will not work as this is not a 
 byte-aligned encoding.This will require all paths to be decoded as they are traversed.
 - **Prefix**, to give a hint of transcoding we add a prefix `tn__`, in similar fashion to `xn--` in Punycode. 
-For short identifiers this may be big overhead.
+For short identifiers this may represent a big overhead.
 
 # Proposed API
 
