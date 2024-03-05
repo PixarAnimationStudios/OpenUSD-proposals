@@ -87,7 +87,8 @@ Disadvantages:
 - **Querying**, unfortunately encoding the search term and doing character comparison will not work as this is not a 
 byte-aligned encoding.This will require all paths to be decoded as they are traversed.
 - **Prefix**, to give a hint of transcoding we add a prefix `tn__`, in similar fashion to `xn--` in Punycode. 
-For short identifiers this may represent a big overhead.
+For short identifiers this may represent a big overhead, and it could potentially collide with identifiers starting 
+with `tn__` for reasons other than a hint for decoding.
 
 # Proposed API
 
@@ -106,7 +107,7 @@ For a proposed API we expect to have three functions:
 
 * `std::string SdfBootstringDecodeIdentifier(const std::string&)`
   * Transform the results of either `SdfBoostringEncodeAsciiIdentifier` or `SdfBoostringEncodeIdentifier` into the 
-  original valid UTF-8 string. Decoding invalid encoded identifiers will return an empty string.
+  original valid UTF-8 string. Decoding invalid encoded identifiers will return the original string.
 
 # Proposed algorithm
 
@@ -317,5 +318,18 @@ static_assert(
 );
 static_assert(
     SdfBootstringDecodeIdentifier("tn__mycoolstring") == "tn__mycoolstring",
+);
+```
+
+| Original           | Transcoding        |
+|--------------------|--------------------|
+| tn__my_cool_string | tn__my_cool_string |
+
+```cpp
+static_assert(
+    SdfBoostringEncodeIdentifier("tn__my_cool_string") == "tn__my_cool_string",
+);
+static_assert(
+    SdfBootstringDecodeIdentifier("tn__my_cool_string") == "tn__my_cool_string",
 );
 ```
