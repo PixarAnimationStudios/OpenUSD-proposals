@@ -95,19 +95,19 @@ with `tn__` for reasons other than a hint for decoding.
 As the Bootstring implementation is reversible, we can add now a function to reverse the transcoding (i.e. decode). 
 For a proposed API we expect to have three functions: 
 
-* `std::string SdfBoostringEncodeAsciiIdentifier(const std::string&)`
+* `std::optional<std::string> SdfBoostringEncodeAsciiIdentifier(const std::string&)`
   * Transform any valid UTF-8 string into a valid OpenUSD identifier using the character set `[A-Za-z0-9_]`. 
   Mostly used for  backwards compatibility (OpenUSD less than 24.03). Invalid UTF-8 strings (i.e. strings with 
-  invalid UTF-8 code points) will return an empty string, we rely on `TfUtf8CodePoint` for the implementation.
+  invalid UTF-8 code points) will return no value, we rely on `TfUtf8CodePoint` for the implementation.
 
-* `std::string SdfBoostringEncodeIdentifier(const std::string&)`
+* `std::optional<std::string> SdfBoostringEncodeIdentifier(const std::string&)`
   + Transform any valid UTF-8 string into a valid OpenUSD XID identifier. Mostly used for OpenUSD 24.03 and higher. 
-  Invalid UTF-8 strings (i.e. strings with invalid UTF-8 code points) will return an empty string, we rely on 
+  Invalid UTF-8 strings (i.e. strings with invalid UTF-8 code points) will return no value, we rely on 
   `TfUtf8CodePoint` for the implementation.
 
-* `std::string SdfBootstringDecodeIdentifier(const std::string&)`
+* `std::optional<std::string> SdfBootstringDecodeIdentifier(const std::string&)`
   * Transform the results of either `SdfBoostringEncodeAsciiIdentifier` or `SdfBoostringEncodeIdentifier` into the 
-  original valid UTF-8 string. Decoding invalid encoded identifiers will return the original string.
+  original valid UTF-8 string. Decoding invalid encoded identifiers will return no value.
 
 # Proposed algorithm
 
@@ -234,14 +234,14 @@ The above example:
 
 ```cpp
 static_assert(
-    SdfBoostringEncodeIdentifier("012-345-678/9.0") == "tn__01234567890_lG7QQ",
+    SdfBoostringEncodeIdentifier("012-345-678/9.0") == "tn__01234567890_lG7QQ"
 );
 static_assert(
-    SdfBootstringDecodeIdentifier("tn__01234567890_lG7QQ") == "012-345-678/9.0",
+    SdfBootstringDecodeIdentifier("tn__01234567890_lG7QQ") == "012-345-678/9.0"
 );
 ```
 
-No changes.
+Encoding valid identifiers produces no changes.
 
 | Original      | Transcoding   |
 |---------------|---------------|
@@ -249,10 +249,38 @@ No changes.
 
 ```cpp
 static_assert(
-    SdfBoostringEncodeIdentifier("id12345_abcde") == "id12345_abcde",
+    SdfBoostringEncodeIdentifier("id12345_abcde") == "id12345_abcde"
 );
 static_assert(
-    SdfBootstringDecodeIdentifier("id12345_abcde") == "id12345_abcde",
+    SdfBootstringDecodeIdentifier("id12345_abcde") == "id12345_abcde"
+);
+```
+
+An encoded identifier is already a valid identifier, and it will result in itself.
+
+| Original              | Transcoding           |
+|-----------------------|-----------------------|
+| tn__01234567890_lG7QQ | tn__01234567890_lG7QQ |
+
+```cpp
+static_assert(
+    SdfBoostringEncodeIdentifier("tn__01234567890_lG7QQ") == "tn__01234567890_lG7QQ"
+);
+```
+
+Existing valid identifiers with `tn__` prefix will produce no changes.
+
+| Original           | Transcoding        |
+|--------------------|--------------------|
+| tn__mycoolstring   | tn__mycoolstring   |
+| tn__my_cool_string | tn__my_cool_string |
+
+```cpp
+static_assert(
+    SdfBoostringEncodeIdentifier("tn__mycoolstring") == "tn__mycoolstring"
+);
+static_assert(
+    SdfBoostringEncodeIdentifier("tn__my_cool_string") == "tn__my_cool_string"
 );
 ```
 
@@ -264,10 +292,10 @@ Remove invalid characters. The extended characters is `-` and `/`.
 
 ```cpp
 static_assert(
-    SdfBoostringEncodeIdentifier("123-456/555") == "tn__123456555_oDT",
+    SdfBoostringEncodeIdentifier("123-456/555") == "tn__123456555_oDT"
 );
 static_assert(
-    SdfBootstringDecodeIdentifier("tn__123456555_oDT") == "123-456/555",
+    SdfBootstringDecodeIdentifier("tn__123456555_oDT") == "123-456/555"
 );
 ```
 
@@ -281,10 +309,10 @@ between new versions of OpenUSD and legacy versions. The extended character set 
 
 ```cpp
 static_assert(
-    SdfBoostringEncodeAsciiIdentifier("München, Germany") == "tn__MnchenGermany_pDV5hi2",
+    SdfBoostringEncodeAsciiIdentifier("München, Germany") == "tn__MnchenGermany_pDV5hi2"
 );
 static_assert(
-    SdfBootstringDecodeIdentifier("tn__MnchenGermany_pDV5hi2") == "München, Germany",
+    SdfBootstringDecodeIdentifier("tn__MnchenGermany_pDV5hi2") == "München, Germany"
 );
 ```
 
@@ -298,38 +326,28 @@ function is the same as above (i.e. `SdfBootstringDecodeIdentifier`).
 
 ```cpp
 static_assert(
-    SdfBoostringEncodeIdentifier("München, Germany") == "tn__MünchenGermany_rEi5",
+    SdfBoostringEncodeIdentifier("München, Germany") == "tn__MünchenGermany_rEi5"
 );
 static_assert(
-    SdfBootstringDecodeIdentifier("tn__MünchenGermany_rEi5") == "München, Germany",
-);
-```
-
-Send invalid strings to encoding/decoding functions should result in the original string.
-
-
-| Original         | Transcoding      |
-|------------------|------------------|
-| tn__mycoolstring | tn__mycoolstring |
-
-```cpp
-static_assert(
-    SdfBoostringEncodeIdentifier("tn__mycoolstring") == "tn__mycoolstring",
-);
-static_assert(
-    SdfBootstringDecodeIdentifier("tn__mycoolstring") == "tn__mycoolstring",
+    SdfBootstringDecodeIdentifier("tn__MünchenGermany_rEi5") == "München, Germany"
 );
 ```
 
-| Original           | Transcoding        |
-|--------------------|--------------------|
-| tn__my_cool_string | tn__my_cool_string |
+Encoding invalid UTF-8 strings will generate no value.
 
 ```cpp
 static_assert(
-    SdfBoostringEncodeIdentifier("tn__my_cool_string") == "tn__my_cool_string",
+    SdfBootstringDecodeIdentifier(generateInvalidUTF8()) == std::optional<std::string>{}
+);
+```
+
+Decoding invalid identifiers will generate no value.
+
+```cpp
+static_assert(
+    SdfBootstringDecodeIdentifier("tn__///abc") == std::optional<std::string>{}
 );
 static_assert(
-    SdfBootstringDecodeIdentifier("tn__my_cool_string") == "tn__my_cool_string",
+    SdfBootstringDecodeIdentifier("tn__my_cool_string") == std::optional<std::string>{}
 );
 ```
