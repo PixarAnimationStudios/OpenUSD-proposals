@@ -163,8 +163,9 @@ long deprecation interval, if not in perpetuity), the stage metadata enumerated 
 appropriate Applied schemas that can be applied to any prim.  We will post followup proposals
 with specifics for the categories present above, which we believe are:
 * **UsdSceneAPI**, containing `startTimeCode` and `endTimeCode` as `timeCode`-valued **attributes**.
-  This schema will address other concerns the community has expressed about organizing
-  "top-level scene data" as well.
+  This schema will address [other concerns the community has expressed about organizing
+  "top-level scene data"](https://groups.google.com/g/usd-interest/c/HpF60yzj_pI/m/EIjXW_sLBwAJ)
+  as well.
 * **UsdGeomMetricsAPI**, containing `metersPerUnit` and `upAxis` as attributes
 * **UsdPhysicsMetricsAPI** containing `kilogramsPerUnit` as an attribute
 
@@ -172,8 +173,35 @@ And potentially:
 * **UsdColorConfigurationAPI** containing `colorConfiguration` and `colorManagementSystem`
   as attributes
 
-Part of the backwards compatibility, and general guidance will be that whatever one _would_
-have authored into the stage metadata, one instead encodes in an application of the relevant
-schema **on the stage's defaultPrim**.  In this way, default references to any asset or scene
-"automatically" present their metrics/data on the referencing stage.  The schemas can, of
-course, be present on any prim, and it will often be necessary to do so when composing assets.
+It will be incumbent on authoring applications to apply the appropriate stage-related schemas 
+to any prim that is likely to be referenced into other stages, which should include all 
+**defined** root prims; see also the Sub-root Referencing section in Risks, below.  
+
+For backwards compatibility with older scenes that use the layer metadata encoding, we might
+provide computations on the newly introduced schemas that will fall back to a "stage metadata" 
+opinion if neither the queried prim, nor any of its ancestors, have the relevant schema applied.
+
+It would be _possible_ to add heuristics to existing "stage-level" queries such as 
+[UsdGeomGetStageUpAxis](https://openusd.org/release/api/group___usd_geom_up_axis__group.html) to 
+analyze a stage's root prims to determine "the most representative" prim with an applied schema
+to represent "the stage's opinion", but we believe it will be better to deprecate these
+methods and encourage the use of the new, schema methods.
+
+## Risks
+
+### Performance of Stage-level Queries
+The advantage of this proposal is that it makes it easier and more robust to determine 
+relevant "metrics" that _can_ vary over a scene due to composition of disparate assets.  However,
+it does sacrifice ease and speed with which the "stage-level" opinion can be determined for
+any given scene, **especially** if you do not already have the scene open on a UsdStage.  In that
+case, layer metadata is both perfectly robust **and** extremely lightweight to interrogate: 
+it is possible to interrogate layer metadata from both `.usda` and `.usdc` files without accessing
+very much of the asset's content.
+
+However, in the proposed API schema encodings, not only do we need to know which prim we care about
+which we _might_ determine by opening the layer and accessing its `defaultPrim` layer metadata, but 
+that is still just a guess, albeit a likely one.  But more importantly, even with smart use of
+Stage Masking to compose only the one root prim we care about, a stage's root layerStack may consist of
+dozens to hundreds of root subLayers, **all of which must be opened** just to compose the one prim.  If 
+those layers are lazy-access `usdc` layers, we do not expect this additional cost to be exorbitatnt, but
+will still generally be an order(s) of magnitude degredation.
