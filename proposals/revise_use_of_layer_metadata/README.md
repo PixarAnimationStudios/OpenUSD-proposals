@@ -10,6 +10,9 @@ Copyright &copy; 2024, Pixar Animation Studios,  version 1.0
     - [Composition Metadata](#composition-metadata)
     - [Stage Metadata](#stage-metadata)
   - [Proposal to Evolve Stage Metadata to Applied Schemas](#proposal-to-evolve-stage-metadata-to-applied-schemas)
+  - [Risks](#risks)
+    - [Performance of Stage-level Queries](#performance-of-stage-level-queries)
+    - [Sub-root References](#sub-root-references)
 
 ## Introduction
 
@@ -175,7 +178,8 @@ And potentially:
 
 It will be incumbent on authoring applications to apply the appropriate stage-related schemas 
 to any prim that is likely to be referenced into other stages, which should include all 
-**defined** root prims; see also the Sub-root Referencing section in Risks, below.  
+**defined** root prims (and OpenUSD would validate at least this much); see also the 
+[Sub-root References](#sub-root-references) section in Risks, below.  
 
 For backwards compatibility with older scenes that use the layer metadata encoding, we might
 provide computations on the newly introduced schemas that will fall back to a "stage metadata" 
@@ -195,13 +199,40 @@ relevant "metrics" that _can_ vary over a scene due to composition of disparate 
 it does sacrifice ease and speed with which the "stage-level" opinion can be determined for
 any given scene, **especially** if you do not already have the scene open on a UsdStage.  In that
 case, layer metadata is both perfectly robust **and** extremely lightweight to interrogate: 
-it is possible to interrogate layer metadata from both `.usda` and `.usdc` files without accessing
+it is possible to interrogate layer metadata from both `usda` and `usdc` files without accessing
 very much of the asset's content.
 
-However, in the proposed API schema encodings, not only do we need to know which prim we care about
+However, in the proposed API schema encodings, we now _firstly_ need to know which prim we care about,
 which we _might_ determine by opening the layer and accessing its `defaultPrim` layer metadata, but 
-that is still just a guess, albeit a likely one.  But more importantly, even with smart use of
-Stage Masking to compose only the one root prim we care about, a stage's root layerStack may consist of
-dozens to hundreds of root subLayers, **all of which must be opened** just to compose the one prim.  If 
-those layers are lazy-access `usdc` layers, we do not expect this additional cost to be exorbitatnt, but
-will still generally be an order(s) of magnitude degredation.
+that is just a guess, albeit a likely one.  But more importantly, even with smart use of
+[Stage Masking](https://openusd.org/release/api/class_usd_stage_population_mask.html#details) 
+to compose only the one root prim we care about, a stage's root layerStack may consist of dozens to 
+hundreds of root subLayers, **all of which must be opened** just to compose the one prim.  If 
+those layers are lazy-access `usdc` layers, we do not expect this additional cost to be exorbitant, but
+nevertheless may generally be an order(s) of magnitude degredation.
+
+### Sub-root References
+Sub-root references pose a similar issue to the "performance risk".  In the current "Stage Metadata"
+encoding, sub-root references do not further degrade the referencing stage's ability to determine the
+referenced metrics... although that is because it is _already_ difficult for _any_ reference: as 
+described above, the referencing stage must find the layer targeted by "the correct" reference, and then
+consult that layer's metadata -- whether the reference targets a root prim or not.
+
+In the proposed applied schema encoding, when the referenced scene is "set up correctly for referencing"
+it becomes straightforward for the referencing scene to access the metrics because they are composed into
+the targeted prim (and is therefore also durable in the face of stage-flattening).  However, we cannot
+predict which prims may be targeted in the referenced scene, and is is neither practical nor desirable
+to apply the metrics redundantly to every prim in the scene.  If the referenced scene is "well formed
+for root-prim referencing", then a client making a sub-root reference in another scene would need to 
+**separately** compose the referenced scene in order to search up the targeted prim's 
+**composed ancestors** to determine the target prim's metrics, and apply them appropriately on the 
+referencing prim.  Again, this is quite a bit more work.
+
+We note, however, that sub-root references must **already be considered an advanced feature** with which
+care must be exercized.  For example, all "inherited binding" behaviors such as UsdShade Material binding
+and UsdSkel Skel Binding are already brittle in the face of sub-root referencing, for exactly the same
+reason as the metrics API's would be.  Primvars authored on ancestors of a targeted geometry prim will
+also "fall off" and therefore potentially change the rendered look of a targeted prim.  For these reasons,
+we do not consider the additional obfuscation of data with API schemas in these cases to be a significant 
+detraction.
+
