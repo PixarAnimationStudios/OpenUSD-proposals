@@ -124,24 +124,33 @@ properly compose the layer into the stage, it is not problematic that when a sta
   coordinate system of the root layer.
 
 ### Stage Metadata
-Stage layer metadata coopts the root layer (with the potential for a single override in the
+Stage layer metadata co-opts the root layer (with the potential for a single override in the
 root (only) session layer) to make a statement about all of the data contained in the scene
 or stage.  This encoding for "stage data" at first seemed attractive because it eliminates
 the need to pick one of potentially many root prims on which to encode information that
 can reasonably be thought of as applying to the entire stage, and it is the choice Pixar 
-made many years ago in Presto to encode the frame/time range of animated scenes.
+made many years ago in Presto to encode the frame/time range of animated scenes.  It also has
+the very nice properties that:
+* This encoding is perfectly suited and unambiguous when considering a stage/asset
+  **in isolation**, or in a uniform environment/pipeline (such as Pixar's) where the majority
+  of metrics are uniform for all assets.
+* When the need arises to query one of the metrics for a scene/asset that is not already
+  composed in a stage in the querying application, it is very easy and economical to
+  interrogate the scene or asset.
 
-When we designed USD's [assetInfo feature,](https://openusd.org/dev/api/class_usd_model_a_p_i.html#Usd_Model_AssetInfo)
+However, when we designed USD's [assetInfo feature,](https://openusd.org/dev/api/class_usd_model_a_p_i.html#Usd_Model_AssetInfo)
 even though the current equivalent feature in Presto was layer-metadata based, our experience 
 informed us that a prim-based encoding would be superior, because we strongly desired:
 1. AssetInfo to persist at namespace asset-boundaries even when a stage is flattened
 2. A simple way to access AssetInfo for referenced assets in a composed stage, i.e. not
    needing to manually inspect all of the layers in a prim's PrimStack, as one **must** do
-   to retrieve stage metadata from a referenced layer.
+   to retrieve stage metadata from a referenced layer. 
 
 However, we did not apply this analysis to many other uses of stage metadata we selected for
-USD's design.  Following is an enumeration of stage metadata we believe to be problematic, 
-and why (the reason is similar for most).
+USD's design, because, while we expected `assetInfo` to vary over a composed scene, we did not
+expect `upAxis` or `metersPerUnit` to similarly vary, however experience in the broader use of
+OpenUSD has proven this false.  Following is an enumeration of stage metadata we believe to be 
+problematic, and why (the reason is similar for most).
 * `metersPerUnit` - defines the linear metric by which to interpret geometric data in the 
   scene.  When assets with different metrics are referenced into the same scene, we advise
   applying a corrective scale on the referencing prim.  The non-composed nature of 
@@ -149,22 +158,42 @@ and why (the reason is similar for most).
   in the face of asset changes or flattening.
 * `upAxis` - follows `metersPerUnit` logic, as it also implies a corrective transformation.
 * `kilogramsPerUnit` from the UsdPhysics schema domain suffers from the same non-composability
-  problems 
+  problems.  Unlike `upAxis` and `metersPerUnit`, **there is no corrective that can be applied
+  in the referencing scene to compensate for the referenced metric** if it differs from that
+  of the referencing scene.  Unless we would require all consumers to check every prim for
+  references and examine target layers when performing physics (which is obviously ludicrous),
+  we would need to devise _an alternate encoding_ that could represent the metric on the referencing
+  prim itself, and teach clients to look for that.
 * `startTimeCode` and `endTimeCode` - It is possible, with referencing and animated visibility,
   to construct a scene comprised of other scenes, and when layerOffsets are applied on the
   references, the animation will be adjusted accordingly; however, the animation _range_
   encoded in these two non-composed data will not - nor will they be very accessible.
 * `colorConfiguration` and `colorManagementSystem` also suffer from the inaccessibility of
-  opinions in referenced assets.  It is unclear whether this is as inconvenient a situation
-  as for other data listed here, as it is typically not feasible to rectify a mismatch, but
-  at least mismatches could be more easily detectable.
+  opinions in referenced assets.  Since, currently, the only way OpenUSD provides for specifying
+  a default/fallback source colorSpace for a scene is _via_ an external `colorConfiguration`
+  document, we are in precisely the same position as with `kilogramsPerUnit`.
+
+We could provide utilities that would make it easier to account for metrics in referenced scenes
+that _can_ be compensated **at the time of adding a reference to the scene/asset**, which would,
+in the case of `upAxis` and `metersPerUnit`, add xformOps on the referencing prim to bring the
+referenced coordinate system into the referencing coordinate system.  However, this approach has
+a number of limitations:
+* There are several ways to add references and payloads in USD, and these activities are not uncommon
+  in pipeline scripts.  Ensuring that all such sites call an appropriate UsdUtils utility function
+  seems difficult.
+* Since new metrics can be a necessary part of new schemas or schema domains, this mechanism would
+  need to provide its own plugin registry to allow extensions to ensure _their_ metrics are
+  compensated.
+* If the referenced asset changes in a way that affects a metric, _post_ adding the reference, our
+  compensation will no longer be correct, and detecting this situation automatically is onerous.
+* But perhaps most importantly, as we saw above, some metrics cannot be compensated with existing
+  encodings, therefore requiring new/alternate/duplicate encodings to be created.
 
 ## Proposal to Evolve Stage Metadata to Applied Schemas
 In addition to promoting the guidance on what concepts are safe to encode in layer metadata,
-we propose to migrate, with backwards compatibility of existing core API (for at least a very 
-long deprecation interval, if not in perpetuity), the stage metadata enumerated above into
-appropriate Applied schemas that can be applied to any prim.  We will post followup proposals
-with specifics for the categories present above, which we believe are:
+we propose, with backwards compatibility for older assets, **to migrate the stage metadata 
+enumerated above into appropriate Applied schemas that can be applied to any prim**.  We will 
+post followup proposals with specifics for the categories present above, which we believe are:
 * **UsdSceneAPI**, containing `startTimeCode` and `endTimeCode` as `timeCode`-valued **attributes**.
   This schema will address [other concerns the community has expressed about organizing
   "top-level scene data"](https://groups.google.com/g/usd-interest/c/HpF60yzj_pI/m/EIjXW_sLBwAJ)
