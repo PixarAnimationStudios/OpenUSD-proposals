@@ -17,9 +17,6 @@ https://github.com/mmp/pbrt-v4/blob/master/src/pbrt/cameras.h
 
 PBRT defines Orthographic, Perspective, Spherical, and Realistic cameras.
 
-@TODO introduce at least Orthographic, in addtion to the present model
-which would be Perspective.
-
 ## Use Cases
 
 ### Interesting Looking Models
