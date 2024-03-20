@@ -170,11 +170,6 @@ class PhysicalCameraSensor "PhysicalCameraSensor" (
     photochemical characteristics of a sensor, it's geometric.
     The electrical or photochemical characteristics are to be described
     either here or in another class within this schema.
-
-    float2 shift; // in millimeters
-    float2 enlarge; // multiplicative
-    float2 aperture; // in millimeters
-    float handedness; // -1 for left handed, 1 for right handed
     """
 )
 {
