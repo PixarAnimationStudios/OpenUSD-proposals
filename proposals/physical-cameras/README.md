@@ -73,6 +73,8 @@ Insert streamed camera metadata scenario here
 
 ## Relationship to Image Plane proposal
 
+Image Plane proposal is here: [https://github.com/PixarAnimationStudios/OpenUSD-proposals/tree/main/proposals/image-planes](https://github.com/PixarAnimationStudios/OpenUSD-proposals/tree/main/proposals/image-planes)
+
 These should be complementary, and any information related to elements
 in this proposal, should be migrated to this proposal. Otherwise, the Image
 Plane proposal specifically describes the mapping of a capture image to an
