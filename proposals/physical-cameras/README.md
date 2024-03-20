@@ -122,10 +122,6 @@ class PhysicalCamera "PhysicalCamera" (
     shutter angle is the shutter duration * frame rate * 360 degrees, and not
     computed here.
 
-    float          flange_distance;   // distance from film back to lens flange, mm
-    float          shutter_open;      // offset in seconds from start of exposure
-    float          shutter_duration;  // duration of exposure, in seconds
-
      """
 )
 {
