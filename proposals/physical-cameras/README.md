@@ -12,8 +12,6 @@
 
 This schema usefully bridges the description of physical cameras to USD scenes.
 
-@TODO PBRT has complex lens model, see RealisticCamera. Consider it for
-adoption here, perhaps as a secondary structure in Optics, or as a subclass.
 
 https://github.com/mmp/pbrt-v4/blob/master/src/pbrt/cameras.h
 
