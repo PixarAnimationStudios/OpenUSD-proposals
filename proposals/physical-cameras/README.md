@@ -58,13 +58,6 @@ files for these lenses, complete with both a custom lens model that properly
 describes the unique characteristics of their lenses, and also a best match
 PhysicalCameraLensModelPinhole for use in realtime previs scouting.
 
-### Smart Stage Studios
-
-insert LED wall scenario here
-
-### Streaming Behemoth
-
-Insert streamed camera metadata scenario here
 
 ## Relationship to Image Plane proposal
 
