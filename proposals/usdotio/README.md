@@ -64,16 +64,17 @@ Here is a mock-up of a timeline after both a 'Speaker Analysis' tool and a 'Scen
 ![Alt](/proposals/usdotio/Speaker%20and%20Scene%20Analysis.png)
 
 ## Command line (proposed)
-1. Embed the OpenTimelineIO metadata from otio.json into a OpenUSD file:
-    - `usdotio add otio.json usdfile.usd`
+1. Embed the OpenTimelineIO metadata from json.otio into a OpenUSD file:
+    - `usdotio add json.otio usdfile.usd`
 2. Save the OpenTimelineIO metadata written by #1 to a JSON file:
-    - `usdotio save -o otio.json usdfile.usd`
+    - `usdotio save -o json.otio usdfile.usd`
 3. Find the Omniverse sequencer information, remove, convert to
 OpenTimelineIO format and add back in again as OTIO metadata
-    - `usdotio update -v2 usdfile.usd`
+    - `usdotio update usdfile.usd`
 
 ## Strawman implementation (PR #2995)
 We've produced a proposed implementation the usdotio 'add' and 'save' commands (and an initial implementation of an OpenUSD codeless schema for OTIO), to spark discussion.
+The codeless schema prepends the "Otio*" prefix to all its schemas and it is a direct 1:1 mapping of an OpenTimelineIO file. 
 
 *"Adds a python script to add OpenTimelineIo data to and from a .usd file. The .otio information is stored in a tree fashion for easy inspecting it with usdview or similar.
 You can have multiple .otio timelines, so that, for example, a TV set model carries its own .otio timeline differently from the main .otio at the root."*
@@ -89,3 +90,4 @@ An ongoing discussion within the OTIO community is how best to handle both dense
 ## Supporting documentation
 - [PDF presentation](/proposals/usdotio/OpenTimelineIO%20&%20OpenUSD.pdf)
 - [OTIO + OpenUSD discussion / PoC document on ASWF.:OTIO](https://docs.google.com/document/d/1pjWVgwJjt6N6V868geHNKBnqlZ_ACZCsEfZIaQRe-18)
+ 
