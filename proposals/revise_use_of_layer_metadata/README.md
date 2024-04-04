@@ -49,8 +49,8 @@ look like in `usda` syntax.
          bool finaled = false
     }
 
-    # `defaultPrim` names a root-level prim on this STAGE for the composition engine to
-    # target when no target is provided in a reference or payload arc to this layer.
+    # `defaultPrim` names a prim on this STAGE for the composition engine to target
+    # when no target is provided in a reference or payload arc to this layer.
     defaultPrim = "MyModel"
 
     # 'metersPerUnit' provides information for clients about how the linear units of
@@ -168,10 +168,15 @@ problematic, and why (the reason is similar for most).
   to construct a scene comprised of other scenes, and when layerOffsets are applied on the
   references, the animation will be adjusted accordingly; however, the animation _range_
   encoded in these two non-composed data will not - nor will they be very accessible.
-* `colorConfiguration` and `colorManagementSystem` also suffer from the inaccessibility of
-  opinions in referenced assets.  Since, currently, the only way OpenUSD provides for specifying
-  a default/fallback source colorSpace for a scene is _via_ an external `colorConfiguration`
-  document, we are in precisely the same position as with `kilogramsPerUnit`.
+* `colorConfiguration` and `colorManagementSystem` present an ineresting case.  It would be of very
+  dubious usefulness to allow either of these settings to vary over a scene... it would in fact 
+  be quite problematic to force a renderer to use two differnt color configuration management
+  systems in the same scene.  So they seem to be exceptional in that they are non-composition,
+  non-advisory metrics data that is truly limited to global scope.  **However**, currently, the
+  only way OpenUSD provides for specifying a default/fallback source colorSpace for a scene is
+  _via_ an external `colorConfiguration` document.  We **do** expect for different assets to be
+  created in different source colorSpaces, and we are, therefore, in precisely
+  the same position as with `kilogramsPerUnit` with respect to source colorSpace.
 
 We could provide utilities that would make it easier to account for metrics in referenced scenes
 that _can_ be compensated **at the time of adding a reference to the scene/asset**, which would,
@@ -200,10 +205,9 @@ post followup proposals with specifics for the categories present above, which w
   as well.
 * **UsdGeomMetricsAPI**, containing `metersPerUnit` and `upAxis` as attributes
 * **UsdPhysicsMetricsAPI** containing `kilogramsPerUnit` as an attribute
-
-And potentially:
-* **UsdColorConfigurationAPI** containing `colorConfiguration` and `colorManagementSystem`
-  as attributes
+* **UsdColorSpaceAPI** or similar schema(s) to allow for both defining new colorSpaces for use in
+  the prim-rooted subtree, and specifying already-known source colorSpaces to be considered 
+  in-effect for the prim-rooted subtree.
 
 It will be incumbent on authoring applications to apply the appropriate stage-related schemas 
 to any prim that is likely to be referenced into other stages, which should include all 
@@ -252,12 +256,13 @@ it becomes straightforward for the referencing scene to access the metrics becau
 the targeted prim (and is therefore also durable in the face of stage-flattening).  However, we cannot
 predict which prims may be targeted in the referenced scene, and is is neither practical nor desirable
 to apply the metrics redundantly to every prim in the scene.  If the referenced scene is "well formed
-for root-prim referencing", then a client making a sub-root reference in another scene would need to 
+for root-prim referencing", then a client making a sub-root reference in another scene will need to 
 **separately** compose the referenced scene in order to search up the targeted prim's 
 **composed ancestors** to determine the target prim's metrics, and apply them appropriately on the 
-referencing prim.  Again, this is quite a bit more work.
+referencing prim.  The client would be able to use [Stage Masking]([url](https://openusd.org/release/api/class_usd_stage.html#ade1d90d759a085022ba76ff910815320)) 
+to compose _only_ the targetted prim and its ancestors, but this is still quite a bit more work.
 
-We note, however, that sub-root references must **already be considered an advanced feature** with which
+We note, however, that **sub-root references must already be considered an advanced feature** with which
 care must be exercized.  For example, all "inherited binding" behaviors such as UsdShade Material binding
 and UsdSkel Skel Binding are already brittle in the face of sub-root referencing, for exactly the same
 reason as the metrics API's would be.  Primvars authored on ancestors of a targeted geometry prim will
