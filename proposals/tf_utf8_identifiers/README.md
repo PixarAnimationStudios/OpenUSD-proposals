@@ -1,4 +1,4 @@
-![Status:Published](https://img.shields.io/badge/Published-green)
+![Status:Implemented, 24.03](https://img.shields.io/badge/Implemented,%2024.03-blue)
 # Unicode Identifiers in USD
 
 Copyright &copy; 2022-2023, NVIDIA Corporation, version 1.1
