@@ -6,6 +6,9 @@ Please put a brief synopsis of the proposal here
 The proposal itself should be in the PR as a markdown file to aid annotation and feedback.
 -->
 
+<!--Replace the link here with a link to your own proposal markdown file -->
+[Link to Rendered Proposal](https://github.com/PixarAnimationStudios/OpenUSD-proposals/blob/main/README.md)
+
 ### Supporting Materials
 
 <!--
