@@ -37,7 +37,7 @@ When a proposal has taken enough shape that it warrants detailed feedback and it
 
 When writing and submitting a proposal, we make the following suggestions for receiving the best feedback.
 
-1. Include a link to the rendered proposal. This can be as simple as linking to the markdown file in your source branch.
+1. Include a link to the rendered proposal in your PR description. This can be as simple as linking to the markdown file in your source branch.
    
    This makes it significantly easier for someone to read the document in a well formatted way.
 2. Your PR and proposal should include, and ideally start with, a short summary of what your change would achieve.
