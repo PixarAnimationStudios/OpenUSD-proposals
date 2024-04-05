@@ -197,8 +197,12 @@ a number of limitations:
 ## Proposal to Evolve Stage Metadata to Applied Schemas
 In addition to promoting the guidance on what concepts are safe to encode in layer metadata,
 we propose, with backwards compatibility for older assets, **to migrate the stage metadata 
-enumerated above into appropriate Applied schemas that can be applied to any prim**.  We will 
-post followup proposals with specifics for the categories present above, which we believe are:
+enumerated above into appropriate Applied schemas that can be applied to any prim**.  Without
+currently-known exception, the information contained in these applied schemas is making a statement
+about the subtree of namespace rooted at the prim; in other words, the properties the schemas contain 
+are effectively inherited to descendant prims until reaching a prim that itself applies the same 
+schema, which then becomes authoritative for its own subtree.  We will post followup proposals with 
+specifics for the categories present above, which we believe are:
 * **UsdSceneAPI**, containing `startTimeCode` and `endTimeCode` as `timeCode`-valued **attributes**.
   This schema will address [other concerns the community has expressed about organizing
   "top-level scene data"](https://groups.google.com/g/usd-interest/c/HpF60yzj_pI/m/EIjXW_sLBwAJ)
