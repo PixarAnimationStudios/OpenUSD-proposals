@@ -33,6 +33,38 @@ When a proposal has taken enough shape that it warrants detailed feedback and it
     1. The PR may include links to supporting materials that could not be included with the proposal files, such as white papers. Add links to the "Supporting Materials" section of the PR body.
     2. Please mention and link any issues and PRs in [OpenUSD](https://github.com/PixarAnimationStudios/OpenUSD) or [OpenUSD-proposals](https://github.com/PixarAnimationStudios/OpenUSD-proposals) that are related to the new proposal. A label will be created to link relevant discussions together. 
 
+### Guidance for Writing Proposals
+
+When writing and submitting a proposal, we make the following suggestions for receiving the best feedback.
+
+1. Include a link to the rendered proposal. This can be as simple as linking to the markdown file in your source branch.
+   
+   This makes it significantly easier for someone to read the document in a well formatted way.
+2. Your PR and proposal should include, and ideally start with, a short summary of what your change would achieve.
+
+   A possible structure could be:
+   1. **Summary** of what you're hoping to achieve
+   2. A **problem statement** explaining why what you are proposing is not currently possible
+   3. A **glossary of terms** that readers may not be familiar with.
+   4. If applicable, any links to **existing implementations or reference documents** that may be useful 
+   5. **Details** about your proposal, such as why you are making certain choices
+   6. **Risks** that you anticipate (if any)
+   7. **Alternate solutions** that you have considered (if any), and why you didn't go with them
+   8. Any **excluded topics**, that you have left out and why. These may be things you want to handle separately in the future for example.
+
+3. It is highly recommended that any submitted proposal include text examples of what your proposal would look like in `.usda` syntax.
+
+#### Large Proposals
+
+Some proposals are inherently of significant size. In those case it is recommended to do one or both of the following:
+
+1. Split your proposal into multiple smaller proposals.
+   1. Create a sub-proposal PR per major feature. 
+   2. Create an umbrella proposal that links to each sub-proposal, ordered by their priority and dependency on each other.
+2. Divide your proposal into smaller sections. These can be sections within the same document or separate documents.
+
+   This helps make each section easier to digest and provide feedback on.
+
 ### Discuss the proposal
 
 A typical workflow for the proposal PR will have some initial discussion on the PR itself. Once some level of consensus has been reached on the proposal details, the PR may be landed. Iteration of the proposal may proceed via subsequent PRs, discussions in the corresponding issue, or using other tools available in github's interface.
