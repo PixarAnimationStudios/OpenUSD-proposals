@@ -107,6 +107,7 @@ The style for the text is included in a separate class named TextStyle. A Simple
 Currently the TextStyle class includes the following properties:
 
 - typeface. The string for the font name. This property must be specified for TextStyle. There is no default value.
+- fontType. This is a string token, which could be "ttf/otf", "fon", "pcf", "shx" and any other font types. Because most of the font library has the similar handling for ttf font and otf font, we use "ttf/otf" for both ttf font and otf font. By default the fontType is "ttf/otf".
 - textHeight. An int value represents the height of the text. This property must be specified for TextStyle. There is no default value. The unit is textMetricsUnit. If you want to get a float text height, you need to use a scale matrix.
 - bold. A boolean value. By default it is false.
 - italic. A boolean value. By default it is false.
@@ -126,7 +127,7 @@ Currently the TextLayout class includes the following properties:
 
 - direction. This is a string token, which could be "defaultDir", "leftToRight", "rightToLeft", "topToBottom" or "bottomToTop". By default it is "defaultDir", which means the direction is decided by the script of the text data. "leftToRight" means the text is written from left to right. "rightToLeft" means the text is written from right to left. "topToBottom" means the text is written from top to bottom. "bottomToTop" means the text is written from bottom to top. (Currently in our implementation the direction will always be "defaultDir". The other settings will not take effect, but will be implemented in the future.)
 
-By including the SimpleText, TextStyle, and TextLayout class you can get a complete text primitive which can be rendered in HdStorm.
+By including the SimpleText, TextStyle, and TextLayout class you can get a complete text primitive. You need to bind the text primitive to a material, then it can be rendered in HdStorm.
 
 You can add more properties. For example, you may add "points" property, which is directly set by the user rather than generated when we generate the rprim for text. 
 
@@ -216,7 +217,7 @@ HdStSimpleText and HdStMarkupText are added as the Rprim for text. The HdStMarku
 
 The underline, overline and strikethrough are specially handling. They are not included in the text draw item. For each line, we will generate a basisCurve draw item.
 
-There is also a specified text.glslfx for the text primitive. Both HdStSimpleText and HdStMarkupText will use this shader. The shader contains a full implementation of vertex shader, but in the fragment shader, it requires a function getOpacity. The getOpacity function should return the opacity of the pixel for a character glyph. This function must be implemented in a surface shader. As a result, both the SimpleText and MarkupText primitive must bind to a material, and the material should contain the surface shader that implement the getOpacity function. In common case, the surface shader should be provided by a UsdImagingTextRenderer. See "UsdImagingTextRenderer" part below. 
+There is also a specified text.glslfx for the text primitive. Both HdStSimpleText and HdStMarkupText will use this shader. The shader contains a full implementation of vertex shader, but in the fragment shader, it requires a function getOpacity. The getOpacity function should return the opacity of the pixel for a character glyph. In current implementation, we hope that the getOpacity function is implemented in the material shader together with the surface shader. As a result, both the SimpleText and MarkupText primitive must bind to a material, and the material should contain an implementation of the getOpacity function. In common case, the material shader should be provided by a UsdImagingTextRenderer. See "UsdImagingTextRenderer" part below. 
 
 # The utilities
 In our implementation, three utilities are added to help display the text. They are added as plugins.
@@ -224,7 +225,9 @@ In our implementation, three utilities are added to help display the text. They 
 ### The UsdImagingMarkupParser
 The UsdImagingMarkupParser plugin class is to parse the markup string of the MarkupText Gprim. Providing the markup language, it can divide the string into substrings, and each substring will have a single style. It will also generate the paragraph style and column style if the markups contain the information.
 
-Currently there is no default implementation. 
+The UsdImagingMarkupParser implementation should provide the markup language that it supports. When the user would like to get a parser, he put the markup language that the parser should support, and the UsdImagingMarkupParserRegistry will get the suitable parser.
+
+Currently we provide a default implementation whose name is "CommonParser", which could parse a string contains MText markup. 
 
 ### The UsdImagingText
 The UsdImagingText plugin class is a wrapper of a font library such as FreeType. It can get the font information and character information. It can also do multilanguage handling. With these functionality, the UsdImagingText can generate the layout: for SimpleText, it is how each character is positioned and also the extent of the whole string; and for MarkupText, it can also do line break and handle the paragraph style and column style.
@@ -233,7 +236,9 @@ The UsdImagingText can also get the control point of a character, or the rasteri
 
 The text library also provide utility functions such as get the path of the system font folder, get the extents of a certain text string before we generate layout for it and so on.
 
-Currently there is no default implementation. 
+When the user would like to get an implementation of UsdImagingText, he should provide the font folder that the class will use. Or else, we will use the default font folder in the operating system.
+
+Currently we provide a default implementation whose name is "CommonText".
 
 ### The UsdImagingTextRenderer
 The UsdImagingTextRenderer plugin class is to generate the rendering geometry, texture and texture coordinate for a character. It has an TextRendererInput, which could be the rasterized image of the character together with the dimension of the image, or the control points of the character. It will use a text rendering algorithm to generate the rendering information. 
@@ -242,7 +247,10 @@ The UsdImagingTextRenderer also should provide a surface shader, which implement
 
 The name of the UsdImagingTextRenderer should be put in the text primitive, and it must correspond to the material which is bound to the text primitive. If the "renderer" property is set to empty, we will use the first UsdImagingTextRenderer in the registry.
 
-Currently there is no default implementation. 
+Currently we provide a default implementation whose name is "SampleTextRenderer", which will require the control points for each character, and generate a rectangle for each character. The characters will be rendered just as rectangles. 
+
+### Enable and disable the build of default plugins
+We add two new build configurations "--textplugin" and "--no-textplugin" to USD build. By default, the configuration is "--no-textplugin". So the three default plugins "CommonParser", "CommonText" and "SampleTextRenderer" will not be built together with USD. If you want to render the text primitive, you need to provide the dlls of your own set of plugins, and put the dlls in the binary folder. If you explicitly add "--textplugin" to the build command, the three default plugins will be built.
 
 # The imaging adapter
 Currently there is the UsdImagingSimpleTextAdapter for the SimpleText primitive, and UsdImagingMarkupTextAdapter for the MarkupText primitive. They can read the properties and will use the three plugins above to generate the geometry, indices and texture for the text rprim.
