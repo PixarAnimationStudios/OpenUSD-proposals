@@ -50,9 +50,13 @@ When writing and submitting a proposal, we make the following suggestions for re
    5. **Details** about your proposal, such as why you are making certain choices
    6. **Risks** that you anticipate (if any)
    7. **Alternate solutions** that you have considered (if any), and why you didn't go with them
-   8. Any **excluded topics**, that you have left out and why. These may be things you want to handle separately in the future for example.
+   8. Any **excluded topics**, that you have left out and why. These may be things you want to handle separately in the
+      future for example.
 
-3. It is highly recommended that any submitted proposal include text examples of what your proposal would look like in `.usda` syntax.
+3. It is highly recommended that any submitted proposal include text examples of what your proposal would look like
+   in `.usda` syntax.
+4. It's recommended that long sentences be split over multiple lines in your Markdown file.
+   This allows more granular feedback, and easier viewing of the files. A recommended line length is 120 characters.
 
 #### Large Proposals
 
