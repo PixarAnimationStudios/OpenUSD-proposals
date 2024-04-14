@@ -56,7 +56,7 @@ When writing and submitting a proposal, we make the following suggestions for re
 3. It is highly recommended that any submitted proposal include text examples of what your proposal would look like
    in `.usda` syntax.
 4. It's recommended that long sentences be split over multiple lines in your Markdown file.
-   This allows more granular feedback, and easier viewing of the files. A recommended line length is 120 characters.
+   This allows more granular feedback, and easier viewing of the files.
 
 #### Large Proposals
 
