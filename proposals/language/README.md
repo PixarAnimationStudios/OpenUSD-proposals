@@ -102,7 +102,7 @@ Our recommendation is:
 
 1. If your attribute or prim is missing a language, check the parent hierarchy for an inherited value
 2. If no language is specified, and if your runtime can infer a language, it is free to do so but does not have to.
-3. If you cannot or chose not to infer a language, assume the users current locale.
+3. If you cannot or chose not to infer a language, assume the user's current locale.
 
 This matches the behaviour of common assistive technologies like screen readers.
 
