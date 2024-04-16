@@ -5,7 +5,7 @@
 ## Summary
 
 We propose additions to USD to allow specifying the human language locale used so that content may be
-localized or provide hints for assistive technologies.
+localized to provide language and locale context for rendered text, speech synthesis, assistive technologies, or other applications.
 
 We propose use of [BCP-47](https://www.w3.org/International/core/langtags/rfc3066bis.html) specifiers according
 to the [Unicode CLDR](https://cldr.unicode.org) specification, using underscores as the delimiter.
