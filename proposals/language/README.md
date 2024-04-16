@@ -35,7 +35,7 @@ A few changes and upcoming changes to USD increase the need to specify language:
    localization for user playback and assistive technologies may be useful.
 
 Since there is no language specification, it is unclear for tooling and users how content should be interpreted
-when used by language aware technologies.
+when used by language-aware technologies.
 
 ## Glossary of Terms
 
