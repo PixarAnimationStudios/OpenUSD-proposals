@@ -155,6 +155,25 @@ def foo {
 
 One advantage of this system is that you can have your translations in different layer files and referenced it in.
 
+It would be recommended that at least one version of the attribute exclude the language token, so that it can 
+fallback to the inherited language and also be used as the fallback if a user asks for a language that has no matching
+languages available.
+
+#### Token Delimiter
+
+The proposal currently implicitly uses the last token as the language.
+It might however be preferable to be explicit about this by also prefixing `lang_` or `lang:` to the last token.
+
+This could look like one of the below
+
+```
+string text:lang_en_us
+string text:lang:en_us
+```
+
+This perhaps makes things longer, but does make it easier to discern that a token represents a language in a wider
+range of use cases. 
+
 #### Why not Variants?
 
 Variants are also a possible solution, however we believe that this becomes difficult for systems to work with as
@@ -183,6 +202,9 @@ Using the example above, a call to `GetLanguagePurposes(foo, "text")` would give
 - (en_US, foo:text:en_US)
 - (fr, foo:fr)
 
+In this case, the `<Fallback or Unknown>` represents that it should follow the logic 
+in the `Unspecified Language Fallback` section.
+
 I would suggest another function like
 
 ```
@@ -192,6 +214,21 @@ TfToken UsdLocaleAPI::GetFallbackLanguage(const UsdPrim& prim)
 That would return either the inherited value or a sentinel `Unknown` value when no language is specified.
 Perhaps USD could have some convenience function to do user locale lookup, but I do not think that needs to be a
 requirement.
+
+#### Language Selection Recommendations
+
+When the requested or desired language is not represented in the set of languages within the file, there are some recommendations
+on how a runtime can pick a fallback option.
+
+Following the recommendations of CLDR and BCP-47, we suggest:
+
+1. If a language is available within the set of languages, pick that attribute. e.g. `en_US` matches `text:en_US`
+2. If a language isn't available, check for a more specific version of that language.
+   e.g. `de_DE` matches `text:de_DE_u_co_phonebk`
+3. If a more specific language isn't available, then pick a less specific purpose.
+   e.g. `en_US` matches `text:en`
+4. If a less specific version isn't available, take the version without any language specified.
+   e.g. `en_US` matches `text`
 
 ## Risks
 
