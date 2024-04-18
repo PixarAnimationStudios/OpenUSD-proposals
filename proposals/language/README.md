@@ -10,13 +10,15 @@ localized or provide hints for assistive technologies.
 We propose use of [BCP-47](https://www.w3.org/International/core/langtags/rfc3066bis.html) specifiers according
 to the [Unicode CLDR](https://cldr.unicode.org) specification, using underscores as the delimiter.
 
-We propose specifying the language as metadata on prims as well as a purpose on attributes.
+We propose specifying the language as [metadata](https://openusd.org/release/glossary.html#usdglossary-metadata),
+or as an [attribute](https://openusd.org/release/glossary.html#attribute)
+on [prims](https://openusd.org/release/glossary.html#usdglossary-prim) as well as a purpose on attributes.
 
 ```
 def Foo(
     prepend apiSchemas = ["LocaleAPI"]
-    language = "en_US"
 ) { 
+    uniform string locale:langue = "en_US"
     string text = "There's a snake in my boot"
     string text:fr_CA = "Il y a un serpent dans ma botte"
     string text:hi = "मेरे जूते में एक सांप है"
@@ -129,8 +131,9 @@ However, per the new proposal this should move to an API schema, and we'd propos
 ```
 def Foo(
     prepend apiSchemas = ["LocaleAPI"]
-    language = "en_CA"
-) { ... }
+) {
+    uniform string locale:langue = "en_US"
+}
 ```
 
 In both scenarios, the language is inherited as the default value for every prim and attribute below it.
@@ -208,7 +211,7 @@ in the `Unspecified Language Fallback` section.
 I would suggest another function like
 
 ```
-TfToken UsdLocaleAPI::GetFallbackLanguage(const UsdPrim& prim)
+TfToken UsdLocaleAPI::ComputeFallbackLanguage(const UsdPrim& prim)
 ```
 
 That would return either the inherited value or a sentinel `Unknown` value when no language is specified.
