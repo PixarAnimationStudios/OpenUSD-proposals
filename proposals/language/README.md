@@ -5,7 +5,7 @@
 ## Summary
 
 We propose additions to USD to allow specifying the human language locale used so that content may be
-localized or provide hints for assistive technologies.
+localized to provide language and locale context for rendered text, speech synthesis, assistive technologies, or other applications.
 
 We propose use of [BCP-47](https://www.w3.org/International/core/langtags/rfc3066bis.html) specifiers according
 to the [Unicode CLDR](https://cldr.unicode.org) specification, using underscores as the delimiter.
@@ -37,7 +37,7 @@ A few changes and upcoming changes to USD increase the need to specify language:
    localization for user playback and assistive technologies may be useful.
 
 Since there is no language specification, it is unclear for tooling and users how content should be interpreted
-when used by language aware technologies.
+when used by language-aware technologies.
 
 ## Glossary of Terms
 
@@ -104,7 +104,7 @@ Our recommendation is:
 
 1. If your attribute or prim is missing a language, check the parent hierarchy for an inherited value
 2. If no language is specified, and if your runtime can infer a language, it is free to do so but does not have to.
-3. If you cannot or chose not to infer a language, assume the users current locale.
+3. If you cannot or chose not to infer a language, assume the user's current locale.
 
 This matches the behaviour of common assistive technologies like screen readers.
 
