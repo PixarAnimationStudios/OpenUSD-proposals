@@ -46,9 +46,9 @@ def Xform "MilkCartonA" (
     }
 
     variantSet "shadingTest" (
+        """Added UPC# for the display names"""
         displayName = "Shading Test Variations"
         doc = "Shading variations that are currently being explored for product placement"
-        comment = "Added UPC# for the display names"
         variantDisplayNames = { "milkBrandA" : "Milk Brand A (UPC#: 123-ABC)", "milkBrandB" : "Milk Brand B (UPC#: 456-DEF)" }
         hidden = True
     ) = {

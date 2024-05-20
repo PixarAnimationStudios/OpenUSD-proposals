@@ -14,6 +14,7 @@ Matthew Kuruc
     - [Custom Metadata Fields](#custom-metadata-fields)
     - [Metadata Value Resoltuion](#metadata-value-resolution)
 - [Example](#example)
+- [Variant Display Name](#variant-display-names)
 - [Variant Ordering](#variant-ordering)
 - [Crate File Format Support](#crate-file-format-support)
 - [UsdVariantSet is not a UsdObject](#UsdVariantSet-is-not-a-usdobject)
@@ -35,13 +36,13 @@ A `UsdVariantSet`, which does not derive from a `UsdObject`, has no such API to 
 
 The following are metadata fields that will be commonly used on a `UsdVariantSet` and will have an explicit API. The fields proposed here will provide the normal accessors and mutators that will be available on a `UsdVariantSet`:
 
+- `comment` - User notes about a variant set
 - `documentation` - Information that can describe the role of the `UsdVariantSet` and its intended uses
 - `displayGroup` - Name to assist with grouping similar `UsdVariantSet`s in editors.
 - `displayName` - Name for the `UsdVariantSet` that can be used in editors
 - `hidden` - Boolean field that can inform an editor if the `UsdVariantSet` should be hidden. This field will have a fallback value of `false`
-- `variantDisplayNames` - Mapping of variant name to a variant's display name that can be used in editors
-- `comment` - User notes about a variant set
-- `variantOrder` - User defined ordering of variants, similar to primOrder and propertyOrder
+- `variantDisplayNames` - Mapping of variant name to a variant's display name that can be used in editors. See [Variant Display Names](#variant-display-names) for more implementation details.
+- `variantOrder` - User defined ordering of variants, similar to primOrder and propertyOrder. See [Variant Ordering](#variant-ordering) for more implementation details.
 - `customData` - User defined dictionary of additional metadata
 
 ## Custom Metadata Fields
@@ -105,9 +106,9 @@ def Xform "MilkCartonA" (
     }
 
     variantSet "shadingTest" (
+        """Added UPC# for the display names"""
         displayName = "Shading Test Variations"
         doc = "Shading variations that are currently being explored for product placement"
-        comment = "Added UPC# for the display names"
         variantDisplayNames = { "milkBrandA" : "Milk Brand A (UPC#: 123-ABC)", "milkBrandB" : "Milk Brand B (UPC#: 456-DEF)" }
         hidden = True
     ) = {
@@ -120,6 +121,10 @@ def Xform "MilkCartonA" (
     }
 }
 ```
+
+## Variant Display Names
+
+Adding display names to variants is another metadata field that this proposal would like to support. This field will need to be handled differently than other displayName metadata fields found on types like `UsdPrim` and `UsdProperty`. Specifically, a mapping of variant name to display name will be required as display name can not be added to a variant. First, there is no `UsdVariant` type to add display name API to. Secondly, and most importantly, all fields within a variant are applied directly to a `UsdPrim` when selected. If a displayName metadata field was added to a variant, that field would be applied to the `UsdPrim`'s displayName and not the variant's. It's for this reason that a mapping of variant name to display name will be added to a `UsdVariantSet`. As described in [Metadata Value Resolution](#metadata-value-resolution), the mapping of variant name to display name will need to be correctly resolved and merged.
 
 ## Variant Ordering
 
@@ -134,9 +139,11 @@ The general consensus is that the USD Crate File Format should "just work" when 
 
 ## UsdVariantSet is not a UsdObject
 
-UsdObject is the base class for `UsdPrim` and `UsdPropert` that provides the common API for accessing metadata. Investigating metadata support for `UsdVariantSet` immediately raised the question of: *“Should UsdVariantSet be a UsdObject?”*. The answer is no, a `UsdVariantSet` should not be a UsdObject. The reason is more philosophical than technical as a `UsdObject` is the common base shared amongst types in OpenUSD’s scenegraph. The idea is that a `UsdObject` is a tangible entity on OpenUSD's scenegraph. These objects can be accessed directly from API such as UsdStage::GetObjectAtPath(), relationships can be established between multiple UsdObjects, they can be included in collections, they will not be discarded during the flattening process, and all UsdObjects share a common set of metadata. This last point is the main reason for asking *"Should UsdVariantSet be a UsdObject?"*; specifically to prevent code duplication. But when thinking about these other points, it becomes clear that deriving `UsdVariantSet` from a `UsdObject` would require quite a few exemptions in OpenUSD.
+`UsdObject` is the base class for `UsdPrim` and `UsdProperty` that provides the common API for accessing metadata. Investigating metadata support for `UsdVariantSet` immediately raised the question of: *“Should UsdVariantSet be a UsdObject?”*. The answer is no, a `UsdVariantSet` should not be a UsdObject. The reason is more philosophical than technical as a `UsdObject` is the common base shared amongst types in OpenUSD’s scenegraph. The idea is that a `UsdObject` is a tangible entity on OpenUSD's scenegraph. These objects can be accessed directly from API such as UsdStage::GetObjectAtPath(), relationships can be established between multiple `UsdObject`s, they can be included in collections, they will not be discarded during the flattening process, and all `UsdObject`s share a common set of metadata. This last point is the main reason for asking *"Should UsdVariantSet be a UsdObject?"*; specifically to prevent code duplication. But when thinking about these other points, it becomes clear that deriving `UsdVariantSet` from a `UsdObject` would require quite a few exemptions in OpenUSD.
 
-From a technical perspective though, deriving `UsdVariantSet` from a `UsdObject` seems logical. It already provides a lot of the metadata API that is presented in this proposal. But `UsdVariantSet` would also inherit API for metadata such as AssetInfo which is not something that applies to a `UsdVariantSet`. It would also create ambiguity with UsdCollectionAPI and UsdRelationship as those expect SdfPaths to UsdObjects like UsdPrim, UsdAttribute or UsdRelationship. What benefit would a collection containing a `UsdVariantSet` provide? Or what does a relationship from a UsdAttribute to a `UsdVariantSet` mean? The convenience of avoiding code duplication does not warrant changing `UsdVariantSet` to be a UsdObject. There is also precedent in OpenUSD for API that provides metadata support without deriving from UsdObject, UsdStage is one such example.
+From a technical perspective though, deriving `UsdVariantSet` from a `UsdObject` seems logical. It already provides a lot of the metadata API that is presented in this proposal. But `UsdVariantSet` would also inherit API for metadata such as AssetInfo which is not something that applies to a `UsdVariantSet`. It would also create ambiguity with `UsdCollectionAPI` and `UsdRelationship` as those expect `SdfPath`s to `UsdObject`s like `UsdPrim`, `UsdAttribute` or `UsdRelationship`. What benefit would a collection containing a `UsdVariantSet` provide? Or what does a relationship from a `UsdAttribute` to a `UsdVariantSet` mean? The convenience of avoiding code duplication does not warrant changing `UsdVariantSet` to be a `UsdObject`. There is also precedent in OpenUSD for API that provides metadata support without deriving from `UsdObject`, `UsdStage` is one such example.
+
+But answering this question leads to discussion on how to best implement metadata support for `UsdVariantSet`. Since `UsdVariantSet` should not be a `UsdObject` a potential implementation for metadata support could lead to unnecessary code duplication. A better approach might be to refactor common metadata API found in `UsdObject` to private internal utilities that can be used for types that do not derive from `UsdObject`. Types such as `UsdStage` and `UsdVariantSet` could use these utilities to implement their own API for metadata, avoiding code duplication and not deriving from `UsdObject`.
 
 ## Stage Flattening
 
