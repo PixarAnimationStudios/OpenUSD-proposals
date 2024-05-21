@@ -15,6 +15,16 @@
 We propose adding attributes to UsdShade `Material` primitives to record the MaterialX library version they were authored
 with. This will allow for MaterialX to provide an automatic upgrade functionality to the data stored in OpenUSD.
 
+The following is an example of a `Material` primitive with the applied schema applied.
+```
+def "Material" MyMaterial ( 
+    prepend apiSchemas = ["MaterialXVersionAPI"]
+)
+{
+    uniform string materialXVersion = "1.39"
+}
+```
+
 ## Introduction
 From its inception, the MaterialX project has considered MaterialX documents to be an archival format.  What goes along 
 with this is an implied promise that opening a MaterialX file from 10+ years ago should generate a material that will 
@@ -48,19 +58,8 @@ We propose adding an applied API schema `MaterialXVersionAPI` (in the spirit of 
 ["Revise use of Layer Metadata in USD"](https://github.com/PixarAnimationStudios/OpenUSD-proposals/blob/main/proposals/revise_use_of_layer_metadata/README.md)) 
 that can record the MaterialX library version on the UsdShade `Material` primitive.  
 
-The following is an example of a `Material` primitive with the applied schema applied.
-```
-def "Material" MyMaterial ( 
-    prepend apiSchemas = ["MaterialXVersionAPI"]
-)
-{
-    uniform string materialXVersion = "1.39"
-}
-```
-
-Adding the version to the `Material` 
-primitive allows for referencing the material directly from a `.mtlx` file. i.e.
-
+Adding the version to the `Material` primitive allows for referencing the material directly from a `.mtlx` file and 
+still retaining the MaterialX library version when the scene is composed. i.e.
 ```
 def "Material" MyMaterial (
     references=@myMaterials.mtlx@</MaterialX/Materials/MyMaterial>
