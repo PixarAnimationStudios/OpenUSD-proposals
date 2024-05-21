@@ -30,7 +30,7 @@ such as usdview. However, there are times when it is desirable to also author me
 a variant set for similar reasons but there is no facility to do so.
 
 We propose adding the ability to author metadata on `UsdVariantSet` to support similar 
-functionality available to UsdPrim, UsdAttribute and UsdRelationship. 
+functionality available to `UsdPrim`, `UsdAttribute` and `UsdRelationship`. 
 This metadata is intended to be used in editors to display information such as a 
 nicely formatted name for the variant set or whether the variant set should be hidden in certain views.
 `UsdVariantSet` metadata will not affect the composition behavior for a `UsdPrim`, 
@@ -179,7 +179,7 @@ One of the metadata fields presented in this proposal is the
 addition of [variantOrder](#metadata-fields). The goal of this field is simple;
 to specify an explicit order for how an editor should display variants in a `UsdVariantSet`.
 When considering the implementation of this metadata field for the `SdfTextFileFormat`
-it seems consistent with other `SdfSpec`s to use a `reorder variants` statment.
+it seems consistent with other `SdfSpec`s to use a `reorder variants` statement.
 This can be seen in the [proposed example](example.usda) but worth 
 calling out specifically as it brings up two questions:
 
