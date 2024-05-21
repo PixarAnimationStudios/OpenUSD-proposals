@@ -29,7 +29,7 @@ includes a `patch` version number, but the MaterialX library version does track 
 The MaterialX integration within OpenUSD relies upon two libraries, `UsdMtlx` and `HdMtlx`. `UsdMtlx` transcodes the 
 MaterialX document in to `UsdShade` primitives. Inside of Hydra, `HdMtlx` is used to reconstruct the
 MaterialX document using the `UsdShade` primitives that have been transported through Hydra (more information 
-available [here](https://openusd.org/release/api/_page__material_x__in__hydra__u_s_d.html)). The reconstucted MaterialX 
+available [here](https://openusd.org/release/api/_page__material_x__in__hydra__u_s_d.html)). The reconstructed MaterialX 
 document is then passed to the MaterialX Shader Generation library to generate shader code in the desired destination
 shading languages.
 
@@ -121,7 +121,7 @@ MaterialX information, but in light of the recent proposal to move away from lay
 conversation was changed.
 
 We also considered authoring the MaterialX library version on each UsdShade `Shader` primitive, in the hope that it 
-would allow more concrete support, or atleast discovery, of mismatched MaterialX library versions created during USD 
+would allow more concrete support, or at least discovery, of mismatched MaterialX library versions created during USD 
 composition.  This idea was discarded on the grounds that it would be both noisy in the USD data, and also potentially 
 error prone if being authored by hand. A single applied API schema for the entire `Material` primitive seemed like a 
 better compromise.
