@@ -22,14 +22,15 @@ Matthew Kuruc
 
 ## Introduction
 
-Variants in OpenUSD are a powerful mechanism that allow authors to modify scene description and 
-express opinions for a given prim. These modifications will ultimately contribute to the final 
-result of a prim during composition. Prims, along with attributes and relationships, 
-offer APIs for authoring additional information, referred to as metadata, to assist editors 
-such as usdview. However, there are times when it is desirable to also author metadata about 
-a variant set for similar reasons but there is no facility to do so.
+Variant sets would benefit from a means of storing and retrieving additional information about them
+and their variant children. Users of editors have a need to create and view context
+and informative descriptors about variant sets. A common use case for this feature is
+showing a user friendly display name instead of just an identifier. For example,
+being able to show UTF-8 transcoded display names in editors,
+providing a much better user experience across languages.
 
-We propose adding the ability to author metadata on `UsdVariantSet` to support similar 
+There is currently no support for this functionality on variant sets,
+so we propose adding the ability to author metadata on `UsdVariantSet` to support similar 
 functionality available to `UsdPrim`, `UsdAttribute` and `UsdRelationship`. 
 This metadata is intended to be used in editors to display information such as a 
 nicely formatted name for the variant set or whether the variant set should be hidden in certain views.
