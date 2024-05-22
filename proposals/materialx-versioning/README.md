@@ -6,6 +6,8 @@
 - [Problem](#problem)
 - [Proposal to Version MaterialX data in OpenUSD](#proposal-to-version-materialx-data-in-openusd)
     - [Overview](#overview) 
+    - [UsdMtlx Implementation](#usdmtlx-implementation-changes)
+    - [HdMtlx Implementation](#hdmtlx-implementation-changes)
 - [Risks](#risks)
     - [Risk 1](#risk_1)
 - [Out of Scope](#out-of-scope)
@@ -18,10 +20,10 @@ with. This will allow for MaterialX to provide an automatic upgrade functionalit
 The following is an example of a `Material` primitive with the applied schema applied.
 ```
 def "Material" MyMaterial ( 
-    prepend apiSchemas = ["MaterialXVersionAPI"]
+    prepend apiSchemas = ["MaterialXInfoAPI"]
 )
 {
-    uniform string materialXVersion = "1.39"
+    uniform string mtlxinfo:version = "1.39"
 }
 ```
 
@@ -54,12 +56,14 @@ container for ambiguous MaterialX data.
 
 ## Proposal to Version MaterialX data in OpenUSD
 ### Overview
-We propose adding an applied API schema `MaterialXVersionAPI` (in the spirit of the 
-["Revise use of Layer Metadata in USD"](https://github.com/PixarAnimationStudios/OpenUSD-proposals/blob/main/proposals/revise_use_of_layer_metadata/README.md)) 
-that can record the MaterialX library version on the UsdShade `Material` primitive.  
+We propose adding an applied API schema `MaterialXInfoAPI` (in the spirit of the 
+["Revise use of Layer Metadata in USD"](https://github.com/PixarAnimationStudios/OpenUSD-proposals/blob/main/proposals/revise_use_of_layer_metadata/README.md)) that can record the MaterialX library version. We keep the name of the 
+applied API schema a little more generalized to leave the door open for additional MaterialX document information to be
+added to the schema at a later date. We deliberately decide to only propose adding the MaterialX library version to the 
+schema to keep the proposal as uncontroversial as possible to add rapid adoption.
 
-Adding the version to the `Material` primitive allows for referencing the material directly from a `.mtlx` file and 
-still retaining the MaterialX library version when the scene is composed. i.e.
+The `MaterialXInfoAPI` will be applied to the UsdShade `Material` primitive. This allows for referencing the material 
+directly from a `.mtlx` file and still retaining the MaterialX library version when the scene is composed. i.e.
 ```
 def "Material" MyMaterial (
     references=@myMaterials.mtlx@</MaterialX/Materials/MyMaterial>
@@ -74,13 +78,13 @@ With the MaterialX library version recorded in the OpenUSD stage, `HdMtlx` would
 version number to use when re-constructing the MaterialX document. This will then allow the existing MaterialX upgrade 
 functionality to be used.
 
-### `UsdMtlx` Implementation changes
+### UsdMtlx Implementation changes
 
 The only change required in `UsdMtlx` would be to apply the applied API schema to the `Material` primitive, and set the
 MaterialX library version.  This version number would come directly from the `.mtlx` file that was being transcoded to 
 OpenUSD.
 
-### `HdMtlx` Implementation changes.
+### HdMtlx Implementation changes.
 
 The `HdMtlx` library will also need to be changed to read the MaterialX library version from the `Material` primitive, 
 and author this version number in the reconstructed MaterialX document.
