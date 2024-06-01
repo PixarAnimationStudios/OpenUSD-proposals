@@ -12,6 +12,7 @@ See the [OpenUSD Proposals Status](https://github.com/orgs/PixarAnimationStudios
 
 ## Committed Proposals
 
+- [Self Assembling Model Hierarchy](https://github.com/PixarAnimationStudios/USD-proposals/tree/main/proposals/selfAssemblingModelHierarchy) ![Status:Draft](https://img.shields.io/badge/Draft-blue) ([current PRs and issues](https://github.com/PixarAnimationStudios/USD-proposals/pulls?q=is%3Apr++label%3Aself-assembling-model-hieararchy+))
 - [Pattern-based Collections](https://github.com/PixarAnimationStudios/USD-proposals/tree/main/proposals/pattern-based-collections) ![Status:Implemented, 23.11](https://img.shields.io/badge/Implemented,%2023.11-blue) ([current PRs and issues](https://github.com/PixarAnimationStudios/USD-proposals/pulls?q=is%3Apr+label%3Ausd-pattern-based-collections+))
 - [Spline Animation](https://github.com/PixarAnimationStudios/OpenUSD-proposals/tree/main/proposals/spline-animation) ![Status:Published](https://img.shields.io/badge/Published-green) ([current PRs and issues](https://github.com/PixarAnimationStudios/USD-proposals/pulls?q=is%3Apr+label%3Ausd-spline-animation+))
 - [Stage Variable Expressions](https://github.com/PixarAnimationStudios/USD-proposals/tree/main/proposals/stage_variable_expressions) ![Status:Implemented, 23.11](https://img.shields.io/badge/Implemented,%2023.11-blue) ([current PRs and issues](https://github.com/PixarAnimationStudios/USD-proposals/pulls?q=is%3Apr+label%3Ausd-stage-variables))
