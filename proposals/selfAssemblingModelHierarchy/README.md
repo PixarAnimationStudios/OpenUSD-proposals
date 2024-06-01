@@ -7,7 +7,7 @@ Simplify correct model hierarchy maintenance and construction through removal of
 ## Background
 OpenUSD presents "model hierarchy" as a mechanism for efficient traversal of a stage's "important" prims. This importance generally corresponds to the stage's referenced assets, but is pipeline independent, persistent under flattening of arcs, and allows for "casual" use of composition operators without implying "importance" (ie. using internal references to reuse scene description).
 
-Model hierarchy is expressed through a prim's `kind` metadata. It's worth noting that `kind` is an extensible concept, but that won't be addressed in this document as to participate in model hierarchy, they must derive from one of the standard `kind`s. `kind` is distinct from and orthogonal to a prim's schema type.
+Model hierarchy is expressed through a prim's `kind` metadata. `kind` is an extensible concept, but that won't be addressed in this document. For prims to participate in model hierarchy, they must be assigned one of the standard `kind`s. Finally, note that `kind` is distinct from and orthogonal to a prim's schema type.
 
 There are several first class `kind` types.
 
@@ -16,7 +16,7 @@ There are several first class `kind` types.
 * `subcomponent`: These prims do not participate in model hierarchy traversals, but indicate important descendant prims of `component` models. `subcomponent` prims may be arbitrarily nested. In a city of `component` buildings, the doors on each building may be "important" to picking and other user interface browsers. `component` models that need to reference other `component` models often will override the `kind` to `subcomponent` to avoid violating model hierarchy rules.
 
 The fourth first class kind is that of `group` which must be explicitly specified on prims that are not `assembly` models but may contain `assembly` or `component` models. `group` acts to bridge model hierarchies on non-"important" scopes that may contain important descendants. For completeness, it's important to note that `assembly` models are necessarily `group`s because they may contain models (`component` or other `assembly` models).
-
+Although group and assembly are interchangeable, assembly is meant to more strongly communicate that some components have grouped to form a logical unit, rather than merely grouped for organizational purposes, or to indicate that a model hierarchy should be traversed through the group.
 Let's look at an example of correct model hierarchy usage.
 ```
 def Scope "TriStateArea" (kind = "group") {
@@ -33,7 +33,7 @@ def Scope "TriStateArea" (kind = "group") {
                 def Scope "FifthAvenue" (kind = "group") {
                     def Xform "DepartmentStore" (kind = "component") {
                         def Scope "GroundFloor" {
-                            def Scope "Housewears" (kind = "subcomponent") {
+                            def Scope "Housewares" (kind = "subcomponent") {
                                 def Xform "Aisle_1" {
                                     def Mesh "TopShelf" {
                                     }
@@ -57,7 +57,7 @@ We've described `assembly` and `component` models as being "important" prims gen
 Prims with `kind=group` rarely correspond to assets. Their relevance to the model hierarchy is implicit from the fact that they _may_ contain important prims. `group` tagging exists solely so that model hierarchy traversal knows to keep descending in pursuit of more models.
 
 ## Problem
-The complexity of maintaining model hierarchy complicates its usage. Model hierarchy (until recently) didn't affect rendering so tools and users may not be properly maintaining it. Even pipelines that attempt to honor model hierarchy may choose to repair model hierarchy only at specific validation points.
+The complexity of maintaining model hierarchy complicates its usage. Model hierarchy (until recently - see notes on Pattern Based Collections below) didn't affect rendering so tools and users may not be properly maintaining it. Even pipelines that attempt to honor model hierarchy may choose to repair model hierarchy only at specific validation points.
 
 Invalid model hierarchy can lead to inconsistent results when using the `UsdModelAPI`. Consider the following scene description
 ```
@@ -126,7 +126,7 @@ Some scopes (`Bridges`, `Tunnels`) are missing their group tagging. A model hier
 The complexity of model hierarchy maintenance can lead users to the following workarounds.
 * Some users flood the scene graph with `group` tags and make all `Xform` prims `group`s (erroneously including those specified under `component` models).
 * Some users build model-discovery features around direct calls to `GetKind()` instead of the cached `IsKind()` to workaround model hierarchy rules, paying for the caching without benefiting and potentially leading to inconsistencies with how `kind` is handled across the ecosystem. Users may believe tooling that relies on the unvalidated `GetKind()` behaves more correctly.
-* Finding model hierarchy unreliable or complicated, some users begin to build model-discovery features around composition arc presence. `kind` as a first class feature was designed in part to aid in discovery of important prims _without composition introspection_ and to perserve behavior across flattening of arcs.
+* Finding model hierarchy unreliable or complicated, some users begin to build model-discovery features around composition arc presence. `kind` as a first class feature was designed in part to aid in discovery of important prims _without composition introspection_ and to preserve behavior across flattening of arcs.
 
 ### Model Hierarchy Impacting Imaging
 Model hierarchy originally could not affect the rendered result and so the consequences of incorrect model hierarchy patterns were minimal. However, the new pattern based collection [proposal](https://github.com/PixarAnimationStudios/USD-proposals/pull/4) aims to leverage model hierarchy in its predicates. Model hierarchy will now affect (and potentially accelerate) collection membership computation. **Tagging a prim as an `assembly` or a `component` and failing to maintain proper `group` tagging could change the results of material bindings or light linking.**
@@ -135,7 +135,7 @@ Model hierarchy originally could not affect the rendered result and so the conse
 Recent additions to OpenUSD include the namespace editor and relocates. Scene graph restructuring may become more common as a result of these utilities, and with it model hierarchy invalidations.
 
 ## Proposal
-The USD Glossary provides this guidance on model hierarchy maintenance.
+The USD Glossary provides this guidance on model hierarchy maintenance:
 
 > When assets are published/packaged with model kinds already established, the model hierarchy becomes mostly “self assembling”.
 
@@ -145,7 +145,7 @@ There is prior art for composition "fixing" errant model hierarchy. Consider jus
 ```
 def Xform "DepartmentStore" (kind = "component") {
     def Scope "GroundFloor" (kind = "group") {
-        def Scope "Housewears" (kind = "subcomponent") {
+        def Scope "Housewares" (kind = "subcomponent") {
         }
     }
 }
@@ -284,7 +284,7 @@ Only propagate when `kind` is unauthored. This is effectively the same as `auto`
 In user interfaces, it may be hard to disambiguate between unauthored (and propagating) and authored (not propagating) `kind` state. There would also not be way to author a value to re-enable propagation, but this may be fine.
 
 #### Variant #3: Use `subcomponent` (or some other kind) to prune traversal
-Despite its name, there are no rules that `subcomponent` prims are descendants of `component` prims. One could use that or some other kind to meaningful stop traversal. `kind=none` (or `kind=terminal`) has been another suggestion. Even if variant #1 or #2 were adopted, this would still be a valid way to prune traversal, it just wouldn't be the only (or preferred) way.
+Despite its name, there are no rules that `subcomponent` prims are descendants of `component` prims. One could use that or some other kind to meaningfully stop traversal. `kind=none` (or `kind=terminal`) has been another suggestion. Even if variant #1 or #2 were adopted, this would still be a valid way to prune traversal, it just wouldn't be the only (or preferred) way.
 
 ### Instancing
 Propagation when `instanceable=True` is complicated, as a prim may have multiple parents with different model hierarchy validity. There are actually [bugs](https://github.com/PixarAnimationStudios/OpenUSD/issues/2406) with this today.
@@ -318,7 +318,7 @@ However, users and tools generally expect to be able to parent `Xform`s undernea
 
 Prior to path expressions, delaying validation until `Save`-ing of a stage was perhaps viable. Not necessarily ideal that model hierarchy would be a broken state, but the impact would be limited to a session's interactive features and not imaging. Delaying validation as a post-process could lead to different material binding and light collections. A user saving a stage they are happy with and then validation informing them of errors that change the way the stage renders risks erroding user trust of validation. It also could lead to users avoiding building expressions around model hierarchy features. As model hierarchy is intended to be efficiently cached, relying on adhoc tags or naming conventions could reduce overall performance of path expressions.
 
-Self assembling model hierarchy does not remove the need for validation of model hierarchy. However, it focuses it on the scopes that are changing and reduces the amount cases that can be considered invalid. We enumerate the potential invalid cases below.
+Self assembling model hierarchy does not remove the need for validation of model hierarchy. However, it focuses it on the scopes that are changing and reduces the number of cases that can be considered invalid. We enumerate the potential invalid cases below.
 
 ### Invalid Case #1: Missing root prim `kind`
 As a concession to performance and "pay for what you use", a hierarchy must opt into model hierarchy at the root prim. Validating and repairing a missing root prim kind has the same risks issues and without automatic group propagation. We suggest that users, tools, and pipelines are willing to treat root prims as special and more willing to carefully maintain and validate their correctness than intermediate scopes.
