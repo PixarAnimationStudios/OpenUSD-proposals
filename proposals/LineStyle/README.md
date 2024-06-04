@@ -31,7 +31,9 @@ You can also define other type of patterns.
 # The implementation of DashDot line style
 Our implementation will introduce a new type of primitive, the DashDotLines. It inherits from Curves. The primitive is a list of line segments or polylines. The width of the line will be uniform, and it will not change when camera changes. There can be no pattern in the line. Or there can be dash-dot pattern.
 
-We also add a new rprim for the DashDotLines. We add a new shader file, the dashDotLines.glslfx, which includes both vertex and fragment shader. We also need two different materials: one is for a line with no pattern, and another is for a line with dash-dot pattern.
+The detail of the pattern will be put in a new type, the DashDotPattern. It inherits from Typed. There is an APISchema, the DashDotPatternAPI, which can bind a DashDotLines primitive with one DashDotPattern. One DashDotPattern can be bound to several different DashDotLines primitive.
+
+We also add a new rprim for the DashDotLines. We add a new shader file, the dashDotLines.glslfx, which includes both vertex and fragment shader. 
 
 In the implementation, we also create special geometry for the primitive. Each line segment is converted to a rectangle which is composed from two triangles. 
 
@@ -39,19 +41,33 @@ In the implementation, we also create special geometry for the primitive. Each l
 A new primitive DashDotLines is added, which inherits from Curves. It inherits properties from Curves.
 The shape of this primitive on the screen is a uniform-width line or polyline. Its width will not change when camera changes. It has either no pattern or dash-dot pattern.
 
-The DashDotLines primitive must bind to a specific material. If the material contains a texture of the dash-dot pattern, the primitive will have dash-dot pattern. Or else, the primitive will have no pattern. The property of the style, such as the cap shape or the scale of the dash dot pattern, will also be set in the material via the surface input.
+The DashDotLines primitive can bind a DashDotPattern type. Then the lines will have dash-dot pattern. If it doesn't bind a DashDotPattern, it will not have a pattern.
 
 These are properties which inherited from Curves:
 - curveVertexCounts
 - widths. Widths are now interpreted as the widths in screen space.
 
 The DashDotLines has the following new properties:
-- screenSpacePattern. A bool uniform. By default it is true, which means the dash-dot pattern will be based on screen unit. If we zoom in, the pattern on the line will change in the world space, so that the dash size and the dash gap size in the screen space will not change. If it is false, the pattern will be based on world unit. If we zoom in, the pattern on the line will not change in world space. The dash size and the dash gap size in the screen space will be larger. 
+- startCapType. A token uniform. It is the shape of the line cap at the start of the line. It can be "round", "triangle" or "square". The default value is "round".
+- endCapType. A token uniform. It is the shape of the line cap at the end of the line. It can be "round", "triangle" or "square". The default value is "round".
+- patternScale. A float uniform. It is valid when the primitive binds a DashDotPattern. The default value is 1. You can lengthen or compress the line pattern by setting this property. For example, if patternScale is set to 2, the length of each dash and each gap will be enlarged by 2 times. This value will not impact on the line width.
+- screenSpacePattern. A bool uniform. It is valid when the primitive binds a DashDotPattern. By default it is true, which means the dash-dot pattern will be based on screen unit. If we zoom in, the pattern on the line will change in the world space, so that the dash size and the dash gap size in the screen space will not change. If it is false, the pattern will be based on world unit. If we zoom in, the pattern on the line will not change in world space. The dash size and the dash gap size in the screen space will be larger. 
 
 ![image of screenSpacePattern](screenSpacePattern.png)
 
 ### Extents of the DashDotLines
 Different from the other Curves, the extents of the DashDotLines is only the bound box of the control points. The width of the line will not be considered, because it is screen spaced, that it is implemented via the shader.
+
+### The DashDotPattern schema
+The DashDotPattern schema inherits from Typed. It saves the detail of a dash-dot pattern. A dash-dot pattern is an array of symbols. Each symbol is either a dash, which is a line, or a dot, which is a point. The DashDotPattern can be bound to one or more DashDotLines primitive.
+
+The DashDotPattern has the following new properties:
+- patternPeriod. A float uniform. It is the length of a pattern. By default it is zero. If there is no pattern, it should be zero.
+- pattern. An array of float2. It saves the dash-dot pattern. For each float2, the x value and the y value must be zero or positive. The x value saves the offset of the start of current symbol, from the end of the previous symbol. If the current symbol is the first symbol, the offset is from the start of the pattern to the start of current symbol. The y value saves the length of the current symbol. If it is zero, the current symbol is a dot. If it is larger than zero, the current symbol is a dash. As a result, the total sum of all the x value and y value will be the length from the start of the pattern to the end of the last symbol. This sum must be smaller than patternPeriod.
+        
+For example, assume the pattern is [(0, 10), (1, 4), (3, 0)]. It means the first symbol is a dash which is from 0 to 10. The second symbol is a dash which is from 11 to 15, and the third symbol is a dot which is at position 18. There are gaps between 10 and 11, and between 15 and 18. If the patternPeriod is 20, there is also a gap between 18 and 20.
+
+An API schema DashDotPatternAPI is provided to bind the DashDotPattern to a DashDotLines primitive.
 
 ### The DashDotLines rprim and shader
 In HdStorm, we will add the HdDashDotLines rprim for the DashDotLines primitive. The topology of the DashDotLines requires the curveVertexCounts, curveIndices and whether the pattern is screenSpaced. In dashDotLines.glslfx, we add two sections of shader code: "DashDot.Vertex" and "DashDot.Fragment".
@@ -59,102 +75,43 @@ In HdStorm, we will add the HdDashDotLines rprim for the DashDotLines primitive.
 ### Other inputs for the shader and screen space pattern implementation
 For a polyline, the shader need to know the sum of line lengths before each vertex. This value can be pre-calculated in CPU. To implement screen space dash-dot pattern, the sum must be based on line lengths on the screen. So to calculate the sum, we need to do matrix transformation for the lines in CPU, and this calculation must be done when camera is changed. (Maybe we can use the compute shader to do the calculation before the rendering process in each frame)
 
-### Material to support the dash dot style
-There are two different materials specially for the DashDotLines primitive, which corresponding to two different surface shaders. The LineSketchSurface shader doesn't have a color input. If the material contains LineSketchSurface shader, the line will not have patterns. The DashDotSurface shader has a color input which linked to a texture shader, and the texture shader will contain the dash-dot pattern texture. If the material contains DashDotSurface shader, the line will have dash-dot patterns.
-
-### LineSketchSurface
-The shader will decide the opacity of pixels around caps and joint. The materialTag for this material is translucent.
-
-This surface also has these special input:
-- startCapType. An int input. It can be 0, 1, or 2. 0 means the cap type is round. 1 means the cap type is square. 2 means the cap type is triangle. The default value is 0.
-- endCapType. An int input. It can be 0, 1, or 2. 0 means the cap type is round. 1 means the cap type is square. 2 means the cap type is triangle. The default value is 0.
-- jointType. An int input. Currently it can only be 0, which means the joint type is round.
-
-### DashDotSurface
-The shader will decide whether the pixel is within a dash or a gap, so that we can decide its opacity. It will also handle the caps and joint. The materialTag for this material is translucent.
-
-The DashDotSurface must has a color input, which connects to another shader whose shader is DashDotTexture. The DashDotTexture shader links to a texture which saves the information of the dash-dot pattern.
-
-This surface also has these special input:
-- startCapType. An int input. It can be 0, 1, or 2. 0 means the cap type is round. 1 means the cap type is square. 2 means the cap type is triangle. The default value is 0.
-- endCapType. An int input. It can be 0, 1, or 2. 0 means the cap type is round. 1 means the cap type is square. 2 means the cap type is triangle. The default value is 0.
-- jointType. An int input. Currently it can only be 0, which means the joint type is round.
-- patternScale. A float input. The default value is 1. You can lengthen or compress the line pattern by setting this property. For example, if patternScale is set to 2, the length of each dash and each gap will be enlarged by 2 times. This value will not impact on the line width.
-
-### DashDotTexture
-The DashDotTexture shader is quite the same as UVTexture shader. The difference is that it outputs rgba value. The default value for wrap is clamp, and the default value for min/max filter is "nearest". The shader must have a dash-dot texture input.
-
-### The dash-dot texture
-The dash-dot texture is a texture that saves a type of dash-dot pattern. In the four channels we will save if the pixel is within a dash or a gap, and the start and end position of the current dash.
-
 # Examples
 ### 2 DashDotLines primitives with dash-dot patterns
 ```
 def DashDotLines "StyledPolyline1" (
-    prepend apiSchemas = ["MaterialBindingAPI"]
+    prepend apiSchemas = ["DashDotPatternAPI"]
 ){
-    uniform token[] xformOpOrder = ["xformOp:translate"]
-    float3 xformOp:translate = (0, 0, 0)
-
-    bool screenSpacePattern = true
-    rel material:binding = </LineMat1>
+    uniform bool screenSpacePattern = true
+    rel dashDotPattern:binding = </Pattern>
+    uniform token startCapType = "round"
+    uniform token endCapType = "round"
+    float patternScale = 5
     int[] curveVertexCounts = [3, 4]
     point3f[] points = [(0, 0, 0), (10, 10, 0), (10, 20, 0), (0, 30, 0), (-10, 40, 0), (-10, 50, 0), (0, 60, 0)]
     float[] widths = [5] (interpolation = "constant")
     color3f[] primvars:displayColor = [(1, 0, 0)]
 }
 def DashDotLines "StyledPolyline2" (
-    prepend apiSchemas = ["MaterialBindingAPI"]
+    prepend apiSchemas = ["DashDotPatternAPI"]
 ){
-    uniform token[] xformOpOrder = ["xformOp:translate"]
-    float3 xformOp:translate = (20, 0, 0)
-
-    bool screenSpacePattern = true
-    rel material:binding = </LineMat2>
+    uniform bool screenSpacePattern = true
+    rel dashDotPattern:binding = </Pattern>
+    uniform token startCapType = "triangle"
+    uniform token endCapType = "triangle"
+    uniform float patternScale = 11
     int[] curveVertexCounts = [3, 4]
     point3f[] points = [(0, 0, 0), (10, 10, 0), (10, 20, 0), (0, 30, 0), (-10, 40, 0), (-10, 50, 0), (0, 60, 0)]
     float[] widths = [10] (interpolation = "constant")
     color3f[] primvars:displayColor = [(0, 0, 1)]
 }
 
-def Shader "PatternTexture"
+def DashDotPattern "Pattern"
 {
-    uniform token info:id = "DashDotTexture"
-    asset inputs:file = @DashDot.tif@
-    float4 outputs:rgba
-}
-
-def Shader "LineShader1"
-{
-    uniform token info:id = "DashDotSurface"
-    color4f inputs:diffuseColor.connect = </PatternTexture.outputs:rgba>
-    int inputs:startCapType = 0
-    int inputs:endCapType = 0
-    float inputs:patternScale = 5
-    token outputs:surface
-}
-
-def Shader "LineShader2"
-{
-    uniform token info:id = "DashDotSurface"
-    color4f inputs:diffuseColor.connect = </PatternTexture.outputs:rgba>
-    int inputs:startCapType = 2
-    int inputs:endCapType = 2
-    float inputs:patternScale = 11
-    token outputs:surface
-}
-
-def Material "LineMat1"
-{
-    token outputs:surface.connect = </LineShader1.outputs:surface>
-}
-
-def Material "LineMat2"
-{
-    token outputs:surface.connect = </LineShader2.outputs:surface>
+    uniform float patternPeriod = 10
+    uniform float2[] pattern    = [(0, 5), (2.5, 0)]
 }
 ```
-In this example, there are two DashDotLines primitives. They all have dash-dot patterns, and the pattern is defined in the DashDot.tif texture. 
+In this example, there are two DashDotLines primitives. They all bind to the same dash-dot pattern, and the pattern is defined in "Pattern". The period of the pattern is 10. There are two symbols in the pattern. The first symbol starts at 0, and it is a dash with length 5. The second symbol starts at 7.5, and it is a dot.
 
 The first primitive has two polylines. One polyline has 3 vertices and another has 4 vertices. The line width on screen is 5. The startCapType and endCapType are both round. The patternScale is 5 which means the dashes and gaps will be lengthened by 5 times. 
 
@@ -168,23 +125,12 @@ The image for the 2 DashDotLines primitives.
 ```
 def DashDotLines "StyledPolyline" (
 ){
-    rel material:binding = </LineMat>
+    uniform token startCapType = "round"
+    uniform token endCapType = "round"
     int[] curveVertexCounts = [3]
     point3f[] points = [(0, 0, 0), (10, 10, 0), (10, 20, 0)]
     float[] widths = [5] (interpolation = "constant")
     color3f[] primvars:displayColor = [(1, 0, 0)]
-}
-def Material "LineMat"
-{
-    token outputs:surface.connect = </LineMat/LineShader.outputs:surface>
-
-    def Shader "LineShader"
-    {
-        uniform token info:id = "LineSketchSurface"
-        token outputs:surface
-        int inputs:startCapType = 0
-        int inputs:endCapType = 0
-    }
 }
 ```
 In this example, there is one polyline. It has 3 vertices. The line width on screen is 5. The polyline doesn't have pattern. The startCapType and endCapType are both round.
