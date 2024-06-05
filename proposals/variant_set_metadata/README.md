@@ -12,7 +12,7 @@ Matthew Kuruc
 - [Metadata in OpenUSD](#metadata-in-openusd)
     - [Metadata Fields](#core-metadata-fields)
     - [Custom Metadata Fields](#custom-metadata-fields)
-    - [Metadata Value Resoltuion](#metadata-value-resolution)
+    - [Metadata Value Resolution](#metadata-value-resolution)
 - [Example](#example)
 - [Variant Display Name](#variant-display-names)
 - [Variant Ordering](#variant-ordering)
@@ -108,7 +108,7 @@ def Xform "MilkCartonA" (
         string shadingComplexity = "full"
         string shadingTest = "milkBrandA"
     }
-    add variantSets = ["modelingVariant", "shadingComplexity", "shadingTest"]
+    prepend variantSets = ["modelingVariant", "shadingComplexity", "shadingTest"]
 )
 {
     variantSet "modelingVariant" (
