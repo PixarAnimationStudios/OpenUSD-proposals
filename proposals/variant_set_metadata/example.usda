@@ -10,7 +10,7 @@ def Xform "MilkCartonA" (
         string shadingComplexity = "full"
         string shadingTest = "milkBrandA"
     }
-    add variantSets = ["modelingVariant", "shadingComplexity", "shadingTest"]
+    prepend variantSets = ["modelingVariant", "shadingComplexity", "shadingTest"]
 )
 {
     variantSet "modelingVariant" (
