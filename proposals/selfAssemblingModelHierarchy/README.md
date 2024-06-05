@@ -1,5 +1,5 @@
 # Self Assembling Model Hierarchy
-Copyright © 2023, NVIDIA Corporation, version 1.3
+Copyright © 2023, NVIDIA Corporation, version 1.4
 
 ## Goal
 Simplify correct model hierarchy maintenance and construction through removal of the need for explicit `kind=group` tagging without incurring _any_ additional reads of `kind` metadata.
@@ -208,6 +208,8 @@ def "root" {
 ```
 The only additional required cost is the read of the pseudo root prim flag for all root prims to suppress propagation.
 
+**As this introduces no new `kind` reads, this is not expected to add measurable cost to composition.**
+
 ### Performance When a Model Hierarchy is Complete and Explicitly Specified
 We define a "complete" model hierarchy where every leaf prim is either a descendant of a `component` (or is a `group`, `assembly`, or `component`).
 
@@ -234,6 +236,8 @@ def "root" (kind = "group") {
 ```
 No pseudo root checks are required because the model hierarchy is complete and explicitly specified.
 
+**As this introduces no new `kind` reads, this is not expected to add measurable cost to composition.**
+
 ### Performance When a Model Hierarchy is Complete and Implicitly Specified
 If every leaf prim is a descendant of a `component` model and `group` is /not/ explicitly set, no additional reads of `kind` will be required.
 
@@ -258,6 +262,8 @@ def "root" (kind = "group") {
 ```
 Any prim that is a child of a `group` (or `assembly`) prim not explicitly specified will pay the cost of the pseudo root prim flag check. In this case, that's only `/root/assembly/group`.
 
+**As this introduces no new `kind` reads (when compared to explicitly specifying intermediate `group` prims), this is not expected to add measurable cost to composition.**
+
 ### Performantly Handling an Incomplete Hierarchy
 The fundamental challenge of this proposal is determining how to performantly handle an incomplete hierarchy.
 
@@ -273,18 +279,40 @@ def Xform "NewYorkCity" (kind = "assembly") {
 
 The "EastRiver" is geometry just inlined as a mesh into the "NewYorkCity" assembly with a material. This "incomplete" hierarchy is not incorrect.  It just means that there are leaf prims that are not `component` descendants.
 
-It's worth noting that in the current implementation without propagation, `kind` will be checked on the `EastRiver` and `EastRiverMaterial` scopes. **If we can signal that propagation should end on these scopes, then we can provide a path for self assembling model hierarchies without additional `kind` reads.**
+_This case may incur additional `kind` reads, but the cost is unmeasurable when the incomplete subgraph is small and measurable but small when the incomplete hierarchy is large._
 
-#### Variant #1: Introduce a new `auto` kind which enables propagation
+When the number of prims is small and multithreading is enabled `PXR_WORK_THREAD_LIMIT=8`, the cost of additional `kind` reads appears to be noise in the context of rereading the stage. An incomplete subgraph with 10,000 prim on average composed faster with propagation than without it. For larger incomplete subgraph, the cost became measurable.
+
+The tests show the average cost of opening a stage 20 times using a layer already in the registry (to discount the cost of identifier token population).
+
+| prims in incomplete subgraph   | 10,000           | 100,000          | 1,000,000        |
+|--------------------------------|------------------|------------------|------------------|
+| stage open without propagation | 0.0077 seconds   | 0.08146 seconds  | 1.06225 seconds  |
+| stage open with propagation    | 0.0073 seconds   | 0.08155 seconds  | 1.08290 seconds  |
+| cost                           | not measurable   | 0.1%             | 1.94%            |
+
+A second set of tests were run single threaded (`PXR_WORK_THREAD_LIMIT=1`) to see if less variability in the results could be observed. Without multithreading, the cost becomes observable at smaller incomplete subgraph sizes.
+
+| prims in incomplete subgraph   | 1,000            | 10,000           | 100,000          | 1,000,000        |
+|--------------------------------|------------------|------------------|------------------|------------------|
+| stage open without propagation | 0.00310 seconds  | 0.0248 seconds   | 0.2853 seconds   | 3.3495 seconds   |
+| stage open with propagation    | 0.00312 seconds  | 0.0256 seconds   | 0.2921 seconds   | 3.430 seconds    |
+| cost                           | 0.85%            | 3.0%             | 2.4%             | 2.4%             |
+
+It's worth noting that in the current implementation without propagation, `kind` will be checked on the `EastRiver` and `EastRiverMaterial` scopes. **This means if we can signal that propagation should end at these scopes, then we can provide a path for self assembling model hierarchies without any additional `kind` reads.**
+
+#### Preferred approach: Use a non-model `kind` to prune traversal
+Despite its name, there are no rules that `subcomponent` prims are descendants of `component` prims. One could use that or some other kind to meaningful stop traversal. `kind=none` (or `kind=terminal`) have been suggested if `subcomponent` is not preferred.
+
+#### Rejected Variant #1: Introduce a new `auto` kind which enables propagation
 `auto` becomes `kind`'s new fallback value. The "EastRiver" and other members of the incomplete hierarchy could be explicitly tagged with `kind=""` to preserve current behavior. Propagation for `group` or `assembly` kinds is `group`.
 
-#### Variant #2: Use authored state to control propagation
+Changing the fallback value of `kind` seems unnecessarily invasive.
+
+#### Rejected Variant #2: Use authored state to control propagation
 Only propagate when `kind` is unauthored. This is effectively the same as `auto` in that "EastRiver" can be tagged with `kind=""` to suppress propagation.
 
-In user interfaces, it may be hard to disambiguate between unauthored (and propagating) and authored (not propagating) `kind` state. There would also not be way to author a value to re-enable propagation, but this may be fine.
-
-#### Variant #3: Use `subcomponent` (or some other kind) to prune traversal
-Despite its name, there are no rules that `subcomponent` prims are descendants of `component` prims. One could use that or some other kind to meaningfully stop traversal. `kind=none` (or `kind=terminal`) has been another suggestion. Even if variant #1 or #2 were adopted, this would still be a valid way to prune traversal, it just wouldn't be the only (or preferred) way.
+In user interfaces, it may be hard to disambiguate between unauthored (and propagating) and authored (not propagating) `kind` state. There would also not be way to author a value to re-enable propagation.
 
 ### Instancing
 Propagation when `instanceable=True` is complicated, as a prim may have multiple parents with different model hierarchy validity. There are actually [bugs](https://github.com/PixarAnimationStudios/OpenUSD/issues/2406) with this today.
@@ -294,9 +322,9 @@ The OpenUSD development team proposes that prim flags are considered in concert 
 Until that fix is available, the best that can be done in both the current state of the world and with self propagating hierarchies is to encourage users to be intentional about model hierarchy when authoring `instanceable` to avoid violating the hierarchy's continuity.
 
 ### Additional API
-To better clarify what it means to be a "model group", this proposal recommends deprecating `IsGroup` in favor of `MayContainComponentModel`.
+To better clarify what it means to be a "model group", this proposal recommends deprecating `IsGroup` in favor of `MightContainComponentModel`.
 
-This proposal also recommends `IsModel` should be deprecated in favor of `MayContainOrIsComponentModel` and should be equivalent to (`MayContainComponentModel() || IsComponent()`).
+This proposal also recommends `IsModel` should be deprecated in favor of `IsInModelHierachy()` and should be equivalent to (`MightContainComponentModel() || IsComponent()`).
 
 Prim flag predicates should be be added to match these APIs.
 
@@ -307,7 +335,7 @@ An early version of this proposal considered whether some of these APIs should e
 ### Forward / Backwards Compatability
 Assets that don't use model hierarchy or that are both "complete" and "explicit" do not require any updates to be forward or backwards compatable.
 
-To make assets backwards compatible, implicit groups need to be made explicit. To make assets forward compatible, _intentionally incompete_ model hierarchies need to author explicit `kind=""` (or some other terminating kind).
+To make assets backwards compatible, implicit groups need to be made explicit. For forwards compatability, _intentionally incomplete_ model hierarchies may choose to explicitly terminate the hierarchy (using `subcomponent` or the proposed `none` or `terminal`) but only to avoid the extra `kind` reads described above.
 
 ## Validation in Contrast and in Concert
 OpenUSD anticipates including validation as a core service that can be used to detect and repair invalid model hierarchies.
@@ -325,18 +353,18 @@ As a concession to performance and "pay for what you use", a hierarchy must opt 
 ### Invalid Case #2: Nested `component` models
 When `component` (or `assembly`) models are nested, the general recommendation is to turn the nested model into a `subcomponent`. Importantly, following this recommendation will not impact path expression matching. Model hierarchy population should have already discarded nested models in both. Converting them to `subcomponent` shores up existing model hierarchy correctness, but does not change the "model"-ness of any ancestors or descendants. (_NOTE-- It's possible that path expressions may match against subcomponents, and so a more conservative validation recommendation may be to convert their kind to the empty string._)
 ### Performance of incomplete model hierarchies
-While self assembling model hierarchy does not introduce any new correctness issues, there is the potential for an unterminated hierarchy to do unnecessary reads of the `kind` field. This performance impact in the context of a stage is likely to be measurable but very small (1-2%). Proficient users and maintainers of model hierarchy should never encounter measurable performance issues.
+While self assembling model hierarchy does not introduce any new correctness or performance issues for complete model hierarchies, there is the potential for an incomplete model hierarchy to do additional reads of the `kind` field. This performance impact in the context of a stage is only measurable in larger incomplete subgraphs. Proficient users and maintainers of model hierarchy should never encounter measurable performance issues.
 
 Validation could be used to "optimize" an inefficient instead of "correct" an invalid hierarchy. Under self assembling model hierarchy, it would become acceptable to introduce optimizing terminal kinds when validating in a post-process. This proposal argues that users are likely to favor validators that optimize content without changing imaging behavior.
 
 Self assembling model hierarchy can partner with validation systems by reducing the number of invalid states a stage can be in and reward users with performance gains instead of potentially leaving them stuck between introducing an imaging change and fixing a model hierarchy error.
 
 ## Summary
-Model hierarchy can become "self assembling" without intermediate `group` tags AND without additional `kind` reads.
+Model hierarchy can become "self assembling" without intermediate `group` tags AND without additional `kind` reads in common cases.
 
-* In scenes where model hierarchy is unused, an additional prim flags query on the root prims will be required to suppress propagation from the pseudo root prim.
-* In scenes where the model hierarchy is complete and explicit, there will be no additional queries of either prim flags or `kind`.
-* In scenes where the model hierarchy is complete but implicit through propagation, there will be an additional prim flags check on every prim that requires propagation.
-* In scenes where the model hierarchy is incomplete, a traversal pruning, non-`component` `kind` will need to be explicitly authored. As long as they are authored at the highest possible level, there will be no additional `kind` queries.
+* In scenes where model hierarchy is unused, an additional prim flags query on the root prims will be required to suppress propagation from the pseudo root prim, but no additional `kind` reads required and no measurable cost to composition is expected.
+* In scenes where the model hierarchy is complete and explicit, there will be no additional queries of either prim flags or `kind` and no measurable cost to composition is expected.
+* In scenes where the model hierarchy is complete but implicit through propagation, there will be an additional prim flags check on every prim that requires propagation, but no additional `kind` reads required (when compared to complete and explicitly specified) and no measurable cost to composition is expected.
+* In scenes where the model hierarchy is incomplete, if the incomplete subgraph is small, the cost was not measurable in tests. For larger incomplete subgraphs, a traversal pruning, non-`component` `kind` may be explicitly authored. When authored at the root of the subgraph, this results in no additional `kind` reads compared to the current state of the world. It's possible for larger incomplete hierarchies to have no measurable cost to composition.
 
 Simplifying correct assembly and maintenance of model hierarchy will promote more consistent handling in toolsets and imaging that increasingly depend on model hierarchy being correctly specified.
