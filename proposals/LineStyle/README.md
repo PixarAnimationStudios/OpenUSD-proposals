@@ -51,9 +51,9 @@ The DashDotLines has the following new properties:
 - startCapType. A token uniform. It is the shape of the line cap at the start of the line. It can be "round", "triangle" or "square". The default value is "round".
 - endCapType. A token uniform. It is the shape of the line cap at the end of the line. It can be "round", "triangle" or "square". The default value is "round".
 - patternScale. A float uniform. It is valid when the primitive binds a DashDotPattern. The default value is 1. You can lengthen or compress the line pattern by setting this property. For example, if patternScale is set to 2, the length of each dash and each gap will be enlarged by 2 times. This value will not impact on the line width.
-- screenSpacePattern. A bool uniform. It is valid when the primitive binds a DashDotPattern. By default it is true, which means the dash-dot pattern will be based on screen unit. If we zoom in, the pattern on the line will change in the world space, so that the dash size and the dash gap size in the screen space will not change. If it is false, the pattern will be based on world unit. If we zoom in, the pattern on the line will not change in world space. The dash size and the dash gap size in the screen space will be larger. 
+- screenspacePattern. A bool uniform. It is valid when the primitive binds a DashDotPattern. By default it is true, which means the dash-dot pattern will be based on screen unit. If we zoom in, the pattern on the line will change in the world space, so that the dash size and the dash gap size in the screen space will not change. If it is false, the pattern will be based on world unit. If we zoom in, the pattern on the line will not change in world space. The dash size and the dash gap size in the screen space will be larger. 
 
-![image of screenSpacePattern](screenSpacePattern.png)
+![image of screenspacePattern](screenSpacePattern.png)
 
 ### Extents of the DashDotLines
 Different from the other Curves, the extents of the DashDotLines is only the bound box of the control points. The width of the line will not be considered, because it is screen spaced, that it is implemented via the shader.
@@ -70,7 +70,7 @@ For example, assume the pattern is [(0, 10), (1, 4), (3, 0)]. It means the first
 An API schema DashDotPatternAPI is provided to bind the DashDotPattern to a DashDotLines primitive.
 
 ### The DashDotLines rprim and shader
-In HdStorm, we will add the HdDashDotLines rprim for the DashDotLines primitive. The topology of the DashDotLines requires the curveVertexCounts, curveIndices and whether the pattern is screenSpaced. In dashDotLines.glslfx, we add two sections of shader code: "DashDot.Vertex" and "DashDot.Fragment".
+In HdStorm, we will add the HdDashDotLines rprim for the DashDotLines primitive. The topology of the DashDotLines requires the curveVertexCounts, curveIndices and whether the pattern is screenspaced. In dashDotLines.glslfx, we add two sections of shader code: "DashDot.Vertex" and "DashDot.Fragment".
 
 ### Other inputs for the shader and screen space pattern implementation
 For a polyline, the shader need to know the sum of line lengths before each vertex. This value can be pre-calculated in CPU. To implement screen space dash-dot pattern, the sum must be based on line lengths on the screen. So to calculate the sum, we need to do matrix transformation for the lines in CPU, and this calculation must be done when camera is changed. (Maybe we can use the compute shader to do the calculation before the rendering process in each frame)
@@ -81,7 +81,7 @@ For a polyline, the shader need to know the sum of line lengths before each vert
 def DashDotLines "StyledPolyline1" (
     prepend apiSchemas = ["DashDotPatternAPI"]
 ){
-    uniform bool screenSpacePattern = true
+    uniform bool screenspacePattern = true
     rel dashDotPattern:binding = </Pattern>
     uniform token startCapType = "round"
     uniform token endCapType = "round"
@@ -94,7 +94,7 @@ def DashDotLines "StyledPolyline1" (
 def DashDotLines "StyledPolyline2" (
     prepend apiSchemas = ["DashDotPatternAPI"]
 ){
-    uniform bool screenSpacePattern = true
+    uniform bool screenspacePattern = true
     rel dashDotPattern:binding = </Pattern>
     uniform token startCapType = "triangle"
     uniform token endCapType = "triangle"
