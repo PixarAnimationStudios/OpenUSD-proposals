@@ -1,5 +1,7 @@
 # Accessibility Schema
 
+[Link to Discussion](https://github.com/PixarAnimationStudios/OpenUSD-proposals/pull/69)
+
 ## Summary
 
 As USD enters more widespread use, with a range of interactive experiences for spatial computing and the web, it becomes necessary to make sure we do not exclude anyone. It is important for 3D content to be as accessible as other media types for people with a range of needs that may require virtual assistive services.
