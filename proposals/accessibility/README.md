@@ -12,8 +12,8 @@ To facilitate this, we propose the addition of accessibility metadata, using ind
 def Mesh "Cube" (
     prepend apiSchemas = ["AccessibilityAPI"]
 ) {
-    string accessibility:label = "A sentient lamp with an adjustable body and cone head"
-    string accessibility:alternate = "The lamp has round base with two sections above it that may be adjusted. It has a conical head with a lightbulb inside. It likes to chase inflatable balls"
+    string accessibility:label = "Luxo, Jr"
+    string accessibility:extendedDescription = "The lamp has round base with two sections above it that may be adjusted. It has a conical head with a lightbulb inside. It likes to chase inflatable balls"
     token accessibility:important = "standard"
 }
 ```
@@ -53,7 +53,7 @@ We propose a new Applied API schema that will allow any Prim to provide descript
 We include the following attribute groupings, with the `accessibility` namespace prefix.
 
 * `label`: The primary description string that is presented to the user. 
-* `alternate` : An alternate description string that may provide more detail than the primary label.
+* `extendedDescription` : An extended description string that may provide more detail than the primary label.
 * `importance` : Sets the importance of this group so tools may prioritize what to surface to a user. Options are `high`, `standard`, `low` with a default of `standard`.
 
 All three attributes are based on existing standard names in accessibility frameworks, and in consultation with multiple accessibility experts.
@@ -64,8 +64,8 @@ Given the example in the summary, repeated here
 def Mesh "Cube" (
     prepend apiSchemas = ["AccessibilityAPI"]
 ) {
-    string accessibility:label = "A sentient lamp with an adjustable body and cone head"
-    string accessibility:alternate = "The lamp has round base with two sections above it that may be adjusted. It has a conical head with a lightbulb inside. It likes to chase inflatable balls"
+    string accessibility:label = "Luxo, Jr"
+    string accessibility:extendedDescription = "The lamp has round base with two sections above it that may be adjusted. It has a conical head with a lightbulb inside. It likes to chase inflatable balls"
     token accessibility:important = "standard"
 }
 ```
@@ -95,10 +95,10 @@ def Mesh "Cube" (
 )
 {
     string accessibility:label = "A Cube"
-    string accessibility:alternate:default = "This cube is a wonderful looking cube"
+    string accessibility:extendedDescription:default = "This cube is a wonderful looking cube"
     token accessibility:importance:default = "standard"
     
-    string accessibility:alternate:size = "As big as a house"
+    string accessibility:extendedDescription:size = "As big as a house"
     token accessibility:importance:size = "low"
 }
 ```
@@ -130,12 +130,12 @@ def Mesh "Cube" (
 )
 {
     string accessibility:label = "A Cube"
-    string accessibility:alternate = "This cube is a wonderful looking cube"
+    string accessibility:extendedDescription = "This cube is a wonderful looking cube"
     token accessibility:importance = "Standard"
     
     string accessibility:label:lang:fr = "Un cube"
-    string accessibility:alternate:lang:fr = "Ce cube est un cube magnifique"
-    string accessibility:alternate:lang:fr_ca = "Ce cube est un cube magnifique canadien"
+    string accessibility:extendedDescription:lang:fr = "Ce cube est un cube magnifique"
+    string accessibility:extendedDescription:lang:fr_ca = "Ce cube est un cube magnifique canadien"
 }
 ```
 
@@ -189,7 +189,7 @@ def Xform "LogoIntro" (
     prepend apiSchemas = ["AccessibilityAPI"]
 )
 {
-    string accessibility:alternate.timeSamples = {
+    string accessibility:extendedDescription.timeSamples = {
         54: "The lamp jumps on the ball",
         56: "The lamp rolls back and forth on the ball",
         60: "The ball deflates and the lamp sinks down",
@@ -213,7 +213,7 @@ For the initial implementation, we do not allow for rel connections as part of t
 
 However, we recognize that a prims hierarchical and binding relationships may be useful to describe to a user.
 
-As such we suggest that it may be useful to provide utilities to gather accessibility data across the following axes:
+As such we think that it may be useful in the future to provide utilities to gather accessibility data across the following axes:
 
 1. Prim ancestors : A prim hierarchy may be getting more specific descriptions as it descends the tree. Being able to collect the information across its parents would allow a utility to combine the descriptions downwards.
 2. Prim children : Similarly, it might be valuable to go in the reverse order when asking about information on a prim where the children provide the details to be combined.
