@@ -182,7 +182,7 @@ This would be analogous to alt-text for an image which describes an entire image
 In most accessibility systems, the information is static.
 However, in recent times, several attempts have been made at temporal accessibility in mediums such as games or our very own proposals to HLS video streaming for photosensitivity.
 
-As such, we think it is valuable to allow the accessibility attributes to have time samples that may vary over time. For example an animation of Luxo, Jr.
+As such, we think it is valuable to optionally allow the accessibility attributes to have time samples that may vary over time. For example an animation of Luxo, Jr. However, this must never be the primary source of accessibility information for reasons laid out below.
 
 ```Python
 def Xform "LogoIntro" (
