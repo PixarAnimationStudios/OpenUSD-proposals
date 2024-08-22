@@ -27,3 +27,4 @@ See the [OpenUSD Proposals Status](https://github.com/orgs/PixarAnimationStudios
 - [Android Support](android/README.md) ![Status:Draft](https://img.shields.io/badge/Draft-blue) ([current PRs and issues](https://github.com/PixarAnimationStudios/OpenUSD-proposals/issues?q=label%3Aandroid-support))
 - [Text Support](text/README.md) ![Status:Draft](https://img.shields.io/badge/Draft-blue) ([current PRs and issues](https://github.com/PixarAnimationStudios/OpenUSD-proposals/issues?q=label%3Atext))
 - [Pick API](PickAPI/README.md) ![Status:Draft](https://img.shields.io/badge/Draft-blue) ([current PRs and issues](https://github.com/PixarAnimationStudios/OpenUSD-proposals/issues?q=label%3Ausd-pickapi))
+- [Accessibility Schema](accessibility/README.md) ![Status:Published](https://img.shields.io/badge/Published-green) ([current PRs and issues](https://github.com/PixarAnimationStudios/OpenUSD-proposals/issues?q=label%3Aaccessibility-schema ))
