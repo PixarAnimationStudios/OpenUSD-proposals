@@ -1,0 +1,26 @@
+diff --git a/pxr/usd/usd/primData.cpp b/pxr/usd/usd/primData.cpp
+index ee2250176..1fd362a22 100644
+--- a/pxr/usd/usd/primData.cpp
++++ b/pxr/usd/usd/primData.cpp
+@@ -146,6 +146,21 @@ Usd_PrimData::_ComposeAndCacheFlags(Usd_PrimDataConstPtr parent,
+                 isComponent = KindRegistry::IsComponent(kind);
+                 isModel = isGroup || isComponent || KindRegistry::IsModel(kind);
+             }
++            else {
++                // Enables propagation of model hierarchy potential for
++                // non-root primitives. This requires model hierarchy to be
++                // opted into at the root level. The pseudo root is trivially
++                // a group. Without this check, stages not using model
++                // hierarchy would pay for the extra reads of `kind` metadata.
++                //
++                // A model hierarchy "opt-out" approach would be generally
++                // simpler and not require the IsPseudoRoot check
++                // in favor of `isGroup` always being true when the parent
++                // is a group, but would result in extra `kind` reads in stages
++                // not participating in model hierarchy.
++                isGroup = !parent->IsPseudoRoot();
++                isModel = isGroup;
++            }
+         }
+         _flags[Usd_PrimGroupFlag] = isGroup;
+         _flags[Usd_PrimModelFlag] = isModel;
