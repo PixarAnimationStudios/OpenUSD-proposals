@@ -141,7 +141,7 @@ The USD Glossary provides this guidance on model hierarchy maintenance:
 
 As the above examples demonstrate, a self assembling model hierarchy unfortunately has been complicated by the need for the "glue" `group` kind.
 
-There is prior art for composition "fixing" errant model hierarchy. Consider just the department store. It's not uncommon to see users (incorrectly) apply the `group` kind to all `Xform` and `Scope` prims in a hierarchy.
+There is prior art for population "fixing" errant model hierarchy. Consider just the department store. It's not uncommon to see users (incorrectly) apply the `group` kind to all `Xform` and `Scope` prims in a hierarchy.
 ```
 def Xform "DepartmentStore" (kind = "component") {
     def Scope "GroundFloor" (kind = "group") {
@@ -151,7 +151,7 @@ def Xform "DepartmentStore" (kind = "component") {
 }
 ```
 
-The authored `group` kind is ignored with respect to model hierarchy because its parent isn't a `group` or `assembly`. With minimal trade-offs, this proposal argues that just as incorrect usage can be discarded by composition, _correct `group` usage can be propagated by composition_.
+The authored `group` kind is ignored with respect to model hierarchy because its parent isn't a `group` or `assembly`. With minimal trade-offs, this proposal argues that just as incorrect usage can be discarded by population, _correct `group` usage can be propagated by population_.
 
 More simply-- **untagged children of groups and assemblies are automatically groups**.
 
@@ -208,7 +208,7 @@ def "root" {
 ```
 The only additional required cost is the read of the pseudo root prim flag for all root prims to suppress propagation.
 
-**As this introduces no new `kind` reads, this is not expected to add measurable cost to composition.**
+**As this introduces no new `kind` reads, this is not expected to add measurable cost to stage population.**
 
 ### Performance When a Model Hierarchy is Complete and Explicitly Specified
 We define a "complete" model hierarchy where every leaf prim is either a descendant of a `component` (or is a `group`, `assembly`, or `component`).
@@ -236,7 +236,7 @@ def "root" (kind = "group") {
 ```
 No pseudo root checks are required because the model hierarchy is complete and explicitly specified.
 
-**As this introduces no new `kind` reads, this is not expected to add measurable cost to composition.**
+**As this introduces no new `kind` reads, this is not expected to add measurable cost to stage population.**
 
 ### Performance When a Model Hierarchy is Complete and Implicitly Specified
 If every leaf prim is a descendant of a `component` model and `group` is /not/ explicitly set, no additional reads of `kind` will be required.
@@ -262,7 +262,7 @@ def "root" (kind = "group") {
 ```
 Any prim that is a child of a `group` (or `assembly`) prim not explicitly specified will pay the cost of the pseudo root prim flag check. In this case, that's only `/root/assembly/group`.
 
-**As this introduces no new `kind` reads (when compared to explicitly specifying intermediate `group` prims), this is not expected to add measurable cost to composition.**
+**As this introduces no new `kind` reads (when compared to explicitly specifying intermediate `group` prims), this is not expected to add measurable cost to stage population.**
 
 ### Performantly Handling an Incomplete Hierarchy
 The fundamental challenge of this proposal is determining how to performantly handle an incomplete hierarchy.
@@ -362,9 +362,9 @@ Self assembling model hierarchy can partner with validation systems by reducing 
 ## Summary
 Model hierarchy can become "self assembling" without intermediate `group` tags AND without additional `kind` reads in common cases.
 
-* In scenes where model hierarchy is unused, an additional prim flags query on the root prims will be required to suppress propagation from the pseudo root prim, but no additional `kind` reads required and no measurable cost to composition is expected.
-* In scenes where the model hierarchy is complete and explicit, there will be no additional queries of either prim flags or `kind` and no measurable cost to composition is expected.
-* In scenes where the model hierarchy is complete but implicit through propagation, there will be an additional prim flags check on every prim that requires propagation, but no additional `kind` reads required (when compared to complete and explicitly specified) and no measurable cost to composition is expected.
-* In scenes where the model hierarchy is incomplete, if the incomplete subgraph is small, the cost was not measurable in tests. For larger incomplete subgraphs, a traversal pruning, non-`component` `kind` may be explicitly authored. When authored at the root of the subgraph, this results in no additional `kind` reads compared to the current state of the world. It's possible for larger incomplete hierarchies to have no measurable cost to composition.
+* In scenes where model hierarchy is unused, an additional prim flags query on the root prims will be required to suppress propagation from the pseudo root prim, but no additional `kind` reads required and no measurable cost to stage population is expected.
+* In scenes where the model hierarchy is complete and explicit, there will be no additional queries of either prim flags or `kind` and no measurable cost to stage population is expected.
+* In scenes where the model hierarchy is complete but implicit through propagation, there will be an additional prim flags check on every prim that requires propagation, but no additional `kind` reads required (when compared to complete and explicitly specified) and no measurable cost to stage population is expected.
+* In scenes where the model hierarchy is incomplete, if the incomplete subgraph is small, the cost was not measurable in tests. For larger incomplete subgraphs, a traversal pruning, non-`component` `kind` may be explicitly authored. When authored at the root of the subgraph, this results in no additional `kind` reads compared to the current state of the world. It's possible for larger incomplete hierarchies to have no measurable cost to stage population.
 
 Simplifying correct assembly and maintenance of model hierarchy will promote more consistent handling in toolsets and imaging that increasingly depend on model hierarchy being correctly specified.
