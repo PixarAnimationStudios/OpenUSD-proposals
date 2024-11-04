@@ -125,7 +125,7 @@ Some scopes (`Bridges`, `Tunnels`) are missing their group tagging. A model hier
 ### Model Hierarchy Complexity
 The complexity of model hierarchy maintenance can lead users to the following workarounds.
 * Some users flood the scene graph with `group` tags and make all `Xform` prims `group`s (erroneously including those specified under `component` models).
-* Some users build model-discovery features around direct calls to `GetKind()` instead of the cached `IsKind()` to workaround model hierarchy rules, paying for the caching without benefiting and potentially leading to inconsistencies with how `kind` is handled across the ecosystem. Users may believe tooling that relies on the unvalidated `GetKind()` behaves more correctly.
+* Some users build model-discovery features around direct calls to `GetKind()` instead of the cached `IsModel()` or `IsComponent()` to workaround model hierarchy rules, paying for the caching without benefiting and potentially leading to inconsistencies with how `kind` is handled across the ecosystem. Users may believe tooling that relies on the unvalidated `GetKind()` behaves more correctly.
 * Finding model hierarchy unreliable or complicated, some users begin to build model-discovery features around composition arc presence. `kind` as a first class feature was designed in part to aid in discovery of important prims _without composition introspection_ and to preserve behavior across flattening of arcs.
 
 ### Model Hierarchy Impacting Imaging
