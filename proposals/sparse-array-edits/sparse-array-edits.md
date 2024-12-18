@@ -1,6 +1,11 @@
 # Sparse Overrides for Array-Valued Attributes in OpenUSD
 
-The ability to sparsely override a subset of elements in an array-valued attribute has been identified as an important and powerful fundamental feature for several workflows.  Examples are: modifying some point positions of a mesh, but leaving the others untouched, appending or deleting elements from point instancer attributes, modifying `xformOpOrder` to incrementally add or remove transform operations while leaving existing operations untouched.
+The ability to sparsely override a subset of elements in an array-valued
+attribute has been identified as an important and powerful fundamental feature
+for several workflows.  Examples are: modifying some point positions of a mesh,
+but leaving the others untouched, appending or deleting elements from point
+instancer attributes, modifying `xformOpOrder` to incrementally add or remove
+transform operations while leaving existing operations untouched.
 
 Until recently, Attribute values in USD could only come from one single "strongest opinion" in scene description.  That strongest opinion could be a prim definition fallback value, an attribute spec default opinion, an attribute spec time-samples, or a value clip.
 
