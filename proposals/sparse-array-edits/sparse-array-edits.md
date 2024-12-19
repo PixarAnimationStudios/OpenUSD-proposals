@@ -1,4 +1,4 @@
-# Sparse Array-Editing Overrides for Attributes in OpenUSD
+# Sparse Array-Editing Attribute Overrides in OpenUSD
 
 The ability to sparsely override a subset of elements in an array-valued
 attribute has been identified as an important fundamental feature for several
