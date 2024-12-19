@@ -286,18 +286,19 @@ with `/` as the `over` operator.
 
 1. A sparse sample over a dense sample at the same time.
     ![A sparse sample over a dense sample at the same time.](figures/one_sample_same_time.svg)
+1. An earlier sparse sample over a later dense sample.
+    ![An earlier sparse sample over a later dense sample.](figures/one_sample_diff_time_1.svg)
+1. A later sparse sample over an earlier dense sample.
+    ![A later sparse sample over an earlier dense sample.](figures/one_sample_diff_time_2.svg)
+1. One sparse sample over two dense samples.
+    ![One sparse sample over two dense samples.](figures/one_sparse_over_two_dense.svg)
+1. Two sparse samples over one dense sample.
+    ![Two sparse samples over one dense sample.](figures/two_sparse_over_one_dense.svg)
+1. A dense followed by a sparse sample over a sparse sample.
+    ![A dense and sparse sample over two sparse samples.](figures/half_dense_over_sparse.svg)
+1. Several series of both sparse and dense samples composed.
+    ![Several series with both sparse and dense samples composed.](figures/eval_composed.svg)
 
-![An earlier sparse sample over a later dense sample.](figures/one_sample_diff_time_1.svg)
-
-![A later sparse sample over an earlier dense sample.](figures/one_sample_diff_time_2.svg)
-
-![One sparse sample over two dense samples.](figures/one_sparse_over_two_dense.svg)
-
-![Two sparse samples over one dense sample.](figures/two_sparse_over_one_dense.svg)
-
-![A dense and sparse sample over two sparse samples.](figures/half_dense_over_sparse.svg)
-
-![Several series with both sparse and dense samples composed.](figures/eval_composed.svg)
 
 #### Evaluating a Strength-Ordering of Samples at a Specific Time
 
@@ -347,7 +348,7 @@ interval `[lo.time, hi.time)`.  So we must restrict our search for a dense value
 only at `hi.time` from then on.
 
 Here is an example showing the samples fetched while evaluating a strength order
-at a specific time.
+at the time 4.5.
 
 ![Evaluating time-varying sparse samples at a specific time.](figures/eval_steps_4_5.svg)
 
