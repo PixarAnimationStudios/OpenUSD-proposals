@@ -232,7 +232,7 @@ Linearization(Attribute A):
 ```
 
 As mentioned, we do not need to generate the complete linearization in the
-typical case: we can stop once we have a dense value.  he implementation in USD
+typical case: we can stop once we have a dense value.  The implementation in USD
 will take this approach, but we present the algorithm this way, without
 opimization, for clarity's sake.
 
@@ -345,7 +345,7 @@ only at `hi.time` from then on.
 Here is an example showing the samples fetched while evaluating a strength order
 at a specific time.
 
-![Evaluating time-varying sparse samples at a specific time.][figures/eval_steps_4_5.svg]
+![Evaluating time-varying sparse samples at a specific time.](figures/eval_steps_4_5.svg)
 
 This scheme works in general for any kind of "composed" attribute value type
 that supports sparse opinions, and would work for both `SdfPathExpression` and
