@@ -1,44 +1,47 @@
 # Sparse Array-Editing Attribute Overrides in OpenUSD
 
-The ability to sparsely override a subset of elements in an array-valued
-attribute has been identified as an important fundamental feature for several
-workflows.  Examples are: modifying a subset of mesh point positions while
-leaving the others untouched, appending or deleting elements from point
-instancer attributes, and modifying `xformOpOrder` to incrementally add or
-remove transform operations while leaving existing operations untouched.
+It has become clear that the ability to sparsely edit a subset of array elements
+in an attribute override is an important feature for several workflows.  Some
+examples are: Modifying a subset of mesh point positions while leaving the
+others untouched, appending or deleting elements from point instancer
+attributes, and modifying `xformOpOrder` to incrementally add or remove
+transform operations while leaving existing operations untouched.
 
-Until recently, Attribute values in USD could only come from a single "strongest
-opinion" in scene description.  That strongest opinion could be a prim
-definition fallback value, an attribute spec default opinion, an attribute spec
-time-samples, or a value clip.
+This proposal introduces a new value type, `VtArrayEdit` that can sparsely edit
+weaker `VtArray` opinions by inserting, erasing, and overwriting elements via a
+simple editing language.
 
-This changed when we introduced Pattern-Based Collections, with the new
+To support `VtArrayEdit`s in USD's core, we need to enhance USD's Value
+Resolution algorithm for Attribute values.  Until recently, Attribute values in
+USD could come from only the single strongest opinion in scene description.
+That strongest opinion could be a prim definition fallback value, an attribute
+spec default opinion, an attribute spec time-samples, or a value clip.
+
+This changed when we introduced Pattern-Based Collections, adding the new
 attribute value type `SdfPathExpression`. These expressions can refer to "the
 weaker expression" in stronger expressions with the token `%_`.  This meant that
 to produce the resolved value for such expressions, we could not stop at the
-strongest opinion, but instead had to keep going in order to fill-in the weaker
-expression for `%_`.
+strongest opinion, but instead had to continue examining weaker opinions to
+fill-in `%_` subexpressions.  We added this support as an ad-hoc special case
+for `SdfPathExpression`, and it does not support time-varying values.
 
 Historically, we have received requests to support dictionary-valued attributes,
 where value resolution would "merge" opinions together, like Python's
 `dict.update()`.
 
-This proposal introduces a new value type, `VtArrayEdit` that can
-incrementally modify weaker `VtArray` opinions by inserting, erasing, and
-overwriting elements via a simple editing language.
-
-Perhaps more significantly, this proposal introduces a general framework for
-handling sparse attribute value opinions of any type in USD, including
-time-varying opinions in time samples and value clips.  Splines in USD are
-restricted to floating point scalar values.  Since we do not anticipate
-supporting sparse opinions for floating point scalars, we need not consider
-splines here.
-
-Here we refer to values that can modify "weaker" values as "sparse" values or
+Here we refer to any value that can modify "weaker" values as "sparse" values or
 sparse opinions.  This includes `VtArrayEdit`s and `SdfPathExpression`s that
 contain `%_` references.  In contrast, "dense" values or opinions are complete
 expressions of value, independent of any weaker opinions, such as `VtArray`s or
 `SdfPathExpression`s that do not contain `%_`.
+
+This proposal introduces a general framework for handling sparse attribute value
+opinions of any type in USD, including time-varying opinions in time samples and
+value clips.  This lets us handle `VtArrayEdit`, and `SdfPathExpression`
+uniformly, and paves the way for new sparse-editing opinions in the future.
+
+Since splines in USD are restricted to floating point scalars, which are always
+dense values, we do not need to consider splines here.
 
 ## A Language for Sparse Array Editing
 
