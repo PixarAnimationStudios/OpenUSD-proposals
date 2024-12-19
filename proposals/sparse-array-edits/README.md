@@ -347,8 +347,8 @@ lower sample is considered stronger than any weaker samples in the entire
 interval `[lo.time, hi.time)`.  So we must restrict our search for a dense value
 only at `hi.time` from then on.
 
-Here is an example showing the samples fetched while evaluating a strength order
-at the time 4.5.
+Here is an example showing the samples fetched and the steps taken while
+evaluating a strength order of Series at the time 4.5.
 
 ![Evaluating time-varying sparse samples at a specific time.](figures/eval_steps_4_5.svg)
 
