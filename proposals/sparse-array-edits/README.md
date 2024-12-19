@@ -425,7 +425,7 @@ VtArrayEdit<T>` that computes the composition of one edit over another.
 
 We will add support for `VtArrayEdit<T>`as a value type in `Sdf` for
 serialization in `.usda` and `.usdc` files.  We will devise a syntax for
-representing array edit opinions in `.sdf`/`.usda` files, such as:
+representing array edit opinions in `.usda` files, such as:
 
 ```
 over "geom_mesh" {
@@ -440,18 +440,19 @@ over "geom_mesh" {
 ```
 
 We will add support for `VtArrayEdit<T>` to `.usdc` files, and we will handle
-the version bump in the familiar way, where we only upgrade the file version if
-we encounter such a value when writing the layer.
+the version bump to both `.usda` and `.usdc` files in the familiar way, where we
+only upgrade the file version if we encounter such a value when writing the
+layer.
 
 ### Value Resolution
 
 At the USD-level, via `UsdAttribute::Get()`, for example, we will never return a
 sparse `VtArrayEdit<T>`, only a dense array.  Even if all the opinions in the
-linearization are sparse, USD will compose over an empty dense array to ensure
-that the observed result is always dense.  However, sparse edits can be written
-to the current edit target directly via `UsdAttribute::Set()`.  Inspection of
-individual sparse opinions in layers is, as always, done through the
-`Sdf`\-level API.
+linearization are sparse, USD will compose over a weakest empty dense array to
+ensure that the returned result is always dense.  However, sparse edits can be
+written to the current edit target directly via `UsdAttribute::Set()`.
+Inspection of individual sparse opinions in layers is, as always, done through
+the `Sdf`\-level API.
 
 The value resolution code in USD's core will be modified to look for
 array-valued attribute types, and do the extended composition.  This will bring
