@@ -284,7 +284,8 @@ lower-case italic letters indicate sparse opinions, while filled circles labeled
 with upper-case letters indicate dense opinions. Composed samples are written
 with `/` as the `over` operator.
 
-![A sparse sample over a dense sample at the same time.](figures/one_sample_same_time.svg)
+1. A sparse sample over a dense sample at the same time.
+    ![A sparse sample over a dense sample at the same time.](figures/one_sample_same_time.svg)
 
 ![An earlier sparse sample over a later dense sample.](figures/one_sample_diff_time_1.svg)
 
