@@ -1,274 +1,284 @@
-# Profiles
+# Profiles in OpenUSD
 
-This document proposes the addition of `profiles` as metadata to USD documents.
-Profiles are short, structured descriptions of potentially non-standard features
-used within the stage such that a runtime or human can know of their existence ahead of time.
+Version 0.7 2025 Jan 5
+	Authored capabilities and schema applied capabilities
+version 0.6 2025 Jan 4
+	final capabilities, component capabilities, implementation capabilities
+version 0.5 2025 Jan 3
+	strawman Capabilities DAG
+version 0.4 2024 Dec 31
+	reorganize requirements as main part of document
+	fold more scratch notes into main body
+version 0.3 2024 Dec 19
+	rewrite requirements based on brainstorming with spiff
+version 0.2 2024 Dec 14
+	revise introduction
+	start cleaning ISO 19650 section
+	fold notes into main body
+	organize body to match the requirements index
+version 0.1, 2024 Dec 12, collection of scratch notes, Requirements
 
-Profiles are not meant to change runtime parsing behaviour, and are essentially just
-informational hints.
+TO DO:
 
-A proposed example would be:
+[ ] ProfileCapabilityAPI, declares the need for a capability at a scope
+[ ] ProfileCapabilityDescriptionAPI, provides detailed metadata about a Profile Capability
+[ ] Describe side car profile files
+[ ] OpenUSD SDK design
+
+## Introduction
+
+USD's flexibility enables custom schemas, proprietary formats, and extensions, but this creates significant interoperability challenges. Schemas are large, yet applications typically implement the subsets that matter to them, resulting in awkward overlap with document capabilities. The USDZ specification enforces strict resource portability by restricting what may be contained in an archive, and thus variants appear as a work around, such as Adobe Scene Description (ASD) and Apple's RealityKit which both uses proprietary schemas and run time components.
+An extension system should enable an application to determine and manage:
+
+- A document's compatibility and runtime requirements, 
+- Interoperability with specific layers, prims, and scene hierarchies within a document,
+- Whether a document may satisfy a given set of functional requirements.
+
+## Profile Requirements
+
+### Domains
+
+Profile functionality applies to three different domains.
+
+- Document
+    - Data that applies at a document level.
+- Scopes
+    - Data that applies at a specific scope within a document.
+- Application
+    - Data that applies to the application itself.
+
+### Profiles
+
+A Profile is a versioned, directed graph of capabilities. Profiles may be obtained appropriately to its  domain.
+
+- It may be encoded in a USD file on scopes via an applied schema.
+- It may accompany a USD file as a separate manifest file, which may itself be a USD file containing a root prim with an encoded profile.
+- It may be dynamically constructed by an application.
+
+A profile could potentially guide the build process for OpenUSD, as an alternative mechanism to command line switches or CMake options. That would be out of scope for this project.
+
+### Capabilities
+
+Profiles are constructed from capabilities. A capability is an identifier indexing particular functionality. Capabilities are organized in a directed graph, and the leaves of that graph are Profiles.
+
+- Capabilities must co-derive ancestrally
+- Capabilities must independently interoperate via ancestral capabilities
+- Capabilities that require sibling interoperability require a co-descendant feature such that interoperable profile capabilities become ancestral
+
+Features are named via a reverse domain scheme, for example, com.pixar.base is the root domain all other features derive from. The specification of the standard OpenUSD features, which reflect the current state of the OpenUSD repository, is part of the initial delivery of Profiles. Vendor features may be constructed on top of the standard features using the mechanisms described above.
+
+The reverse naming enables clear namespacing, which has advantages for clear diagnostic messages. There's no dependence on URLs or other live resources, providing stability and simple queries. There is however the need for a central authority for registration; at first this will be the OpenUSD distribution itself.
+
+A profile Capability represents a grouping of functional abilities. A capability may group all the functionality of USD core physics, or subdivision surfaces, or some other component that brings new functionality. 
+
+Capabilities are organized into a directed acyclic graph (DAG), and terminal nodes in the graph are profiles.
+
+A system may declare that it supports a capability, a document may declare that it requires a certain capability. In general, a domain of interest, whether it is an application, or a document, or some other system may be queried of its capabilities in terms of a profile, or a list of capabilities.
+
+- Given this profile, what capability level do you offer?
+- Given this profile, what required capabilities are missing?
+
+A domain may respond with:
+
+- None
+  - The scope is explicitly incompatible.
+- Not Applicable
+  - The scope is neither incompatible nor interoperable at any level. For example, a query against an implementation detail such as the use of OpenGL might be of interest when queried against a system such as Storm, it is of no interest when queried against a format scope.
+- View
+  - The scope is viewable at a certain level, either generically such as an Image Poster, via a Polygonal representation, via Subdivision Surfaces, so on, and via feature sets such as RealityKit, AdobeSubstance, Renderman, and so on.
+- Review
+  - The prim is reviewable for validation, approval, and introspection purposes via appropriate mechanisms as may be domain specific.
+- Interoperable
+  - The prim may be reliably modified.
+
+A capability query follows standard LIVRPS compositional rules, and kind rules. The query is concluded at a leaf scope, or at scope of component kind. The query frontier is expanded at USD payloads, so an asset hierarchy should be designed appropriately to limit a query. For example, if a city has "city blocks" as components, asking the city for its capabilities can be determined quickly without loading every building in the city. As another example, assets offering application specific capabilities, such as a choice between a web proxy, a game asset, and a full technical asset, may use components corresponding to those high level application needs to enable rapid discovery of a proxy without loading everything.
+
+A capability may be marked in its metadata as a component, indicating that a query does not need to introspect a layer further, as a further aid to streamlining queries.
+
+Capabilities may be authored on scopes, and this utilization is expected during document distribution and delivery for streamlining and efficiency. Accordingly there are two kinds of queries possible; a query on explicitly authored capabilities, and an exhaustive introspection to discover capabilities encoded in a document by virtue of having had capabilities required through the application of schema APIs to a scope. Applied schemas therefore may also have a query functionality on them that describes the set of capabilities conferred on the scope by the schema. It would make sense to audit and retrofit existing applied APIs with capabilities.
+
+See Appendix A for a suggested preliminary capability DAG for OpenUSD.
+
+### Versions
+
+Profiles may be versioned. As an example, there might be a Reality Kit 1.0 profile, and a Reality Kit 2.0 profile. Note that asset versions, also known as editions, are not part of the Profiles proposal.
+
+- If a profile references a versioned ancestor, the versioned ancestor is preferred
+- If a profile references a non-versioned ancestor, the greatest numbered versioned variant is preferred
+
+It is proposed that versions are indicated via the semver major.minor.patch system. This system is well known, and enables easy determination of version precedence and compatibility, including checks for exact versions, ranges, and so on.
+
+### Validation
+
+Profiles will leverage the UsdValidator system to check that authored profiles are not contradicted by authored prims in a document. This check is performed by performing an explicit check on a document as well as an applied check, and reporting whether the explicit check is equal to the applied check, or perhaps whether the explicit profile is a superset of the applied profile. Other tools include:
+
+- usdchecker
+  - Check an asset for validity given a profile.
+- usdprofile 
+  - traverses a file and rewrites as necessary profile information to satisfy a usdchecker request and annotation non-core requirements.
+
+Applications include such cases as:
+
+- Asset pipelines validating files against a profile to ensure project requirements are meant.
+- Asset vendors could use compatibility information to check deliveries before submission.
+- Interested parties, such as AOUSD or vendors, to investigate certification and badging services. Certification and badging is out of scope for the Profiles project itself.
+- Library browsers could filter documents.
+
+### Late Binding
+
+Late binding refers to the idea of extending OpenUSD functionality on demand at runtime. Late binding could provide key functionality for users of the Profile system; for example, an application could discover that a given asset needs a particular schema to be present for the Review capability. The ability to late load the schema would provide a critical extensibility and interoperability mechanism. 
+Late binding allows systems to dynamically configure workflows, validations, and data handling logic based on EIR metadata or rules. If a certain properties (e.g., fire ratings, material quantities) must be exchanged in a specific format, a late-bound system could dynamically incorporate the required validation logic or property schemas without modifying the shared base. Extensions or updates to evolving schemas could be implemented and deployed without requiring changes to existing software infrastructure. 
+Although the implementation of late binding is out of scope for the Profiles project, some useful applications are noted here:
+
+- Existing OpenUSD plugin points could be extended with on-demand loading.
+- Schemas could be bundled in an usdz archive, or encoded in a usd file.
+- glslfx shaders could be bundled, encoded, available via plugins, or the file system.
+- Asset resolution could be extended at runtime.
+
+Late binding mechanisms could enable an interested party, such as AOUSD or a vendor to create a centralized registration and delivery point for validated plugin and extensions.
+
+### Appendix A. Taxonomy
+
+Proposed Capability DAG Structure (Strawman for discussion)
+
+Capabilities are tags in reverse domain order. Capabilities reference their direct ancestors, and only ancestors previously declared, thus ensuring that the capability graph is a directed acyclic graph. The DAG is rooted at a node named root which confers no capabilities, but always exists.
+
+Syntax:
 
 ```
-(
-    profile = {
-        string name = "org.openusd.core"
-        string version = "1.2.3"
-        dictionary compatibility = {
-            string com.apple.realitykit = "4.3.2"
-        }
-        dictionary required = {
-            dictionary fileFormats = {
-                string org.aom.vvm = "1.0.0"
-            }
-        }
-        dictionary optional = {
-            dictionary schemas = {
-                string com.apple.realitykit.components = "1.0.0"
-            }
-        }
-    }
-)
+name {, version} {[ancestor]} {final}
+
+
+name [ancestor]
+name, version [ancestor]
 ```
 
-## Problem Statement
-
-USD documents can be pretty wide in terms of the features supported such as custom schemas, textures, audio or geometry
-formats. Some of these are important to be
-represented, while others are not meant to be portable.
-
-This makes it difficult for an application runtime to know what it should let a user
-know about, when it can't represent something. It also means that the application
-needs to analyze every element before telling the user something may be amiss.
-
-Conversely, USDZ packages focus on portability and are much stricter about the resource types
-they may include (though it omits the same rigidity for schemas).
-However, this strictness can also prevent the use of new features until they've
-been standardized. While this is great for inter-ecosystem sharing, it can be an
-issue for use within more limited scopes.
-
-Profiles aim to solve this by providing metadata so that USD documents and packages
-may express what non-standard features they use. This would allow runtimes to flag
-concerns to a user faster for unsupported features, and allow USDZ documents to use
-features prior to standardization.
-
-## Glossary
-
-N/A
-
-## Details
-
-We propose the addition of a dictionary metadata that stores a structured mapping
-of profile identifiers to their corresponding versions.
-
-### Profile Identifiers
-
-We suggest that profiles identify themselves with
-a [Reverse Domain Name Notation](https://en.wikipedia.org/wiki/Reverse_domain_name_notation)**.
-
-This is a very standard registration type across multiple systems, and has the
-advantage of allowing namespacing, while reducing the risk of name squatting.
-
-E.g `com.apple.text.preliminary` would allow pointing to the use of a preliminary
-text schema, that is attributed to Apple. This would allow disambiguation with
-something like `com.autodesk.text.preliminary` if Autodesk would want to release
-a preliminary version of their schema too.
-
-While there should be other forms of delineation within the schema, and potentially its name, this allows the
-application runtime to alert the user before traversing
-the scene and running heuristics.
-
-It also allows the application to direct the user to the relevant developers site
-where they can ask for more information.
-
-Lastly, it also prevents name collisions.
-For example, in the future, [aswf.com](https://www.aswf.com) may want to make schemas for window
-film parameters. This would then conflict with [aswf.io](https://www.aswf.io)'s schemas.
-Treating the domain identifier as ownership has proven to be quite resilient.
-
-#### Why not a URL?
-
-It may be preferable to some to use a URL like `https://www.openusd.org/profiles/core/v1.2.3`.
-
-However, this has been problematic in past systems where URL's bitrot, and require
-that everyone align on one website structure, or that runtimes have many parsers.
-
-A standardized reverse domain name notation is therefore considered a good middleg round.
-Users may still have to search for the specific feature, but they'll
-at least know who to ask.
-
-### Profile Versioning
-
-We propose that versions of profiles use [semantic versioning](https://semver.org)
-compatible strings. We recognize that many projects, including OpenUSD, do not use
-semver. However, there is benefit in using a string that can be parsed by
-semver parsers even if the semantic meanings of the tokens aren't the same.
-
-For example, one application may support a specific version of an extension but not older or newer versions of it.
-
-### Profile Augmentation
-
-Our proposal for profiles includes the concept of a base profile and augmentations
-beyond that.
-
-The base profile should be a well known base level understanding of what features are
-standardized under it.
-
-For example, `org.openusd.core = 0.25.8` to represent a core profile of USD that
-aligns with OpenUSD 25.8.
-
-Features beyond this base profile may be specified as well in a similar way,
-augmenting it. Therefore, profiles are always additive.
-
-`com.apple.realitykit.components = 1.2.3` could augment the base profile, as one
-example.
-
-### Dictionary Overview
-
-We propose the dictionary have the following top level keys:
-
-- **name** : The identifier of the base profile
-- **version** : The version of the base profile
-
-Beyond that, there are sub-dictionaries of augmentations. Each of these two are
-further subdivided into categories as described in the next section:
-
-- **required** : A set of profile augmentations that are
-  required to present this USD stage. For example, if using geometry compressed
-  file format plugins, the stage would not represent in a usable form without
-  their availability.
-
-- **optional** : A set of profile augmentations that are
-  not required to portably represent this stage. For example, Reality Kit or other
-  runtimes may include many runtime specific schemas for behaviour etc... which
-  are not expected to be used by a DCC.
-
-Finally, it may also be beneficial to share what versions of runtimes the document
-has been intended for or tested with. This is a mapping of identifiers to
-their versions.
-
-- **compatibility** : A map of which versions of a DCC or runtime the document has
-  been tested for or is intended to be used with. e.g `com.sidefx.houdini = "12.4""`.
-  These should not be used to prevent loading of the file in mismatched versions, but
-  provide a standardized way to warn a user if compatibility might be an issue.
-
-### Augmentation Dictionary Categories
-
-Both the required and optional augmentation dictionaries are further subdivided
-into categories.
-
-Categories help organize the augmentations into their respective domains.
-This further allows a runtime to decide what to present to a user.
-
-For example,a runtime that is not rendering need not bother with augmentations
-that are meant for visualization.
-
-Additionally, this allows for better, standardized reporting structures to users
-in whatever manner the runtime or app chooses. e.g Maya and Blender would inherently
-have different UIs, but wouldn't have to necessarily provide their own categorization.
-
-We propose the following categories:
-
-- **imaging** : features that a renderer would need to support this document.
-  For example, Gaussian Splat rendering `com.adobe.splats`.
-- **fileFormats** : data plugins that are needed to be read by USD to recreate a hierarchy. e.g `org.aswf.materialx`
-- **assetFormats** : Asset formats for textures or audio that may be required.
-  e.g `org.aswf.vdb`
-- **schemas** : Schemas that may be required for correct parsing of this scene.
-  e.g `com.apple.realitykit.components`
-- **features** : A list of USD features that may not be supported by a given runtime.
-  e.g a USD file may use relocates, but an older runtime won’t understand them even
-  if it can parse them. e.g `org.openusd.relocates`
-- **general** : Extensions that don’t fit in a predetermined category
-
-## Profiles vs Extensions
-
-Other formats like glTF have extension facilities as described
-in [glTF 2.0 Extension Registry](https://github.com/KhronosGroup/glTF/blob/main/extensions/README.md).
-
-Unlike extensions, profiles (as described here) do not add new functionality.
-Instead, profiles are a complement to OpenUSD's existing extension system by allowing
-up front declaration of which extensions are in use.
-
-Profiles are intended to have no runtime side effects beyond their declaration.
-
-## Runtime Analysis
-
-A concern about profiles is that they are just hints, and are taken at face value.
-
-The real truth is of course always in the actual data stored, whether thats the schemas or asset formats used.
-
-However, this requires runtimes to analyze everything in the scene, and have an
-understanding what they may not support ahead of time.
-This is difficult in several scenarios, especially when combined with composition
-to analyze ahead of time. Additionally, this can help reduce the need to parse
-multiple file formats ahead of time to know if they're supported.
-
-As such, profiles are simply hints that should be truthful from the content creation
-pipeline to the consuming application/runtime. They are not meant to be taken
-as absolute truth.
-
-## Metadata Location
-
-One question is where is best to store the metadata. Especially when it comes to the
-use of multiple layers composing a stage.
-Does the root layer need to describe the sum of all profile information of the rest
-of the stage?
-
-Therefore, it may be preferable to store the metadata on the individual top level prims.
-
-This would allow the metadata to compose together, at the expense of a little more
-complexity in where to look for the metadata.
-
-## Suggested Core Profile
-
-We propose the addition of an OpenUSD base profile that corresponds to the USD version.
-
-This would be a well recognized base profile to use for systems in the form of
-`org.openusd.core` where the version would be `0.24.5` etc...
-
-Future base profiles could be managed by well known bodies in the industry like the
-AOUSD. For example if there was a more limited set of USD for the web without
-features like volumetrics, it could be `org.aousd.web` with a requisite version.
-
-## Suggested Augmentation Profiles
-
-The following profiles are examples of hypothetical augmentation profiles.
-
-- **org.aom.vvm** : Use of
-  the [Volumetric Visual Media](https://aomedia.org/press%20releases/call-for-proposals-on-static-polygonal-mesh-coding-technology/)
-  compression
-- **org.aom.avif** : Use of the AVIF media encoder, since USD files may need to be
-  used in older runtime versions that do not include the AV1 decoder.
-- **com.apple.realitykit.components** : Components that describe RealityKit specific runtime behaviour.
-- **org.aswf.materialx** : Requires usdMtlx be built for a specific version of MaterialX to load the data
-- **org.aswf.openvdb** : Requires VDB to be available to load volumetric data
-
-## Validation
-
-The addition of profiles could open up the opportunity for more granular validation.
-e.g a file that doesn't claim to use RealityKit components could surface a warning
-if those components are encountered.
-
-Specific additions to validation are considered out of scope for this proposal, but
-the idea as an abstract is one that could be useful.
-
-There are a few ways that profiles can help with validation of USD files:
-
-1. An application may present warnings on load when it load a USD file that uses an unsupported extension. This would be
-   similar to when Maya loads a ma file using unknown plugins , or when Keynote loads a file that makes use of unknown
-   fonts.
-2. Asset deliveries could have very quick validation to make sure that the assets aren’t using undesirable extensions,
-   prior to parsing the files themselves. The list of e compatibility information could be provided to asset vendors to
-   check against in a normative way.
-3. An asset library could choose to only show USD files that have extension versions compatible with the current
-   application
-4. Command line tools (like the macOS fork of usdchecker) could validate whether a given set of extensions would work on
-   the current versions of RealityKit etc...
-
-## Alternate Solutions
-
-When proposing this addition, no other alternate approaches were suggested
-beforehand by contributors and evaluators.
-
-
+DAG:
+
+```
+root [] // common ancestor all capabilities
+usd [root]
+python [root]
+usd.geom [usd]
+usd.geom.subdiv [usd.geom]
+usd.geom.skel [usd.geom]
+usd.shadeMaterial [usd]
+usd.imaging [usd.geom.subdiv, usd.shadeMaterial]
+usd.format [usd]
+usd.format.usda [usd.format]
+usd.format.usdc [usd.format]
+usd.format.usdz [usd.format.usda, usd.format.usdc]
+usd.format.abc [usd.format, usd.geom]  // relies on geometry features
+usd.format.obj [usd.format, usd.geom]
+usd.python [usd, python]
+usd.physics [usd.geom]
+```
+
+Vendor domains have their own root, the exact name is chosen by the vendor.
+
+```
+apple [root] // Apple specific subsystems are present
+apple.realityKit [usd.physics, usd.imaging, usd.geom.skel]
+apple.format.realityKit [apple.realityKit, usd.format.usdz]
+```
+
+Versions are independent, as core functionality is assumed to come from an ancestor, consider MaterialX; the version may be known or unknown:
+
+```
+matx [root]
+usd.format.matx, [matx, usd.format, usd.geom, usd.shadeMaterial]
+usd.format.matx, 1.38 [matx, usd.format, usd.geom, usd.shadeMaterial]
+usd.format.matx, 1.39 [matx, usd.format, usd.geom, usd.shadeMaterial]
+```
+
+Capabilities may be roll ups of simpler capabilities:
+
+```
+usd.format.gltf-read [usd.format, usd.geom, usd.shadeMaterial]
+usd.format.gltf-write [usd.format, usd.geom, usd.shadeMaterial]
+usd.format.gltf [usd.format.gltf-read, usd.format-gltf.write]
+```
+
+Profiles are terminal nodes that may be used to describe a feature level.
+
+```
+usd.profile, 25.05 [usd.geom.skel, usd.physics, …]
+```
+
+The scheme could apply to Hydra:
+
+```
+hd [usd.imaging]
+hd.subdiv [hd]
+hd.splat [hd]
+hd.matx [hd, matx]
+hd.hio [hd]
+hd.hio.avif-read [hd.hio]
+hd.hio.exr-read [hd.hio]
+hd.hio.exr-read [hd.hio]
+hd.hio.exr [hd.hio.exr-read, hd.hio.exr-write]
+hd.hio.png-read [hd.hio]
+```
+
+Implementation details are typically marked as final, and are useful to query against a system, rather than a document. If recorded in a document, they indicate that the detail is required for interpretation of the document.
+
+```
+khronos.opengl [root]
+intel.tbb [root]
+```
+
+In these examples, the capabilities are assigned to a vendor, however, they refer to root as an ancestor, because there are no characteristics beyond ownership interred by being in a vendor domain.
+
+### Appendix B. ISO 19650
+
+Some inspiration for Profiles came from ISO 19650, so a brief overview is provided here for context.
+
+The IFC (Industry Foundation Classes) schema demonstrate modularity via a graph of dependent extensions that introduce new capabilities. This structure is intended to enable domain interoperability via the composition of distinct features. ISO 19650 is a series of standards that define a framework for collaborative management of information in the realm of buildings and infrastructure throughout the lifecycle of assets and is widely recognized wherever standards based information exchange is mandated or beneficial.
+
+The standard is divided into several parts, each addressing different aspects of information management. Work is ongoing to introduce further chapters around health and safety and project management.
+
+- ISO 19650-1: Concepts and principles.
+  - Introduces the framework and provides high-level guidance on its implementation.
+- ISO 19650-2: Delivery phase of assets.
+  - Focuses on managing information during the design and construction phases.
+- ISO 19650-3: Operational phase of assets.
+  - Extends the framework to asset operation and maintenance.
+- ISO 19650-4: Organization and digitalization of building information
+  - Specific schemas related to construction
+- ISO 19650-5: Security-minded approach.
+  - Provides guidelines for securing sensitive information.
+
+Key Principles of ISO 19650:
+
+- Standardized and modularized views enable formal conformance levels and collaboration.
+  - Preview.  An asset may be viewed to a certain degree of fidelity
+  - Coordination and Review. An asset may be viewed and introspected to the degree required to share details, gain consensus, and support sign off processes.
+  - Design Conformance: Full parametric fidelity and editing of an asset, enabling cross application interoperability.
+  - Exchange Information Requirements (EIR)
+  - Specify what information is needed, by whom, and at what project stage.
+  - Late-binding approaches to implementation can greatly aid in supporting these requirements flexibly.
+- Asset Information Requirements (AIR): 
+  - Define information needs for managing the asset during its operation.
+- Common Data Environments (CDE)
+  - Establish workflows for information management: producing, sharing, and approving information.
+- Roles and Responsibilities:
+  - Assign information management responsibilities to specific roles like the Lead Appointed Party and Task Teams.
+- Formal Hierarchy of Schemata:
+  - The hierarchy includes general principles, specific extensions (like Exchange Information Requirements), and derived structures (project-specific workflows).
+- Schema Interoperability:
+  - Prioritizes interoperable workflows. Document and manage project lifecycle via interoperation of design, construction, and operational applications.
+- Dynamic Binding of Extensions:
+  - Dynamic EIRs enable tailoring information to project needs without altering the base standard.
+- Lifecycle Thinking:
+  - Information is managed across all asset lifecycle stages, from design to operation to decommissioning.
+- Validation Framework:
+  - Information management processes ensure compliance with requirements at various stages.
+- Extensibility without Duplication:
+  - Extensions reuse core principles without duplicating base definitions, maintaining efficiency and scalability.
+
+### Appendix C: Links
+
+- Original propsal: https://github.com/PixarAnimationStudios/OpenUSD-proposals/pull/75
+- Internal JIRA USD-10252
+- ISO 19650 overview https://www.cdbb.cam.ac.uk/system/files/documents/InformationManagementaccordingtoBSENISO19650GuidancePart1Concepts.pdf
+- RDN https://en.wikipedia.org/wiki/Reverse_domain_name_notation
