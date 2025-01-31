@@ -73,10 +73,13 @@ The proposed instructions are:
 * `prepend ...` (alias for `insert ... at [0]`)
 * `append ...` (alias for `insert ... at [end]`)
 * `erase <slice>`
+* `minsize N` (append default elements as needed until size is at least N)
+* `maxsize N` (erase elements from the end as needed until size is at most N)
+* `resize N`  (append or erase elements as needed until size is exactly N)
 
 The `write-to` instruction overwrites array elements, but never changes array
-size. In contrast, both the `insert-at` and `erase` instructions can change
-array size.
+size. In contrast, the `insert-at`, `append`/`prepend`, `erase` and `*size`
+instructions can change array size.
 
 Above, an `<index>` is either a bracketed numeric index, like `[123]`, including
 negative indexing, meaning to subtract from the array's length to form the true
