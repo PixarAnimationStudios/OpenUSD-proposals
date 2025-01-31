@@ -299,6 +299,9 @@ with `/` as the `over` operator.
 1. Several series of both sparse and dense samples composed.
     ![Several series with both sparse and dense samples composed.](figures/eval_composed.svg)
 
+To override a single time sample in a sampled animation sequence, author an identity override (that has no effect) at the earliest time, the intended override at the desired time, another identity override at the next sample time.  This way the desired override takes effect in the desired interval and there is no effect elsewhere.
+
+![A sparse override 'a' that applies over the interval [2, 3).](figures/override_one_sample.svg)
 
 #### Evaluating a Strength-Ordering of Samples at a Specific Time
 
@@ -484,6 +487,16 @@ current use-case for it, so we leave it as an optional future expansion.
 
 Similarly we also leave support for sparse array edits for array-valued metadata
 to the future.
+
+The possibility of handling interpolation by interpolating sparse array edits
+was discussed.  However, interpolating the sparse edits themselves is not
+possible without the array to be edited in hand, yet this is the scenario for
+flattening.  So to do this in general, a single array edit would need to be able
+to represent an expression tree of `lerp()` and `over()` operations.  This
+effectively encodes a deferred flattening, and would in general be of the size
+of the pre-flattened stack.  The added complexity of this approach; including
+the requirement that we read and write these to files and present them to
+users, outweighed the potential interpolation benefit.
 
 It’s tempting to reach for more sophisticated kinds of value transformations in
 sparse edits.  For example, It’s easy to imagine something like `write [:] + 100
