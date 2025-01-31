@@ -151,6 +151,13 @@ erase [10]                 # Erase element 10, shifting elts at >=10 down 1.
 erase [-1]                 # Erase the last element.
 erase [end]                # Error: erase out-of-bounds.
 erase [1::2]               # Erase odd-indexed elts.
+
+########################################################################
+# '*size' can change array size by appending or erasing elements.
+
+minsize 20                 # Append elements if needed to make size >= 20.
+maxsize 1024               # Erase trailing elts if needed to make size <= 1024.
+resize 128                 # Erase or append as needed to make size = 128.
 ```
 
 This language is intentionally not Turing-complete.  There are no conditionals
