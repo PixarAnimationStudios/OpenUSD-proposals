@@ -68,8 +68,10 @@ The proposed instructions are:
 
 * `write opt-src-array<slice> to <slice>`  
 * `write literal-value to <slice>`  
-* `insert opt-src-array<slice> at <index>`  
-* `insert literal-value at <index>`  
+* `insert opt-src-array<slice> at <index>`
+* `insert literal-value at <index>`
+* `prepend ...` (alias for `insert ... at [0]`)
+* `append ...` (alias for `insert ... at [end]`)
 * `erase <slice>`
 
 The `write-to` instruction overwrites array elements, but never changes array
@@ -126,14 +128,18 @@ write src[::-1] to [:]    # Write `src` backward to the array, starting from the
 insert 3 at [10]           # Shift elts at index >=10 up by 1, insert 3 at [10]
 insert 9 at [-1]           # Shift the last elt up 1, insert 9 second-last.
 insert 86 at [end]         # Append 86, making it the last elt.
+append 86                  # Same as above.
 
 # inserting destination array elements at other indexes...
 insert [-1] at [0]         # Insert a copy of the last elt at the beginning.
+prepend [-1]               # Same as above.
 insert [-10:] at [0]       # Insert a copy of the last 10 elts at the beginning.
+prepend [-10:]             # Same as above.
 
 # inserting named source array elements in the destination...
 insert src[23] at [13]     # Shift elts at index >=13 up by 1, insert src[23].
 insert src[::2] at [end]   # Append the even-indexed elts from src to destination.
+append src[::2]            # Same as above
 
 ########################################################################
 # 'erase' can change array size by deleting elements.
