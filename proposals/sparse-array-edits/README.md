@@ -301,7 +301,7 @@ with `/` as the `over` operator.
 
 To override a single time sample in a sampled animation sequence, author an identity override (that has no effect) at the earliest time, the intended override at the desired time, another identity override at the next sample time.  This way the desired override takes effect in the desired interval and there is no effect elsewhere.
 
-![A sparse override 'a' that applies over the interval [2, 3).](figures/override_one_sample.svg)
+![A sparse override 'a' that applies over the interval \[2, 3\).](figures/override_one_sample.svg)
 
 #### Evaluating a Strength-Ordering of Samples at a Specific Time
 
@@ -487,6 +487,10 @@ current use-case for it, so we leave it as an optional future expansion.
 
 Similarly we also leave support for sparse array edits for array-valued metadata
 to the future.
+
+There is no special handling for indexed primvars.  It is left to DCCs to author
+sparse overrides of the `primvars:foo` and `primvars:foo:indices` attributes
+separately.
 
 The possibility of handling interpolation by interpolating sparse array edits
 was discussed.  However, interpolating the sparse edits themselves is not
