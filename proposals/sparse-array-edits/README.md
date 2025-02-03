@@ -161,8 +161,11 @@ resize 128                 # Erase or append as needed to make size = 128.
 ```
 
 This language is intentionally not Turing-complete.  There are no conditionals
-of any kind, so applying an edit always terminates, and takes time proportional
-to the number of instructions.
+of any kind, so applying an edit always terminates, and each instruction
+executes exactly once.
+
+Implementations are permitted to make action-preserving changes to instruction
+sequences, for example to remove redundant writes.
 
 We will provide a C++ class, `VtArrayEdit<T>`, that can represent a sequence of
 edits as described above, as well as apply those edits to a `VtArray<T>`.  In
