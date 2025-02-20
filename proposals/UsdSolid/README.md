@@ -552,77 +552,103 @@ class BrepArray "BrepArray" (
 
     Objects related to a single Brep must be consecutive in the BrepArray.  For example, the Edges of Brep i are the brep:edgeCount[i] consecutive Edges starting at SUM(brep:edgeCount[n]), for n in [0,i).
 ) {
-    uniform int[]      brep:id                   ( doc = """ User applied ID. size() = Number of Breps. """ )
-    uniform int[]      brep:regionCount          ( doc = """ Number of Regions in this Brep. size() = Number of Breps """ )
-    uniform int[]      brep:shellCount           ( doc = """ Number of Shells in this Brep. size() = Number of Breps """ )
-    uniform int[]      brep:faceuseCount         ( doc = """ Number of Faceuses in this Brep. size() = Number of Breps """ )
-    uniform int[]      brep:faceCount            ( doc = """ Number of Faces in this Brep. size() = Number of Breps """ )
-    uniform int[]      brep:loopCount            ( doc = """ Number of Loops in this Brep. size() = Number of Breps """ )
-    uniform int[]      brep:edgeuseCount         ( doc = """ Number of Edgeuses in this Brep. size() = Number of Breps """ )
-    uniform int[]      brep:edgeCount            ( doc = """ Number of Edges in this Brep. size() = Number of Breps """ )
-    uniform int[]      brep:vertexCount          ( doc = """ Number of Vertices in this Brep. size() = Number of Breps """ )
-
-       
-    uniform int[]      region:id                 ( doc = """ User applied ID. size() = number of regions. """ )
-    uniform int[]      region:shellCount         ( doc = """ Number of shells in this region - shells after the first shell are inner shells in the region. size() = number of regions. SUM(region:shellCount) = number of Shells""")
-    uniform token[]    region:type               ( allowedTokens = ["solid", "void"]
-                                                   doc = """ Indicates if this region is a solid or a void. size() = number of regions.""")
-    
-    uniform int[]      shell:id                  ( doc = """ User applied ID. size() = number of shells. """ )
-    uniform token[]    shell:type                ( allowedTokens = ["faceuse", "wireEdge", "vertex"]
-                                                   doc = """ A vertex type shell contains one and only one vertex. A wireEdge type shell contains Edges and Vertices. A faceuse type shell contains Faces, Edges and Vertices. size() = number of shells.""")
-    uniform int2[]     shell:childCount          ( doc = """ Provides the start index and number of topology items associated with this Shell. The type of the associated topology is indicated by the `shell:type` attribute. """ )
-    
-    uniform int[]      faceuse:face              ( doc = """ Index of owning Face. size() = number of faceuses = 2 x number of faces""" )
-    uniform token[]    faceuse:orientation       ( allowedTokens = ["same", "opposite"] 
-                                                   doc = """ Orientation of the faceuse relative to the face->surface. The "same" oriented faceuse will be on the positive-normal side, and the "opposite" orientated faceuse will be on the negative-normal side of the surface.  size() = number of faceuses. """)
-    
-    uniform int[]      face:id                   ( doc = """ User applied ID. size() = number of faces. """ )  
-    uniform int2[]     face:loopCount            ( doc = """ Provides the start index and number of loops associated with this Face. """)
-    uniform token[]    face:surfaceType          ( allowedTokens = ["BrepSurfaceNurbsAPI"] )
-    uniform int[]      face:surfaceIndex         ( doc = """ Provides the index of the surface associated with this Face. The type of the associated geometry is indicated by the `face:surfaceType` attribute. """ )
-    uniform token[]    face:trim                 ( allowedTokens = ["none", "uvCurves", "rectangular"]
-                                                   doc = """ none = No UV trim curves specified. uvCurves = UV trim curves are specified for this Edgeuses connected to this face.
-                                                             rectangular = Special case of 'uvCurves', UV domain is composed of isoparameter curves. size() = number of faces.""")
-    uniform double2[]  face:uRange               ( doc = """ U domain of the face on its surface. size() = number of faces. """)
-    uniform double2[]  face:vRange               ( doc = """ V domain of the face on its surface. size() = number of faces. """)
-    
-    uniform int[]      loop:id                   ( doc = """ User applied ID. size() = number of Loops. """ )
-    uniform token[]    loop:type                 ( allowedTokens = ["edgeuse", "vertex"] 
-                                                   doc = """ A vertex type loop exists on one and only one vertex.  An edgeuse type loop is comprised of one or more edgeuses. size() = number of loops. """)
-    uniform int2[]     loop:childTopology        ( doc = """ Provides the start index and number of topology items associated with this Loop. The type of the associated topology is indicated by the `loop:type` attribute. """ )
-
-    uniform token[]    edgeuse:type              ( allowedTokens = ["edge", "vertex", "wireEdge", "vertexAtPole"]
-                                                   doc = """ An edge type edgeuse connects an edge to a loopuse. A wireEdge type edgeuse connects an edge to a shell. Vertex and vertexAtPole type edgeuses connect a vertex to a loop. size() = 1/2 number of Edgeuses. """)
-    uniform int[]      edgeuse:edgeOrVertexIndex ( doc = """ Index of the owning edge or vertex. Edge index when edgeuse:type == edge or wireEdge, Vertex index when edgeuse:type == vertex or vertexAtPole. size() = 1/2 number of Edgeuses.  """)
-    uniform int[]      edgeuse:loopOrShellIndex  ( doc = """ Index of the owning loop or shell. Shell index when edgeuse:type == wireEdge, Loop index otherwise. size() = 1/2 number of Edgeuses.""")
-    uniform token[]    edgeuse:orientation       ( allowedTokens = ["same", "opposite"] 
-                                                   doc = """ The edge has the same direction as its curve. The "same" oriented edgeuse also runs in the same direction as the edge->curve.  size() = 1/2 number of Edgeuses.""")
-    uniform int[]      edgeuse:nextEdgeuse       ( doc = """ Index of next edgeuse when edgeuse:type == edge. O otherwise.  size() = 1/2 number of Edgeuses. """)
-    uniform int[]      edgeuse:mateNextEdgeuse   ( doc = """ Index of mate's next edgeuse when edgeuse:type == edge. O otherwise.  size() = 1/2 number of Edgeuses. """)
-    uniform int[]      edgeuse:uvCurveIndex      ( doc = """ Provides the index of the curve associated with this edgeuse. The curve is a UV Nurbs curve. """)
-
-    uniform int[]      edge:id                   ( doc = """ User applied ID. size() = number of Edges. """ )
-    uniform token[]    edge:curveType            ( allowedTokens = ["BrepCurveNurbsAPI"] )
-    uniform int[]      edge:curveIndex           ( doc = """ Provides the index of the curve associated with this edge. The type of the associated geometry is indicated by the `edge:curveType` attribute. """ )
-    uniform double2[]  edge:range                ( doc = """ Interval of the edge. size() = number of Edges.""")
-    uniform int2[]     edge:vertexIndices        ( doc = """ Indices of the Edge's start and end vertices. size() = number of Edges. """)
-    uniform int[]      edge:primaryEdgeuse       ( doc = """ Index of Edge's primary edgeuse. size() = number of Edges.
-                                                   Positive Value = pBrepData->m_vEdgeuses[lIndex].m_pEdgeuse1
-                                                   Negative Value = pBrepData->m_vEdgeuses[(-lIndex)-1].m_pEdgeuse2 """)
-
-    uniform int[]      vertex:id                 ( doc = """ User applied ID. size() = number of Vertices. """ )
-    uniform token[]    vertex:type               ( allowedTokens = ["BrepVertexPointAPI"] )
-    uniform int[]      vertex:index              ( doc = """ Provides the index of the position associated with this vertex. The type of the associated geometry is indicated by the `vertex:type` attribute. """ )
+    uniform  int[]     brep:userId                ( doc = """ optional User applied ID. size() = Number of Breps. """ )
+    uniform uint[]     brep:regionCount           ( doc = """ Number of Regions in this Brep. size() = Number of Breps """ )
+    uniform uint[]     brep:shellCount            ( doc = """ Number of Shells in this Brep. size() = Number of Breps """ )
+    uniform uint[]     brep:faceuseCount          ( doc = """ Number of Faceuses in this Brep. size() = Number of Breps """ )
+    uniform uint[]     brep:faceCount             ( doc = """ Number of Faces in this Brep. size() = Number of Breps """ )
+    uniform uint[]     brep:loopCount             ( doc = """ Number of Loops in this Brep. size() = Number of Breps """ )
+    uniform uint[]     brep:edgeuseCount          ( doc = """ Number of Edgeuses in this Brep. size() = Number of Breps """ )
+    uniform uint[]     brep:edgeCount             ( doc = """ Number of Edges in this Brep. size() = Number of Breps """ )
+    uniform uint[]     brep:vertexCount           ( doc = """ Number of Vertices in this Brep. size() = Number of Breps """ )
+                                                  
+    uniform int[]      region:userId              ( doc = """ optional User applied ID for region_ii. size() = number of regions. """ )
+    uniform int2[]     region:shellCount          ( doc = """ {startShellIndx, numberOfShells} for region_ii. 1st shell = outerShell, subsequent shells = innerShells. size() = number of regions. """ )
+                                                  # type to be changed to uint2[] when uint touples get supported
+    uniform token[]    region:type                ( allowedTokens = ["solidRegion", "voidRegion"]
+                                                    doc = """ solid = region_ii points are in the Brep. void = region_ii points are out of the Brep. size() = number of regions. """ )
+                                                  
+    uniform int[]      shell:userId               ( doc = """ optional User applied ID for shell_ii. size() = number of shells. """ )
+    uniform token[]    shell:type                 ( allowedTokens = ["faceuse", "wireEdge", "vertex"] 
+                                                    doc = """ vertex = shell_ii is a vertex shell embedded in a region containing one and only one vertex not connected to any edges or faces. 
+                                                              wireEdge = shell_ii is a wireEdge shell embedded in a region containing only connected wireEdges (and their connected vertices). 
+                                                              faceuse = shell_ii is a faceuse shell embedded in a region containing connected faceuses and any attached wireEdges (and their conneced edges and vertices).
+                                                    size() = number of shells. """ )
+    uniform int4[]     shell:childCount           ( doc = """ if shell_ii:type == faceuse,  {StartFaceuseIndx, numberOfFfaceuses, StartWireEdgeIndx, numberOfWireEdges} for shell_ii.
+                                                              if shell_ii:type == wireEdge, {StartEdgeIndx,    numberOfWireEdges, -1 = not used, -1 = not used} for shell_ii.
+                                                              if shell_ii:type == vertex,   {StartVertexIndx,  1 (number of vertices is always 1), -1 = not used, -1 = not used } for shell_ii.
+                                                              size() = number of shells. """ )
+                                                  # type to be changed to uint4[] when uint touples get supported
+                                                  
+    uniform uint[]     faceuse:faceIndex          ( doc = """ owningFace index. size() = number of faceuses = 2 x number of faces """ )
+    uniform token[]    faceuse:orientation        ( allowedTokens = ["same", "opposite"] 
+                                                    doc = """ same = top faceuse on the face-side pointed to by the face's surface normal.  
+                                                              opposite = bot faceuse on the opposite face-side.
+                                                              size() = number of faceuses = 2 x number of faces. """ )
+                                                  
+    uniform int[]      face:userId                ( doc = """ optional User applied ID for face_ii. size() = number of faces. """ )  
+    uniform int2[]     face:loopCount             ( doc = """ {startLoopIndex, numberOfLoops} for face_ii. 1st loop = outerLoop, subsequent loops = innerLoops. size() = number of faces. """ )
+                                                  # type to be changed to uint2[] when uint touples get supported
+                                                  
+    uniform token[]    face:surfaceType           ( allowedTokens = ["BrepSurfaceNurbsAPI"]
+                                                    doc = """ BrepCurveNurbsAPI = shape for face_ii is a NURB function in the associated surfaceType array. Currently only NURB surfaces allowed. In the future analytics will be added. 
+                                                              size() = number of faces. """ )
+    uniform uint[]     face:surfaceIndex          ( doc = """ face_ii's surface index in associated surfaceType array. size() = number of faces. """ )
+    uniform token[]    face:trimType              ( allowedTokens = ["general", "rectangular"]
+                                                    doc = """ general = face_ii's outerLoop contains any number of any shaped UVTrimCurves.
+                                                              rectangular = face_ii's outerLoop contains 4 isoparameter UVTrimCurves bounding the face's uv domain. size() = number of faces. """ )
+    uniform double2[]  face:uRange                ( doc = """ {Umin, Umax} for face_ii's u domain bounding interval. size() = number of faces. """ )
+    uniform double2[]  face:vRange                ( doc = """ {Vmin, Vmax} for face_ii's v domain bounding interval. size() = number of faces. """ )
+                                                  
+    uniform int[]      loop:userId                ( doc = """ optional User applied ID for loop_ii. size() = number of Loops. """ )
+    uniform token[]    loop:type                  ( allowedTokens = ["edgeuse", "vertex"] 
+                                                    doc = """ edgeuse = loop_ii is an edgeuseLoop consisting of any number of edgeuses connected in a head-to-tail circular list embedded in a face forming an 'in' patch boundary.
+                                                              vertex = loop_ii is a vertexLoop consisting of one vertex embedded in a face. size() = number of loops. """ )
+    uniform int2[]     loop:childTopology         ( doc = """ if loop:type[loop_ii] == edgeuse, {StartEdgeuseIndex, NumberOfEdgeuses} for loop_ii
+                                                              if loop:type[loop_ii] == vertex,  {StartVertexIndex, 1} for loop_ii. size() = number of Loops. """ )
+                                                  # type to be changed to uint2[] when uint touples get supported
+                                                  
+    uniform uint[]     edgeuse:edgeIndex          ( doc = """ owningEdge index. size() = Number of one-sided edge_to_face connections. """ )
+    uniform token[]    edgeuse:TopEU_orientation  ( allowedTokens = ["same", "opposite"] 
+                                                    doc = """ same = edgeuse_ii's TopEdgeuse parametric direction is the same as the owningEdge's, running from from StartVertex to EndVertex.
+                                                              opposite = edgeuse_ii's TopEdgeuse parametric direction runs from EndVertex to StartVertex in the opposite direction.
+                                                              size() = Number of one-sided edge_to_face connections. """ )
+    uniform int[]      edgeuse:NextRadialEU_Index ( doc = """ Each edgeuse connects one side of an edge to the top and bottom sides of a face with a {TopEdgeuse BotEdgeuse} mated pair
+                                                              A right-hand-rule traversal around an edge orders these connections into a series of {face entry side, face exit side} pairs, 
+                                                              represented as a {entryEdgeuse, exitEdgeuse} pair.
+                                                              The NextRadialEU_Index sign value specifies which face sides are the entry and exit sides as:
+                                                                positive semi-definite value ii: the face connected to edgeuse_ii is entered through the top-side TopEdgeuse and exited from the bottom-side BotEdgeuse.
+                                                                negative value -ii-1:            the face connected to edgeuse_ii has an opposite traversal entering the BotEdgeuse and exiting the TopEdgeuse.
+                                                              size() = Number of one-sided edge_to_face connections. """ )
+    uniform uint[]     edgeuse:uvTrimCurveIndex   ( doc = """ edgeuse's UVTrimCurve index in the assoicated UVTrimCurve array. UVTrimCurve = onwerEdge_ii's shape projected into connectedFace's uv domain . 
+                                                              The UVTrimCurve is a UV Nurbs curve. size() = Number of one-sided edge_to_face connections. """ )
+                                                  
+    uniform int[]      edge:userId                ( doc = """ optional User applied ID for edge_ii. size() = number of Edges. """ )
+    uniform token[]    edge:curveType             ( allowedTokens = ["BrepCurveNurbsAPI"] 
+                                                    doc = """ BrepCurveNurbsAPI = shape for edge_ii is a NURBs function in the associated curveType array. 
+                                                              Currently only NURB curves allowed. In the future analytics will be added. 
+                                                              size() = Number of edges. """ )
+    uniform uint[]     edge:curveIndex            ( doc = """ edge_ii's 3d curve index in the associated curveType array. size() = Number of edges. """ )
+    uniform double2[]  edge:range                 ( doc = """ {min, max} for edge_ii's domain interval. size() = number of Edges. """ )
+    uniform int2[]     edge:vertexIndices         ( doc = """ {StartVertexIndex, EndVertexIndex} for edge_ii 
+                                                                   where Vertex_StartVertexIndex:position = Edge_ii:Curve(Edge:Range(0)).
+                                                                         Vertex_EndVertexIndex:position   = Edge_ii:Curve(Edge:Range(1)).
+                                                                   size() = number of Edges. """ )
+                                                  # type to be changed to uint2[] when uint touples get supported
+                                                  
+    uniform int[]      vertex:userId              ( doc = """ optional User applied ID for vertex_ii. size() = number of Vertices. """ )
+    uniform token[]    vertex:pointType           ( allowedTokens = ["BrepVertexPointAPI"] 
+                                                    doc = """ BrepVertexPointAPI = shape for vertex_ii is a point in the pointType array. size() = number of Vertices. """ )
+    uniform uint[]     vertex:pointIndex          ( doc = """ vertex_ii's point index in the pointType array. size() = number of Vertices. """ )
 }
 
 class "BrepVertexPointAPI" (
     inherits = </APISchemaBase>
-    doc = """ Packed Point Vertex description for use as a Brep geometry source """
+    doc = """ Packed Point Vertex description for use as a Brep geometry source """ 
 )
 {
     uniform point3d[] brep:vertex:point:position (
-        doc = """ Vertex position. size() = number of Vertices. """
+        doc = """ Vertex position. size() = number of Vertices. """ 
         customData = {
             string apiName = "position"
         }
@@ -639,8 +665,14 @@ class "BrepCurveNurbsAPI" (
     and modeling curves. We require 'numSegments + 2 * degree + 1' knots (2 more than maya does). This is to be more
     consistent with RenderMan's NURBS patch specification.  
     
+    To express a periodic curve:
+    - knot[0] = knot[1] - (knots[-2] - knots[-3]; 
+    - knot[-1] = knot[-2] + (knot[2] - knots[1]);
     
-    """
+    To express a nonperiodic curve:
+    - knot[0] = knot[1];
+    - knot[-1] = knot[-2];
+    """ 
     customData = {
         token apiSchemaType = "singleApply"
         token[] apiSchemaCanOnlyApplyTo = ["UsdSolidBrepArray"]
@@ -648,33 +680,33 @@ class "BrepCurveNurbsAPI" (
 )
 {
     uniform point3d[] brep:curve:nurbs:controlVertices (
-        doc = """Control vertices of the NurbsCurve.
-        size() = SUM(vertexCount)."""
+        doc = """ Control vertices of the NurbsCurve.
+        size() = SUM(vertexCount). """ 
         customData = {
             string apiName = "controlVertices"
         }
     ) 
     
     uniform int[] brep:curve:nurbs:vertexCount (
-        doc = """Number of control vertices per curve.
-        size() = number of NURBS curves."""
+        doc = """ Number of control vertices per curve.
+        size() = number of NURBS curves. """ 
         customData = {
             string apiName = "vertexCount"
         }
     )
     
     uniform int[] brep:curve:nurbs:order (
-        doc = """Order of the curve. 
+        doc = """ Order of the curve. 
         Order must be positive and is equal to the degree of the polynomial basis to be evaluated, plus 1.
         Its value for the 'i'th curve must be less than or equal to vertexCount[i].
-        size() = number of NURBS curves."""
+        size() = number of NURBS curves. """ 
         customData = {
             string apiName = "order"
         }
     )
     
     uniform double[] brep:curve:nurbs:knots (
-        doc = """Knot vector providing curve parameterization.
+        doc = """ Knot vector providing curve parameterization.
         The length of the slice of the array for the ith curve must be ( vertexCount[i] + order[i] ), and its entries
         must take on non-decreasing values. Knots are listed in multiplicity, e.g. [0, 0, 1, 1]."""
         customData = {
@@ -694,30 +726,30 @@ class "BrepCurveNurbsAPI" (
 
 class "BrepCurveUvAPI" (
     inherits = </APISchemaBase>
-    doc = """ Packed UV Curve description for use as a Brep geometry source """
+    doc = """ Packed UV Curve description for use as a Brep geometry source """ 
 )
 {
     uniform double2[] brep:curve:uv:controlVertices (
-        doc = """2D Control points (u, v) that comprise the curves.
-        size() = SUM(vertexCount)."""
+        doc = """ 2D Control points (u, v) that comprise the curves.
+        size() = SUM(vertexCount). """ 
         customData = {
             string apiName = "controlVertices"
         }
     )
     
     uniform int[] brep:curve:uv:vertexCount (
-        doc = """Number of control vertices for each of the curves.
-        size() = number of curves."""
+        doc = """ Number of control vertices for each of the curves.
+        size() = number of curves. """ 
         customData = {
             string apiName = "vertexCount"
         }
     )
     
     uniform int[] brep:curve:uv:order (
-        doc = """Order of the curves.
+        doc = """ Order of the curves.
         Order must be positive and is equal to the degree of the polynomial basis to be evaluated, plus 1.
         Its value for the 'i'th curve must be less than or equal to vertexCount[i].
-        size() = number of curves."""
+        size() = number of curves. """ 
         customData = {
             string apiName = "order"
         }
@@ -755,7 +787,7 @@ class "BrepSurfaceNurbsAPI" (
     The layout of control vertices in the \\em points attribute is row-major with U considered rows, and V columns.
 
     The authored points, orders, knots, weights, and ranges are all that is required to render the nurbs patch.
-    """
+    """ 
     customData = {
         token apiSchemaType = "singleApply"
         token[] apiSchemaCanOnlyApplyTo = ["UsdSolidBrepArray"]
@@ -763,43 +795,43 @@ class "BrepSurfaceNurbsAPI" (
 )
 {
     uniform point3d[] brep:surface:nurbs:controlVertices (
-        doc = """Control vertices of the NurbsSurface.
+        doc = """ Control vertices of the NurbsSurface.
         The layout is row-major with U considered rows, and V columns.
-        size() = SUM_i(uVertexCount[i] * vVertexCount[i])."""
+        size() = SUM_i(uVertexCount[i] * vVertexCount[i]). """ 
         customData = {
             string apiName = "controlVertices"
         }
     )
 
     uniform int[] brep:surface:nurbs:uVertexCount (
-        doc = """Number of control vertices per surface in U dir.
-        size() = number of NURBS surfaces."""
+        doc = """ Number of control vertices per surface in U dir.
+        size() = number of NURBS surfaces. """ 
         customData = {
             string apiName = "uVertexCount"
         }
     )
 
     uniform int[] brep:surface:nurbs:vVertexCount (
-        doc = """Number of control vertices per surface in V dir.
-        size() = number of NURBS surfaces."""
+        doc = """ Number of control vertices per surface in V dir.
+        size() = number of NURBS surfaces. """ 
         customData = {
             string apiName = "vVertexCount"
         }
     )
     
     uniform int[] brep:surface:nurbs:uOrder (
-        doc = """Order in the U direction.
+        doc = """ Order in the U direction.
         Order must be positive and is equal to the degree of the polynomial basis to be evaluated, plus 1.
-        size() = number of NURBS surfaces."""
+        size() = number of NURBS surfaces. """ 
         customData = {
             string apiName = "uOrder"
         }
     )
     
     uniform int[] brep:surface:nurbs:vOrder (
-        doc = """Order in the V direction.
+        doc = """ Order in the V direction.
         Order must be positive and is equal to the degree of the polynomial basis to be evaluated, plus 1.
-        size() = number of NURBS surfaces."""
+        size() = number of NURBS surfaces. """ 
         customData = {
             string apiName = "vOrder"
         }
@@ -842,6 +874,7 @@ class "BrepSurfaceNurbsAPI" (
 
 To exhibit this model we present 4 examples: a unit cube; a unit cube with IDs assigned to each topology object; a non-manifold brep consisting of 2 cubes sharing a face; and nested cubes, creating a void space in a manifold brep.
 
+## **On 2/20/25 a new schema was released. At that time the examples became stale and need to be regenerated. This work is pending.**
 
 ## **4.1. Cube**
 
@@ -855,79 +888,6 @@ Each of the 36 topology object has a unique, integer ID tag. There are: 8 vertic
   <summary> Click to expand </summary>
 
 ```
-#usda 1.0
-
-def Xform "World"
-{
-    def BrepArray "CubeIds" (
-        prepend apiSchemas = ["BrepCurveUvAPI", "BrepCurveNurbsAPI", "BrepSurfaceNurbsAPI"]
-    )
-    {
-        uniform point3d[] brep:curve:nurbs:controlVertices = [(1, 0, 1), (1, 1, 1), (0, 1, 1), (1, 1, 1), (0, 0, 0), (0, 1, 0), (0, 0, 1), (0, 1, 1), (1, 0, 0), (1, 1, 0), (1, 1, 0), (1, 1, 1), (0, 0, 0), (0, 0, 1), (0, 0, 0), (1, 0, 0), (1, 0, 0), (1, 0, 1), (0, 0, 1), (1, 0, 1), (0, 1, 0), (0, 1, 1), (0, 1, 0), (1, 1, 0)]
-        uniform double[] brep:curve:nurbs:knots = [0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1]
-        uniform int[] brep:curve:nurbs:order = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
-        uniform int[] brep:curve:nurbs:vertexCount = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
-        uniform double[] brep:curve:nurbs:weights = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-        uniform double2[] brep:curve:uv:controlVertices = [(0, 0), (1, -2.220446049250313e-16), (1, -2.220446049250313e-16), (0.9999999999999998, 0.9999999999999998), (-2.220446049250313e-16, 1), (0.9999999999999998, 0.9999999999999998), (0, 0), (-2.220446049250313e-16, 1), (0, 0), (0, 1), (0, 0), (1, 0), (1, 0), (1, 1), (0, 1), (1, 1), (0, 0), (1, -2.220446049250313e-16), (1, -2.220446049250313e-16), (0.9999999999999998, 0.9999999999999998), (-2.220446049250313e-16, 1), (0.9999999999999998, 0.9999999999999998), (0, 0), (-2.220446049250313e-16, 1), (0, 0), (0, 1), (0, 0), (1, 0), (1, 0), (1, 1), (0, 1), (1, 1), (0, 0), (0, 1), (0, 0), (1, 0), (1, 0), (1, 1), (0, 1), (1, 1), (0, 0), (1, -2.220446049250313e-16), (1, -2.220446049250313e-16), (0.9999999999999998, 0.9999999999999998), (-2.220446049250313e-16, 1), (0.9999999999999998, 0.9999999999999998), (0, 0), (-2.220446049250313e-16, 1)]
-        uniform double[] brep:curve:uv:knots = [0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1]
-        uniform int[] brep:curve:uv:order = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
-        uniform int[] brep:curve:uv:vertexCount = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
-        uniform double[] brep:curve:uv:weights = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-        uniform int[] brep:edgeCount = [12]
-        uniform int[] brep:edgeuseCount = [24]
-        uniform int[] brep:faceCount = [6]
-        uniform int[] brep:faceuseCount = [12]
-        uniform int[] brep:id = [0]
-        uniform int[] brep:loopCount = [6]
-        uniform int[] brep:regionCount = [2]
-        uniform int[] brep:shellCount = [2]
-        uniform point3d[] brep:surface:nurbs:controlVertices = [(0, 0, 0), (0, 1, 0), (1, 0, 0), (1, 1, 0), (0, 0, 1), (1, 0, 1), (0, 1, 1), (1, 1, 1), (0, 0, 0), (0, 0, 1), (0, 1, 0), (0, 1, 1), (1, 0, 0), (1, 1, 0), (1, 0, 1), (1, 1, 1), (0, 0, 0), (1, 0, 0), (0, 0, 1), (1, 0, 1), (0, 1, 0), (0, 1, 1), (1, 1, 0), (1, 1, 1)]
-        uniform double[] brep:surface:nurbs:uKnots = [0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1]
-        uniform int[] brep:surface:nurbs:uOrder = [2, 2, 2, 2, 2, 2]
-        uniform int[] brep:surface:nurbs:uVertexCount = [2, 2, 2, 2, 2, 2]
-        uniform double[] brep:surface:nurbs:vKnots = [0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1]
-        uniform int[] brep:surface:nurbs:vOrder = [2, 2, 2, 2, 2, 2]
-        uniform int[] brep:surface:nurbs:vVertexCount = [2, 2, 2, 2, 2, 2]
-        uniform double[] brep:surface:nurbs:weights = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-        uniform point3d[] brep:vertex:point:position = [(1, 1, 1), (0, 0, 1), (0, 0, 0), (1, 0, 0), (1, 0, 1), (0, 1, 1), (0, 1, 0), (1, 1, 0)]
-        uniform int[] brep:vertexCount = [8]
-        uniform int[] edge:curveIndex = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
-        uniform token[] edge:curveType = ["BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI"]
-        uniform int[] edge:id = [16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27]
-        uniform int[] edge:primaryEdgeuse = [6, 7, -12, -10, 13, 14, 16, 17, 18, 19, -21, -24]
-        uniform double2[] edge:range = [(0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1)]
-        uniform int2[] edge:vertexIndices = [(4, 0), (5, 0), (2, 6), (1, 5), (3, 7), (7, 0), (2, 1), (2, 3), (3, 4), (1, 4), (6, 5), (6, 7)]
-        uniform int[] edgeuse:edgeOrVertexIndex = [2, 11, 4, 7, 3, 9, 0, 1, 6, 3, 10, 2, 8, 4, 5, 0, 6, 7, 8, 9, 10, 1, 5, 11]
-        uniform int[] edgeuse:loopOrShellIndex = [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5]
-        uniform int[] edgeuse:mateNextEdgeuse = [-12, -24, 2, 3, -10, 5, -16, -22, 8, 9, -21, 11, 12, -3, -23, 15, -9, -4, -13, -6, 20, 21, 22, 23]
-        uniform int[] edgeuse:nextEdgeuse = [-1, -2, 13, 17, -5, 19, -7, -8, 16, 4, -11, 0, 18, -14, -15, 6, -17, -18, -19, -20, 10, 7, 14, 1]
-        uniform token[] edgeuse:orientation = ["same", "same", "opposite", "opposite", "opposite", "same", "same", "opposite", "same", "same", "opposite", "opposite", "opposite", "same", "same", "opposite", "opposite", "same", "same", "opposite", "same", "same", "opposite", "opposite"]
-        uniform token[] edgeuse:type = ["edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge"]
-        uniform int[] edgeuse:uvCurveIndex = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]
-        uniform float3[] extent = []
-        uniform int2[] face:childLoops = [(0, 1), (1, 1), (2, 1), (3, 1), (4, 1), (5, 1)]
-        uniform int[] face:id = [4, 5, 6, 7, 8, 9]
-        uniform int[] face:surfaceIndex = [0, 1, 2, 3, 4, 5]
-        uniform token[] face:surfaceType = ["BrepSurfaceNurbsAPI", "BrepSurfaceNurbsAPI", "BrepSurfaceNurbsAPI", "BrepSurfaceNurbsAPI", "BrepSurfaceNurbsAPI", "BrepSurfaceNurbsAPI"]
-        uniform token[] face:trim = ["uvCurves", "uvCurves", "uvCurves", "uvCurves", "uvCurves", "uvCurves"]
-        uniform double2[] face:uRange = [(0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1)]
-        uniform double2[] face:vRange = [(0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1)]
-        uniform int[] faceuse:face = [5, 4, 2, 0, 3, 1, 5, 1, 4, 0, 3, 2]
-        uniform token[] faceuse:orientation = ["same", "same", "same", "same", "same", "same", "opposite", "opposite", "opposite", "opposite", "opposite", "opposite"]
-        uniform int2[] loop:childTopology = [(0, 4), (4, 4), (8, 4), (12, 4), (16, 4), (20, 4)]
-        uniform int[] loop:id = [10, 11, 12, 13, 14, 15]
-        uniform token[] loop:type = ["edgeuse", "edgeuse", "edgeuse", "edgeuse", "edgeuse", "edgeuse"]
-        uniform int[] region:id = [0, 1]
-        uniform int[] region:numberOfShells = [1, 1]
-        uniform token[] region:type = ["void", "solid"]
-        uniform int2[] shell:childTopology = [(0, 6), (6, 6)]
-        uniform int[] shell:id = [2, 3]
-        uniform token[] shell:type = ["faceuse", "faceuse"]
-        uniform int[] vertex:id = [28, 29, 30, 31, 32, 33, 34, 35]
-        uniform int[] vertex:index = [0, 1, 2, 3, 4, 5, 6, 7]
-        uniform token[] vertex:type = ["BrepVertexPointAPI", "BrepVertexPointAPI", "BrepVertexPointAPI", "BrepVertexPointAPI", "BrepVertexPointAPI", "BrepVertexPointAPI", "BrepVertexPointAPI", "BrepVertexPointAPI"]
-    }
-}
 ```
 </details>
  
@@ -948,79 +908,6 @@ In the wireframe model image below, the non-manifold edges are shown in blue. An
   <summary> Click to expand </summary>
 
 ```
-#usda 1.0
-
-def Xform "World"
-{
-    def BrepArray "nonManifoldCubes" (
-        prepend apiSchemas = ["BrepCurveUvAPI", "BrepCurveNurbsAPI", "BrepSurfaceNurbsAPI"]
-    )
-    {
-        uniform point3d[] brep:curve:nurbs:controlVertices = [(1, 0, 1), (1, 1, 1), (0, 1, 1), (1, 1, 1), (0, 0, 0), (0, 1, 0), (0, 0, 1), (0, 1, 1), (1, 0, 0), (1, 1, 0), (1, 1, 0), (1, 1, 1), (0, 0, 0), (0, 0, 1), (0, 0, 0), (1, 0, 0), (1, 0, 0), (1, 0, 1), (0, 0, 1), (1, 0, 1), (0, 1, 0), (0, 1, 1), (0, 1, 0), (1, 1, 0), (1, 0, 1), (2, 0, 1), (2, 0, 1), (2, 1, 1), (1, 1, 1), (2, 1, 1), (2, 1, 0), (2, 1, 1), (1, 1, 0), (2, 1, 0), (2, 0, 0), (2, 1, 0), (1, 0, 0), (2, 0, 0), (2, 0, 0), (2, 0, 1)]
-        uniform double[] brep:curve:nurbs:knots = [0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1]
-        uniform int[] brep:curve:nurbs:order = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
-        uniform int[] brep:curve:nurbs:vertexCount = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
-        uniform double[] brep:curve:nurbs:weights = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-        uniform double2[] brep:curve:uv:controlVertices = [(0, 0), (1, -2.220446049250313e-16), (1, -2.220446049250313e-16), (0.9999999999999998, 0.9999999999999998), (-2.220446049250313e-16, 1), (0.9999999999999998, 0.9999999999999998), (0, 0), (-2.220446049250313e-16, 1), (0, 0), (0, 1), (0, 0), (1, 0), (1, 0), (1, 1), (0, 1), (1, 1), (0, 0), (1, -2.220446049250313e-16), (1, -2.220446049250313e-16), (0.9999999999999998, 0.9999999999999998), (-2.220446049250313e-16, 1), (0.9999999999999998, 0.9999999999999998), (0, 0), (-2.220446049250313e-16, 1), (0, 0), (0, 1), (0, 0), (1, 0), (1, 0), (1, 1), (0, 1), (1, 1), (0, 0), (0, 1), (0, 0), (1, 0), (1, 0), (1, 1), (0, 1), (1, 1), (0, 0), (1, -2.220446049250313e-16), (1, -2.220446049250313e-16), (0.9999999999999998, 0.9999999999999998), (-2.220446049250313e-16, 1), (0.9999999999999998, 0.9999999999999998), (0, 0), (-2.220446049250313e-16, 1), (0, 1), (1, 1)]
-        uniform double[] brep:curve:uv:knots = [0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1]
-        uniform int[] brep:curve:uv:order = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
-        uniform int[] brep:curve:uv:vertexCount = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
-        uniform double[] brep:curve:uv:weights = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-        uniform int[] brep:edgeCount = [20]
-        uniform int[] brep:edgeuseCount = [44]
-        uniform int[] brep:faceCount = [11]
-        uniform int[] brep:faceuseCount = [22]
-        uniform int[] brep:id = [0]
-        uniform int[] brep:loopCount = [11]
-        uniform int[] brep:regionCount = [3]
-        uniform int[] brep:shellCount = [3]
-        uniform point3d[] brep:surface:nurbs:controlVertices = [(0, 0, 0), (0, 1, 0), (1, 0, 0), (1, 1, 0), (0, 0, 1), (1, 0, 1), (0, 1, 1), (1, 1, 1), (0, 0, 0), (0, 0, 1), (0, 1, 0), (0, 1, 1), (1, 0, 0), (1, 1, 0), (1, 0, 1), (1, 1, 1), (0, 0, 0), (1, 0, 0), (0, 0, 1), (1, 0, 1), (0, 1, 0), (0, 1, 1), (1, 1, 0), (1, 1, 1), (1, 0, 1), (2, 0, 1), (1, 1, 1), (2, 1, 1), (1, 1, 0), (1, 1, 1), (2, 1, 0), (2, 1, 1), (1, 0, 0), (1, 1, 0), (2, 0, 0), (2, 1, 0), (2, 0, 0), (2, 1, 0), (2, 0, 1), (2, 1, 1), (1, 0, 0), (2, 0, 0), (1, 0, 1), (2, 0, 1)]
-        uniform double[] brep:surface:nurbs:uKnots = [0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1]
-        uniform int[] brep:surface:nurbs:uOrder = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
-        uniform int[] brep:surface:nurbs:uVertexCount = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
-        uniform double[] brep:surface:nurbs:vKnots = [0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1]
-        uniform int[] brep:surface:nurbs:vOrder = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
-        uniform int[] brep:surface:nurbs:vVertexCount = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
-        uniform double[] brep:surface:nurbs:weights = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-        uniform point3d[] brep:vertex:point:position = [(1, 1, 1), (0, 0, 1), (0, 0, 0), (1, 0, 0), (1, 0, 1), (0, 1, 1), (0, 1, 0), (1, 1, 0), (2, 0, 1), (2, 1, 1), (2, 1, 0), (2, 0, 0)]
-        uniform int[] brep:vertexCount = [12]
-        uniform int[] edge:curveIndex = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
-        uniform token[] edge:curveType = ["BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI"]
-        uniform int[] edge:id = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-        uniform int[] edge:primaryEdgeuse = [6, 7, -12, -10, 13, 14, 16, 17, 18, 19, -21, -24, 25, 26, -28, -31, -32, -35, -36, -37]
-        uniform double2[] edge:range = [(0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1)]
-        uniform int2[] edge:vertexIndices = [(4, 0), (5, 0), (2, 6), (1, 5), (3, 7), (7, 0), (2, 1), (2, 3), (3, 4), (1, 4), (6, 5), (6, 7), (4, 8), (8, 9), (0, 9), (10, 9), (7, 10), (11, 10), (3, 11), (11, 8)]
-        uniform int[] edgeuse:edgeOrVertexIndex = [2, 11, 4, 7, 3, 9, 0, 1, 6, 3, 10, 2, 8, 4, 5, 0, 6, 7, 8, 9, 10, 1, 5, 11, 0, 12, 13, 14, 5, 14, 15, 16, 4, 16, 17, 18, 19, 17, 15, 13, 8, 18, 19, 12]
-        uniform int[] edgeuse:loopOrShellIndex = [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 6, 6, 6, 6, 7, 7, 7, 7, 8, 8, 8, 8, 9, 9, 9, 9, 10, 10, 10, 10]
-        uniform int[] edgeuse:mateNextEdgeuse = [-12, -24, 2, 3, -10, 5, -16, -22, 8, 9, -21, 11, 12, -3, -23, 15, -9, -4, -13, -6, 20, 21, 22, 23, 24, -44, -40, 27, 14, -28, 30, 31, 13, -32, 34, 35, 36, -35, -31, 39, 40, -36, -37, 43]
-        uniform int[] edgeuse:nextEdgeuse = [-1, -2, 32, 17, -5, 19, -7, -8, 16, 4, -11, 0, -41, -14, -15, -25, -17, -18, -19, -20, 10, 7, 28, 1, 6, -26, -27, 29, -29, -30, 38, 33, -33, -34, 37, 41, 42, -38, -39, 26, 18, -42, -43, 25]
-        uniform token[] edgeuse:orientation = ["same", "same", "opposite", "opposite", "opposite", "same", "same", "opposite", "same", "same", "opposite", "opposite", "opposite", "same", "same", "opposite", "opposite", "same", "same", "opposite", "same", "same", "opposite", "opposite", "opposite", "same", "same", "opposite", "same", "same", "opposite", "opposite", "same", "same", "opposite", "opposite", "opposite", "same", "same", "opposite", "opposite", "same", "same", "opposite"]
-        uniform token[] edgeuse:type = ["edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge"]
-        uniform int[] edgeuse:uvCurveIndex = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 24, -1, -1, -1, -1, -1, -1, -1, -1, -1]
-        uniform float3[] extent = []
-        uniform int2[] face:childLoops = [(0, 1), (1, 1), (2, 1), (3, 1), (4, 1), (5, 1), (6, 1), (7, 1), (8, 1), (9, 1), (10, 1)]
-        uniform int[] face:id = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-        uniform int[] face:surfaceIndex = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-        uniform token[] face:surfaceType = ["BrepSurfaceNurbsAPI", "BrepSurfaceNurbsAPI", "BrepSurfaceNurbsAPI", "BrepSurfaceNurbsAPI", "BrepSurfaceNurbsAPI", "BrepSurfaceNurbsAPI", "BrepSurfaceNurbsAPI", "BrepSurfaceNurbsAPI", "BrepSurfaceNurbsAPI", "BrepSurfaceNurbsAPI", "BrepSurfaceNurbsAPI"]
-        uniform token[] face:trim = ["uvCurves", "uvCurves", "uvCurves", "uvCurves", "uvCurves", "uvCurves", "uvCurves", "uvCurves", "uvCurves", "uvCurves", "uvCurves"]
-        uniform double2[] face:uRange = [(0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1)]
-        uniform double2[] face:vRange = [(0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1)]
-        uniform int[] faceuse:face = [5, 4, 2, 0, 1, 6, 7, 8, 9, 10, 5, 1, 4, 0, 3, 2, 10, 8, 7, 6, 9, 3]
-        uniform token[] faceuse:orientation = ["same", "same", "same", "same", "same", "same", "same", "same", "same", "same", "opposite", "opposite", "opposite", "opposite", "opposite", "opposite", "opposite", "opposite", "opposite", "opposite", "opposite", "same"]
-        uniform int2[] loop:childTopology = [(0, 4), (4, 4), (8, 4), (12, 4), (16, 4), (20, 4), (24, 4), (28, 4), (32, 4), (36, 4), (40, 4)]
-        uniform int[] loop:id = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-        uniform token[] loop:type = ["edgeuse", "edgeuse", "edgeuse", "edgeuse", "edgeuse", "edgeuse", "edgeuse", "edgeuse", "edgeuse", "edgeuse", "edgeuse"]
-        uniform int[] region:id = [0, 0, 0]
-        uniform int[] region:numberOfShells = [1, 1, 1]
-        uniform token[] region:type = ["void", "solid", "solid"]
-        uniform int2[] shell:childTopology = [(0, 10), (10, 6), (16, 6)]
-        uniform int[] shell:id = [0, 0, 0]
-        uniform token[] shell:type = ["faceuse", "faceuse", "faceuse"]
-        uniform int[] vertex:id = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-        uniform int[] vertex:index = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
-        uniform token[] vertex:type = ["BrepVertexPointAPI", "BrepVertexPointAPI", "BrepVertexPointAPI", "BrepVertexPointAPI", "BrepVertexPointAPI", "BrepVertexPointAPI", "BrepVertexPointAPI", "BrepVertexPointAPI", "BrepVertexPointAPI", "BrepVertexPointAPI", "BrepVertexPointAPI", "BrepVertexPointAPI"]
-    }
-}
 ```
 
 </details>
@@ -1038,79 +925,6 @@ This example shows a manifold Brep with an internal void. The infinite region is
   <summary> Click to expand </summary>
 
 ```
-#usda 1.0
-
-def Xform "World"
-{
-    def BrepArray "cubeWithVoid" (
-        prepend apiSchemas = ["BrepCurveUvAPI", "BrepCurveNurbsAPI", "BrepSurfaceNurbsAPI"]
-    )
-    {
-        uniform point3d[] brep:curve:nurbs:controlVertices = [(1, 0, 1), (1, 1, 1), (0, 1, 1), (1, 1, 1), (0, 0, 0), (0, 1, 0), (0, 0, 1), (0, 1, 1), (1, 0, 0), (1, 1, 0), (1, 1, 0), (1, 1, 1), (0, 0, 0), (0, 0, 1), (0, 0, 0), (1, 0, 0), (1, 0, 0), (1, 0, 1), (0, 0, 1), (1, 0, 1), (0, 1, 0), (0, 1, 1), (0, 1, 0), (1, 1, 0), (0.49999999999999994, 0.5, 0.3), (0.7, 0.5, 0.29999999999999993), (0.7, 0.5, 0.49999999999999994), (0.7, 0.5, 0.7), (0.5000000000000001, 0.5, 0.7)]
-        uniform double[] brep:curve:nurbs:knots = [0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0.5, 0.5, 1, 1, 1]
-        uniform int[] brep:curve:nurbs:order = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3]
-        uniform int[] brep:curve:nurbs:vertexCount = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 5]
-        uniform double[] brep:curve:nurbs:weights = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.7071067811865476, 1, 0.7071067811865476, 1]
-        uniform double2[] brep:curve:uv:controlVertices = [(0, 0), (1, -2.220446049250313e-16), (1, -2.220446049250313e-16), (0.9999999999999998, 0.9999999999999998), (-2.220446049250313e-16, 1), (0.9999999999999998, 0.9999999999999998), (0, 0), (-2.220446049250313e-16, 1), (0, 0), (0, 1), (0, 0), (1, 0), (1, 0), (1, 1), (0, 1), (1, 1), (0, 0), (1, -2.220446049250313e-16), (1, -2.220446049250313e-16), (0.9999999999999998, 0.9999999999999998), (-2.220446049250313e-16, 1), (0.9999999999999998, 0.9999999999999998), (0, 0), (-2.220446049250313e-16, 1), (0, 0), (0, 1), (0, 0), (1, 0), (1, 0), (1, 1), (0, 1), (1, 1), (0, 0), (0, 1), (0, 0), (1, 0), (1, 0), (1, 1), (0, 1), (1, 1), (0, 0), (1, -2.220446049250313e-16), (1, -2.220446049250313e-16), (0.9999999999999998, 0.9999999999999998), (-2.220446049250313e-16, 1), (0.9999999999999998, 0.9999999999999998), (0, 0), (-2.220446049250313e-16, 1), (0, 0), (0, 1), (1, 0), (1, 1)]
-        uniform double[] brep:curve:uv:knots = [0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1]
-        uniform int[] brep:curve:uv:order = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
-        uniform int[] brep:curve:uv:vertexCount = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
-        uniform double[] brep:curve:uv:weights = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-        uniform int[] brep:edgeCount = [13]
-        uniform int[] brep:edgeuseCount = [26]
-        uniform int[] brep:faceCount = [7]
-        uniform int[] brep:faceuseCount = [14]
-        uniform int[] brep:id = [0]
-        uniform int[] brep:loopCount = [7]
-        uniform int[] brep:regionCount = [3]
-        uniform int[] brep:shellCount = [4]
-        uniform point3d[] brep:surface:nurbs:controlVertices = [(0, 0, 0), (0, 1, 0), (1, 0, 0), (1, 1, 0), (0, 0, 1), (1, 0, 1), (0, 1, 1), (1, 1, 1), (0, 0, 0), (0, 0, 1), (0, 1, 0), (0, 1, 1), (1, 0, 0), (1, 1, 0), (1, 0, 1), (1, 1, 1), (0, 0, 0), (1, 0, 0), (0, 0, 1), (1, 0, 1), (0, 1, 0), (0, 1, 1), (1, 1, 0), (1, 1, 1), (0.49999999999999994, 0.5, 0.3), (0.49999999999999994, 0.5, 0.3), (0.49999999999999994, 0.5, 0.3), (0.49999999999999994, 0.5, 0.3), (0.49999999999999994, 0.5, 0.3), (0.49999999999999994, 0.5, 0.3), (0.49999999999999994, 0.5, 0.3), (0.49999999999999994, 0.5, 0.3), (0.49999999999999994, 0.5, 0.3), (0.7, 0.5, 0.29999999999999993), (0.7, 0.7, 0.29999999999999993), (0.5, 0.7, 0.29999999999999993), (0.30000000000000004, 0.7, 0.29999999999999993), (0.30000000000000004, 0.5, 0.29999999999999993), (0.30000000000000004, 0.30000000000000004, 0.29999999999999993), (0.49999999999999994, 0.30000000000000004, 0.29999999999999993), (0.7, 0.3, 0.29999999999999993), (0.7, 0.5, 0.29999999999999993), (0.7, 0.5, 0.49999999999999994), (0.7, 0.7, 0.49999999999999994), (0.5, 0.7, 0.49999999999999994), (0.30000000000000004, 0.7, 0.49999999999999994), (0.30000000000000004, 0.5, 0.49999999999999994), (0.30000000000000004, 0.30000000000000004, 0.49999999999999994), (0.49999999999999994, 0.30000000000000004, 0.49999999999999994), (0.7, 0.3, 0.49999999999999994), (0.7, 0.5, 0.49999999999999994), (0.7, 0.5, 0.7), (0.7, 0.7, 0.7), (0.5, 0.7, 0.7), (0.30000000000000004, 0.7, 0.7), (0.30000000000000004, 0.5, 0.7), (0.30000000000000004, 0.30000000000000004, 0.7), (0.49999999999999994, 0.30000000000000004, 0.7), (0.7, 0.3, 0.7), (0.7, 0.5, 0.7), (0.5000000000000001, 0.5, 0.7), (0.5000000000000001, 0.5, 0.7), (0.5000000000000001, 0.5, 0.7), (0.5000000000000001, 0.5, 0.7), (0.5000000000000001, 0.5, 0.7), (0.5000000000000001, 0.5, 0.7), (0.5000000000000001, 0.5, 0.7), (0.5000000000000001, 0.5, 0.7), (0.5000000000000001, 0.5, 0.7)]
-        uniform double[] brep:surface:nurbs:uKnots = [0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0.25, 0.25, 0.5, 0.5, 0.75, 0.75, 1, 1, 1]
-        uniform int[] brep:surface:nurbs:uOrder = [2, 2, 2, 2, 2, 2, 3]
-        uniform int[] brep:surface:nurbs:uVertexCount = [2, 2, 2, 2, 2, 2, 9]
-        uniform double[] brep:surface:nurbs:vKnots = [0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0.5, 0.5, 1, 1, 1]
-        uniform int[] brep:surface:nurbs:vOrder = [2, 2, 2, 2, 2, 2, 3]
-        uniform int[] brep:surface:nurbs:vVertexCount = [2, 2, 2, 2, 2, 2, 5]
-        uniform double[] brep:surface:nurbs:weights = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.7071067811865476, 1, 0.7071067811865476, 1, 0.7071067811865476, 1, 0.7071067811865476, 1, 0.7071067811865476, 0.5000000000000001, 0.7071067811865476, 0.5000000000000001, 0.7071067811865476, 0.5000000000000001, 0.7071067811865476, 0.5000000000000001, 0.7071067811865476, 1, 0.7071067811865476, 1, 0.7071067811865476, 1, 0.7071067811865476, 1, 0.7071067811865476, 1, 0.7071067811865476, 0.5000000000000001, 0.7071067811865476, 0.5000000000000001, 0.7071067811865476, 0.5000000000000001, 0.7071067811865476, 0.5000000000000001, 0.7071067811865476, 1, 0.7071067811865476, 1, 0.7071067811865476, 1, 0.7071067811865476, 1, 0.7071067811865476, 1]
-        uniform point3d[] brep:vertex:point:position = [(1, 1, 1), (0, 0, 1), (0, 0, 0), (1, 0, 0), (1, 0, 1), (0, 1, 1), (0, 1, 0), (1, 1, 0), (0.5000000000000001, 0.5, 0.7), (0.49999999999999994, 0.5, 0.3)]
-        uniform int[] brep:vertexCount = [10]
-        uniform int[] edge:curveIndex = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
-        uniform token[] edge:curveType = ["BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI"]
-        uniform int[] edge:id = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-        uniform int[] edge:primaryEdgeuse = [6, 7, -12, -10, 13, 14, 16, 17, 18, 19, -21, -24, -25]
-        uniform double2[] edge:range = [(0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1)]
-        uniform int2[] edge:vertexIndices = [(4, 0), (5, 0), (2, 6), (1, 5), (3, 7), (7, 0), (2, 1), (2, 3), (3, 4), (1, 4), (6, 5), (6, 7), (9, 8)]
-        uniform int[] edgeuse:edgeOrVertexIndex = [2, 11, 4, 7, 3, 9, 0, 1, 6, 3, 10, 2, 8, 4, 5, 0, 6, 7, 8, 9, 10, 1, 5, 11, 12, 12]
-        uniform int[] edgeuse:loopOrShellIndex = [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 6, 6]
-        uniform int[] edgeuse:mateNextEdgeuse = [-12, -24, 2, 3, -10, 5, -16, -22, 8, 9, -21, 11, 12, -3, -23, 15, -9, -4, -13, -6, 20, 21, 22, 23, 24, -25]
-        uniform int[] edgeuse:nextEdgeuse = [-1, -2, 13, 17, -5, 19, -7, -8, 16, 4, -11, 0, 18, -14, -15, 6, -17, -18, -19, -20, 10, 7, 14, 1, 25, -26]
-        uniform token[] edgeuse:orientation = ["same", "same", "opposite", "opposite", "opposite", "same", "same", "opposite", "same", "same", "opposite", "opposite", "opposite", "same", "same", "opposite", "opposite", "same", "same", "opposite", "same", "same", "opposite", "opposite", "opposite", "same"]
-        uniform token[] edgeuse:type = ["edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge"]
-        uniform int[] edgeuse:uvCurveIndex = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
-        uniform float3[] extent = []
-        uniform int2[] face:childLoops = [(0, 1), (1, 1), (2, 1), (3, 1), (4, 1), (5, 1), (6, 1)]
-        uniform int[] face:id = [0, 0, 0, 0, 0, 0, 0]
-        uniform int[] face:surfaceIndex = [0, 1, 2, 3, 4, 5, 6]
-        uniform token[] face:surfaceType = ["BrepSurfaceNurbsAPI", "BrepSurfaceNurbsAPI", "BrepSurfaceNurbsAPI", "BrepSurfaceNurbsAPI", "BrepSurfaceNurbsAPI", "BrepSurfaceNurbsAPI", "BrepSurfaceNurbsAPI"]
-        uniform token[] face:trim = ["uvCurves", "uvCurves", "uvCurves", "uvCurves", "uvCurves", "uvCurves", "uvCurves"]
-        uniform double2[] face:uRange = [(0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1)]
-        uniform double2[] face:vRange = [(0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1)]
-        uniform int[] faceuse:face = [5, 4, 2, 0, 3, 1, 5, 1, 4, 0, 3, 2, 6, 6]
-        uniform token[] faceuse:orientation = ["same", "same", "same", "same", "same", "same", "opposite", "opposite", "opposite", "opposite", "opposite", "opposite", "same", "opposite"]
-        uniform int2[] loop:childTopology = [(0, 4), (4, 4), (8, 4), (12, 4), (16, 4), (20, 4), (24, 2)]
-        uniform int[] loop:id = [0, 0, 0, 0, 0, 0, 0]
-        uniform token[] loop:type = ["edgeuse", "edgeuse", "edgeuse", "edgeuse", "edgeuse", "edgeuse", "edgeuse"]
-        uniform int[] region:id = [0, 0, 0]
-        uniform int[] region:numberOfShells = [1, 2, 1]
-        uniform token[] region:type = ["void", "solid", "void"]
-        uniform int2[] shell:childTopology = [(0, 6), (6, 6), (12, 1), (13, 1)]
-        uniform int[] shell:id = [0, 0, 0, 0]
-        uniform token[] shell:type = ["faceuse", "faceuse", "faceuse", "faceuse"]
-        uniform int[] vertex:id = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-        uniform int[] vertex:index = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-        uniform token[] vertex:type = ["BrepVertexPointAPI", "BrepVertexPointAPI", "BrepVertexPointAPI", "BrepVertexPointAPI", "BrepVertexPointAPI", "BrepVertexPointAPI", "BrepVertexPointAPI", "BrepVertexPointAPI", "BrepVertexPointAPI", "BrepVertexPointAPI"]
-    }
-}
 ```
 
 </details>
@@ -1129,157 +943,6 @@ The BrepArray assigns unique materials to the Breps with the GeomSubset property
   <summary> Click to expand </summary>
 
 ```
-#usda 1.0
-
-def Xform "World"
-{
-    def BrepArray "brepArray" (
-        prepend apiSchemas = ["BrepCurveUvAPI", "BrepCurveNurbsAPI", "BrepSurfaceNurbsAPI"]
-    )
-    {
-        uniform point3d[] brep:curve:nurbs:controlVertices = [(1, 0, 1), (1, 1, 1), (0, 1, 1), (1, 1, 1), (0, 0, 0), (0, 1, 0), (0, 0, 1), (0, 1, 1), (1, 0, 0), (1, 1, 0), (1, 1, 0), (1, 1, 1), (0, 0, 0), (0, 0, 1), (0, 0, 0), (1, 0, 0), (1, 0, 0), (1, 0, 1), (0, 0, 1), (1, 0, 1), (0, 1, 0), (0, 1, 1), (0, 1, 0), (1, 1, 0), (3, 0, 1), (3, 1, 1), (2, 1, 1), (3, 1, 1), (2, 0, 0), (2, 1, 0), (2, 0, 1), (2, 1, 1), (3, 0, 0), (3, 1, 0), (3, 1, 0), (3, 1, 1), (2, 0, 0), (2, 0, 1), (2, 0, 0), (3, 0, 0), (3, 0, 0), (3, 0, 1), (2, 0, 1), (3, 0, 1), (2, 1, 0), (2, 1, 1), (2, 1, 0), (3, 1, 0)]
-        uniform double[] brep:curve:nurbs:knots = [0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1]
-        uniform int[] brep:curve:nurbs:order = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
-        uniform int[] brep:curve:nurbs:vertexCount = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
-        uniform double[] brep:curve:nurbs:weights = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-        uniform double2[] brep:curve:uv:controlVertices = [(0, 0), (1, -2.220446049250313e-16), (1, -2.220446049250313e-16), (0.9999999999999998, 0.9999999999999998), (-2.220446049250313e-16, 1), (0.9999999999999998, 0.9999999999999998), (0, 0), (-2.220446049250313e-16, 1), (0, 0), (0, 1), (0, 0), (1, 0), (1, 0), (1, 1), (0, 1), (1, 1), (0, 0), (1, -2.220446049250313e-16), (1, -2.220446049250313e-16), (0.9999999999999998, 0.9999999999999998), (-2.220446049250313e-16, 1), (0.9999999999999998, 0.9999999999999998), (0, 0), (-2.220446049250313e-16, 1), (0, 0), (0, 1), (0, 0), (1, 0), (1, 0), (1, 1), (0, 1), (1, 1), (0, 0), (0, 1), (0, 0), (1, 0), (1, 0), (1, 1), (0, 1), (1, 1), (0, 0), (1, -2.220446049250313e-16), (1, -2.220446049250313e-16), (0.9999999999999998, 0.9999999999999998), (-2.220446049250313e-16, 1), (0.9999999999999998, 0.9999999999999998), (0, 0), (-2.220446049250313e-16, 1), (0, 0), (1, -2.220446049250313e-16), (1, -2.220446049250313e-16), (0.9999999999999998, 0.9999999999999998), (-2.220446049250313e-16, 1), (0.9999999999999998, 0.9999999999999998), (0, 0), (-2.220446049250313e-16, 1), (0, 0), (0, 1), (0, 0), (1, 0), (1, 0), (1, 1), (0, 1), (1, 1), (0, 0), (1, -2.220446049250313e-16), (1, -2.220446049250313e-16), (0.9999999999999998, 0.9999999999999998), (-2.220446049250313e-16, 1), (0.9999999999999998, 0.9999999999999998), (0, 0), (-2.220446049250313e-16, 1), (0, 0), (0, 1), (0, 0), (1, 0), (1, 0), (1, 1), (0, 1), (1, 1), (0, 0), (0, 1), (0, 0), (1, 0), (1, 0), (1, 1), (0, 1), (1, 1), (0, 0), (1, -2.220446049250313e-16), (1, -2.220446049250313e-16), (0.9999999999999998, 0.9999999999999998), (-2.220446049250313e-16, 1), (0.9999999999999998, 0.9999999999999998), (0, 0), (-2.220446049250313e-16, 1)]
-        uniform double[] brep:curve:uv:knots = [0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1]
-        uniform int[] brep:curve:uv:order = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
-        uniform int[] brep:curve:uv:vertexCount = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
-        uniform double[] brep:curve:uv:weights = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-        uniform int[] brep:edgeCount = [12, 12]
-        uniform int[] brep:edgeuseCount = [24, 24]
-        uniform int[] brep:faceCount = [6, 6]
-        uniform int[] brep:faceuseCount = [12, 12]
-        uniform int[] brep:id = [0, 0]
-        uniform int[] brep:loopCount = [6, 6]
-        uniform int[] brep:regionCount = [2, 2]
-        uniform int[] brep:shellCount = [2, 2]
-        uniform point3d[] brep:surface:nurbs:controlVertices = [(0, 0, 0), (0, 1, 0), (1, 0, 0), (1, 1, 0), (0, 0, 1), (1, 0, 1), (0, 1, 1), (1, 1, 1), (0, 0, 0), (0, 0, 1), (0, 1, 0), (0, 1, 1), (1, 0, 0), (1, 1, 0), (1, 0, 1), (1, 1, 1), (0, 0, 0), (1, 0, 0), (0, 0, 1), (1, 0, 1), (0, 1, 0), (0, 1, 1), (1, 1, 0), (1, 1, 1), (2, 0, 0), (2, 1, 0), (3, 0, 0), (3, 1, 0), (2, 0, 1), (3, 0, 1), (2, 1, 1), (3, 1, 1), (2, 0, 0), (2, 0, 1), (2, 1, 0), (2, 1, 1), (3, 0, 0), (3, 1, 0), (3, 0, 1), (3, 1, 1), (2, 0, 0), (3, 0, 0), (2, 0, 1), (3, 0, 1), (2, 1, 0), (2, 1, 1), (3, 1, 0), (3, 1, 1)]
-        uniform double[] brep:surface:nurbs:uKnots = [0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1]
-        uniform int[] brep:surface:nurbs:uOrder = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
-        uniform int[] brep:surface:nurbs:uVertexCount = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
-        uniform double[] brep:surface:nurbs:vKnots = [0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1]
-        uniform int[] brep:surface:nurbs:vOrder = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
-        uniform int[] brep:surface:nurbs:vVertexCount = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
-        uniform double[] brep:surface:nurbs:weights = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-        uniform point3d[] brep:vertex:point:position = [(1, 1, 1), (0, 0, 1), (0, 0, 0), (1, 0, 0), (1, 0, 1), (0, 1, 1), (0, 1, 0), (1, 1, 0), (3, 1, 1), (2, 0, 1), (2, 0, 0), (3, 0, 0), (3, 0, 1), (2, 1, 1), (2, 1, 0), (3, 1, 0)]
-        uniform int[] brep:vertexCount = [8, 8]
-        uniform int[] edge:curveIndex = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]
-        uniform token[] edge:curveType = ["BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI"]
-        uniform int[] edge:id = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-        uniform int[] edge:primaryEdgeuse = [6, 7, -12, -10, 13, 14, 16, 17, 18, 19, -21, -24, 30, 31, 12, 14, 37, 38, 40, 41, 42, 43, 3, 0]
-        uniform double2[] edge:range = [(0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1)]
-        uniform int2[] edge:vertexIndices = [(4, 0), (5, 0), (2, 6), (1, 5), (3, 7), (7, 0), (2, 1), (2, 3), (3, 4), (1, 4), (6, 5), (6, 7), (12, 8), (13, 8), (10, 14), (9, 13), (11, 15), (15, 8), (10, 9), (10, 11), (11, 12), (9, 12), (14, 13), (14, 15)]
-        uniform int[] edgeuse:edgeOrVertexIndex = [2, 11, 4, 7, 3, 9, 0, 1, 6, 3, 10, 2, 8, 4, 5, 0, 6, 7, 8, 9, 10, 1, 5, 11, 14, 23, 16, 19, 15, 21, 12, 13, 18, 15, 22, 14, 20, 16, 17, 12, 18, 19, 20, 21, 22, 13, 17, 23]
-        uniform int[] edgeuse:loopOrShellIndex = [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 6, 6, 6, 6, 7, 7, 7, 7, 8, 8, 8, 8, 9, 9, 9, 9, 10, 10, 10, 10, 11, 11, 11, 11]
-        uniform int[] edgeuse:mateNextEdgeuse = [-12, -24, 2, 3, -10, 5, -16, -22, 8, 9, -21, 11, 12, -3, -23, 15, -9, -4, -13, -6, 20, 21, 22, 23, 12, 0, 26, 27, 14, 29, 8, 2, 32, 33, 3, 35, 36, 21, 1, 39, 15, 20, 11, 18, 44, 45, 46, 47]
-        uniform int[] edgeuse:nextEdgeuse = [-1, -2, 13, 17, -5, 19, -7, -8, 16, 4, -11, 0, 18, -14, -15, 6, -17, -18, -19, -20, 10, 7, 14, 1, 23, 22, 37, 41, 19, 43, 17, 16, 40, 28, 13, 24, 42, 10, 9, 30, 7, 6, 5, 4, 34, 31, 38, 25]
-        uniform token[] edgeuse:orientation = ["same", "same", "opposite", "opposite", "opposite", "same", "same", "opposite", "same", "same", "opposite", "opposite", "opposite", "same", "same", "opposite", "opposite", "same", "same", "opposite", "same", "same", "opposite", "opposite", "same", "same", "opposite", "opposite", "opposite", "same", "same", "opposite", "same", "same", "opposite", "opposite", "opposite", "same", "same", "opposite", "opposite", "same", "same", "opposite", "same", "same", "opposite", "opposite"]
-        uniform token[] edgeuse:type = ["edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge"]
-        uniform int[] edgeuse:uvCurveIndex = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47]
-        uniform float3[] extent = []
-        uniform int2[] face:childLoops = [(0, 1), (1, 1), (2, 1), (3, 1), (4, 1), (5, 1), (6, 1), (7, 1), (8, 1), (9, 1), (10, 1), (11, 1)]
-        uniform int[] face:id = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-        uniform int[] face:surfaceIndex = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
-        uniform token[] face:surfaceType = ["BrepSurfaceNurbsAPI", "BrepSurfaceNurbsAPI", "BrepSurfaceNurbsAPI", "BrepSurfaceNurbsAPI", "BrepSurfaceNurbsAPI", "BrepSurfaceNurbsAPI", "BrepSurfaceNurbsAPI", "BrepSurfaceNurbsAPI", "BrepSurfaceNurbsAPI", "BrepSurfaceNurbsAPI", "BrepSurfaceNurbsAPI", "BrepSurfaceNurbsAPI"]
-        uniform token[] face:trim = ["uvCurves", "uvCurves", "uvCurves", "uvCurves", "uvCurves", "uvCurves", "uvCurves", "uvCurves", "uvCurves", "uvCurves", "uvCurves", "uvCurves"]
-        uniform double2[] face:uRange = [(0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1)]
-        uniform double2[] face:vRange = [(0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1)]
-        uniform int[] faceuse:face = [5, 4, 2, 0, 3, 1, 5, 1, 4, 0, 3, 2, 11, 10, 8, 6, 9, 7, 11, 7, 10, 6, 9, 8]
-        uniform token[] faceuse:orientation = ["same", "same", "same", "same", "same", "same", "opposite", "opposite", "opposite", "opposite", "opposite", "opposite", "same", "same", "same", "same", "same", "same", "opposite", "opposite", "opposite", "opposite", "opposite", "opposite"]
-        uniform int2[] loop:childTopology = [(0, 4), (4, 4), (8, 4), (12, 4), (16, 4), (20, 4), (24, 4), (28, 4), (32, 4), (36, 4), (40, 4), (44, 4)]
-        uniform int[] loop:id = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-        uniform token[] loop:type = ["edgeuse", "edgeuse", "edgeuse", "edgeuse", "edgeuse", "edgeuse", "edgeuse", "edgeuse", "edgeuse", "edgeuse", "edgeuse", "edgeuse"]
-        uniform int[] region:id = [0, 0, 0, 0]
-        uniform int[] region:numberOfShells = [1, 1, 1, 1]
-        uniform token[] region:type = ["void", "solid", "void", "solid"]
-        uniform int2[] shell:childTopology = [(0, 6), (6, 6), (12, 6), (18, 6)]
-        uniform int[] shell:id = [0, 0, 0, 0]
-        uniform token[] shell:type = ["faceuse", "faceuse", "faceuse", "faceuse"]
-        uniform int[] vertex:id = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-        uniform int[] vertex:index = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
-        uniform token[] vertex:type = ["BrepVertexPointAPI", "BrepVertexPointAPI", "BrepVertexPointAPI", "BrepVertexPointAPI", "BrepVertexPointAPI", "BrepVertexPointAPI", "BrepVertexPointAPI", "BrepVertexPointAPI", "BrepVertexPointAPI", "BrepVertexPointAPI", "BrepVertexPointAPI", "BrepVertexPointAPI", "BrepVertexPointAPI", "BrepVertexPointAPI", "BrepVertexPointAPI", "BrepVertexPointAPI"]
-
-        def GeomSubset "subset_0" (
-            prepend apiSchemas = ["MaterialBindingAPI"]
-        )
-        {
-            uniform token elementType = "brep"
-            uniform int[] indices = [0]
-            rel material:binding = </World/Looks/Black>
-        }
-
-        def GeomSubset "subset_1" (
-            prepend apiSchemas = ["MaterialBindingAPI"]
-        )
-        {
-            uniform token elementType = "brep"
-            uniform int[] indices = [1]
-            rel material:binding = </World/Looks/Green>
-
-        }
-    }
-
-    def "Looks"
-    {
-        def Material "Black"
-        {
-            token outputs:surface.connect = </World/Looks/Black/PBRShader.outputs:surface>
-
-            def Shader "PBRShader"
-            {
-                uniform token info:id = "UsdPreviewSurface"
-                color3f inputs:diffuseColor = (0, 0, 0)
-                token outputs:surface
-            }
-        }
-
-        def Material "Green"
-        {
-            token outputs:surface.connect = </World/Looks/Green/PBRShader.outputs:surface>
-
-            def Shader "PBRShader"
-            {
-                uniform token info:id = "UsdPreviewSurface"
-                color3f inputs:diffuseColor = (0.463, 0.725, 0)
-                token outputs:surface
-            }
-        }
-    }
-
-    def Mesh "Mesh_black" (
-        prepend apiSchemas = ["MaterialBindingAPI"]
-    )
-    {
-        uniform vector3f[] extent = [(0, 0, 0), (1, 1, 1)]
-        uniform int[] faceVertexCounts = [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]
-        uniform int[] faceVertexIndices = [0, 2, 3, 2, 0, 1, 0, 5, 4, 5, 0, 3, 4, 7, 6, 7, 4, 5, 3, 7, 5, 7, 3, 2, 1, 7, 2, 7, 1, 6, 0, 6, 1, 6, 0, 4]
-        rel material:binding = </World/Looks/Black>
-        uniform vector3f[] points = [(0, 0, 0), (0, 1, 0), (1, 1, 0), (1, 0, 0), (0, 0, 1), (1, 0, 1), (0, 1, 1), (1, 1, 1)]
-        uniform normal3f[] primvars:normals = [(0, 0, -1), (0, -1, 0), (-1, 0, 0), (0, 0, -1), (0, 1, 0), (-1, 0, 0), (0, 0, -1), (1, 0, 0), (0, 1, 0), (0, 0, -1), (0, -1, 0), (1, 0, 0), (0, -1, 0), (0, 0, 1), (-1, 0, 0), (0, -1, 0), (0, 0, 1), (1, 0, 0), (0, 0, 1), (0, 1, 0), (-1, 0, 0), (0, 0, 1), (1, 0, 0), (0, 1, 0)] (
-            interpolation = "faceVarying"
-        )
-        uniform int[] primvars:normals:indices = [0, 6, 9, 6, 0, 3, 1, 15, 12, 15, 1, 10, 13, 21, 18, 21, 13, 16, 11, 22, 17, 22, 11, 7, 4, 23, 8, 23, 4, 19, 2, 20, 5, 20, 2, 14]
-        uniform token subdivisionScheme = "none"
-    }
-
-    def Mesh "Mesh_green" (
-        prepend apiSchemas = ["MaterialBindingAPI"]
-    )
-    {
-        uniform vector3f[] extent = [(2, 0, 0), (3, 1, 1)]
-        uniform int[] faceVertexCounts = [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]
-        uniform int[] faceVertexIndices = [0, 2, 3, 2, 0, 1, 0, 5, 4, 5, 0, 3, 4, 7, 6, 7, 4, 5, 3, 7, 5, 7, 3, 2, 1, 7, 2, 7, 1, 6, 0, 6, 1, 6, 0, 4]
-        rel material:binding = </World/Looks/Green>
-        uniform vector3f[] points = [(2, 0, 0), (2, 1, 0), (3, 1, 0), (3, 0, 0), (2, 0, 1), (3, 0, 1), (2, 1, 1), (3, 1, 1)]
-        uniform normal3f[] primvars:normals = [(0, 0, -1), (0, -1, 0), (-1, 0, 0), (0, 0, -1), (0, 1, 0), (-1, 0, 0), (0, 0, -1), (1, 0, 0), (0, 1, 0), (0, 0, -1), (0, -1, 0), (1, 0, 0), (0, -1, 0), (0, 0, 1), (-1, 0, 0), (0, -1, 0), (0, 0, 1), (1, 0, 0), (0, 0, 1), (0, 1, 0), (-1, 0, 0), (0, 0, 1), (1, 0, 0), (0, 1, 0)] (
-            interpolation = "faceVarying"
-        )
-        uniform int[] primvars:normals:indices = [0, 6, 9, 6, 0, 3, 1, 15, 12, 15, 1, 10, 13, 21, 18, 21, 13, 16, 11, 22, 17, 22, 11, 7, 4, 23, 8, 23, 4, 19, 2, 20, 5, 20, 2, 14]
-        uniform token subdivisionScheme = "none"
-    }
-}
 ```
 </details>
 
@@ -1297,155 +960,6 @@ When tessellated and authored as a _UsdGeomMesh_, _UsdGeomSubset_ is used to ass
   <summary> Click to expand </summary>
 
 ```
-#usda 1.0
-
-def Xform "World"
-{
-    def BrepArray "CubeMats" (
-        prepend apiSchemas = ["BrepCurveUvAPI", "BrepCurveNurbsAPI", "BrepSurfaceNurbsAPI"]
-    )
-    {
-        uniform point3d[] brep:curve:nurbs:controlVertices = [(1, 0, 1), (1, 1, 1), (0, 1, 1), (1, 1, 1), (0, 0, 0), (0, 1, 0), (0, 0, 1), (0, 1, 1), (1, 0, 0), (1, 1, 0), (1, 1, 0), (1, 1, 1), (0, 0, 0), (0, 0, 1), (0, 0, 0), (1, 0, 0), (1, 0, 0), (1, 0, 1), (0, 0, 1), (1, 0, 1), (0, 1, 0), (0, 1, 1), (0, 1, 0), (1, 1, 0)]
-        uniform double[] brep:curve:nurbs:knots = [0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1]
-        uniform int[] brep:curve:nurbs:order = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
-        uniform int[] brep:curve:nurbs:vertexCount = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
-        uniform double[] brep:curve:nurbs:weights = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-        uniform double2[] brep:curve:uv:controlVertices = [(0, 0), (1, -2.220446049250313e-16), (1, -2.220446049250313e-16), (0.9999999999999998, 0.9999999999999998), (-2.220446049250313e-16, 1), (0.9999999999999998, 0.9999999999999998), (0, 0), (-2.220446049250313e-16, 1), (0, 0), (0, 1), (0, 0), (1, 0), (1, 0), (1, 1), (0, 1), (1, 1), (0, 0), (1, -2.220446049250313e-16), (1, -2.220446049250313e-16), (0.9999999999999998, 0.9999999999999998), (-2.220446049250313e-16, 1), (0.9999999999999998, 0.9999999999999998), (0, 0), (-2.220446049250313e-16, 1), (0, 0), (0, 1), (0, 0), (1, 0), (1, 0), (1, 1), (0, 1), (1, 1), (0, 0), (0, 1), (0, 0), (1, 0), (1, 0), (1, 1), (0, 1), (1, 1), (0, 0), (1, -2.220446049250313e-16), (1, -2.220446049250313e-16), (0.9999999999999998, 0.9999999999999998), (-2.220446049250313e-16, 1), (0.9999999999999998, 0.9999999999999998), (0, 0), (-2.220446049250313e-16, 1)]
-        uniform double[] brep:curve:uv:knots = [0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1]
-        uniform int[] brep:curve:uv:order = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
-        uniform int[] brep:curve:uv:vertexCount = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
-        uniform double[] brep:curve:uv:weights = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-        uniform int[] brep:edgeCount = [12]
-        uniform int[] brep:edgeuseCount = [24]
-        uniform int[] brep:faceCount = [6]
-        uniform int[] brep:faceuseCount = [12]
-        uniform int[] brep:id = [0]
-        uniform int[] brep:loopCount = [6]
-        uniform int[] brep:regionCount = [2]
-        uniform int[] brep:shellCount = [2]
-        uniform point3d[] brep:surface:nurbs:controlVertices = [(0, 0, 0), (0, 1, 0), (1, 0, 0), (1, 1, 0), (0, 0, 1), (1, 0, 1), (0, 1, 1), (1, 1, 1), (0, 0, 0), (0, 0, 1), (0, 1, 0), (0, 1, 1), (1, 0, 0), (1, 1, 0), (1, 0, 1), (1, 1, 1), (0, 0, 0), (1, 0, 0), (0, 0, 1), (1, 0, 1), (0, 1, 0), (0, 1, 1), (1, 1, 0), (1, 1, 1)]
-        uniform double[] brep:surface:nurbs:uKnots = [0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1]
-        uniform int[] brep:surface:nurbs:uOrder = [2, 2, 2, 2, 2, 2]
-        uniform int[] brep:surface:nurbs:uVertexCount = [2, 2, 2, 2, 2, 2]
-        uniform double[] brep:surface:nurbs:vKnots = [0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1]
-        uniform int[] brep:surface:nurbs:vOrder = [2, 2, 2, 2, 2, 2]
-        uniform int[] brep:surface:nurbs:vVertexCount = [2, 2, 2, 2, 2, 2]
-        uniform double[] brep:surface:nurbs:weights = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-        uniform point3d[] brep:vertex:point:position = [(1, 1, 1), (0, 0, 1), (0, 0, 0), (1, 0, 0), (1, 0, 1), (0, 1, 1), (0, 1, 0), (1, 1, 0)]
-        uniform int[] brep:vertexCount = [8]
-        uniform int[] edge:curveIndex = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
-        uniform token[] edge:curveType = ["BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI", "BrepCurveNurbsAPI"]
-        uniform int[] edge:id = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-        uniform int[] edge:primaryEdgeuse = [6, 7, -12, -10, 13, 14, 16, 17, 18, 19, -21, -24]
-        uniform double2[] edge:range = [(0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1)]
-        uniform int2[] edge:vertexIndices = [(4, 0), (5, 0), (2, 6), (1, 5), (3, 7), (7, 0), (2, 1), (2, 3), (3, 4), (1, 4), (6, 5), (6, 7)]
-        uniform int[] edgeuse:edgeOrVertexIndex = [2, 11, 4, 7, 3, 9, 0, 1, 6, 3, 10, 2, 8, 4, 5, 0, 6, 7, 8, 9, 10, 1, 5, 11]
-        uniform int[] edgeuse:loopOrShellIndex = [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5]
-        uniform int[] edgeuse:mateNextEdgeuse = [-12, -24, 2, 3, -10, 5, -16, -22, 8, 9, -21, 11, 12, -3, -23, 15, -9, -4, -13, -6, 20, 21, 22, 23]
-        uniform int[] edgeuse:nextEdgeuse = [-1, -2, 13, 17, -5, 19, -7, -8, 16, 4, -11, 0, 18, -14, -15, 6, -17, -18, -19, -20, 10, 7, 14, 1]
-        uniform token[] edgeuse:orientation = ["same", "same", "opposite", "opposite", "opposite", "same", "same", "opposite", "same", "same", "opposite", "opposite", "opposite", "same", "same", "opposite", "opposite", "same", "same", "opposite", "same", "same", "opposite", "opposite"]
-        uniform token[] edgeuse:type = ["edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge", "edge"]
-        uniform int[] edgeuse:uvCurveIndex = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]
-        uniform float3[] extent = []
-        uniform int2[] face:childLoops = [(0, 1), (1, 1), (2, 1), (3, 1), (4, 1), (5, 1)]
-        uniform int[] face:id = [0, 0, 0, 0, 0, 0]
-        uniform int[] face:surfaceIndex = [0, 1, 2, 3, 4, 5]
-        uniform token[] face:surfaceType = ["BrepSurfaceNurbsAPI", "BrepSurfaceNurbsAPI", "BrepSurfaceNurbsAPI", "BrepSurfaceNurbsAPI", "BrepSurfaceNurbsAPI", "BrepSurfaceNurbsAPI"]
-        uniform token[] face:trim = ["uvCurves", "uvCurves", "uvCurves", "uvCurves", "uvCurves", "uvCurves"]
-        uniform double2[] face:uRange = [(0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1)]
-        uniform double2[] face:vRange = [(0, 1), (0, 1), (0, 1), (0, 1), (0, 1), (0, 1)]
-        uniform int[] faceuse:face = [5, 4, 2, 0, 3, 1, 5, 1, 4, 0, 3, 2]
-        uniform token[] faceuse:orientation = ["same", "same", "same", "same", "same", "same", "opposite", "opposite", "opposite", "opposite", "opposite", "opposite"]
-        uniform int2[] loop:childTopology = [(0, 4), (4, 4), (8, 4), (12, 4), (16, 4), (20, 4)]
-        uniform int[] loop:id = [0, 0, 0, 0, 0, 0]
-        uniform token[] loop:type = ["edgeuse", "edgeuse", "edgeuse", "edgeuse", "edgeuse", "edgeuse"]
-        uniform int[] region:id = [0, 0]
-        uniform int[] region:numberOfShells = [1, 1]
-        uniform token[] region:type = ["void", "solid"]
-        uniform int2[] shell:childTopology = [(0, 6), (6, 6)]
-        uniform int[] shell:id = [0, 0]
-        uniform token[] shell:type = ["faceuse", "faceuse"]
-        uniform int[] vertex:id = [0, 0, 0, 0, 0, 0, 0, 0]
-        uniform int[] vertex:index = [0, 1, 2, 3, 4, 5, 6, 7]
-        uniform token[] vertex:type = ["BrepVertexPointAPI", "BrepVertexPointAPI", "BrepVertexPointAPI", "BrepVertexPointAPI", "BrepVertexPointAPI", "BrepVertexPointAPI", "BrepVertexPointAPI", "BrepVertexPointAPI"]
-
-        def GeomSubset "subset_0" (
-            prepend apiSchemas = ["MaterialBindingAPI"]
-        )
-        {
-            uniform token elementType = "face"
-            uniform int[] indices = [0, 1, 2]
-            rel material:binding = </World/Looks/Black>
-        }
-
-        def GeomSubset "subset_1" (
-            prepend apiSchemas = ["MaterialBindingAPI"]
-        )
-        {
-            uniform token elementType = "face"
-            uniform int[] indices = [3, 4, 5]
-            rel material:binding = </World/Looks/Green>
-        }
-    }
-
-    def "Looks"
-    {
-        def Material "Black"
-        {
-            token outputs:surface.connect = </World/Looks/Black/PBRShader.outputs:surface>
-
-            def Shader "PBRShader"
-            {
-                uniform token info:id = "UsdPreviewSurface"
-                color3f inputs:diffuseColor = (0, 0, 0)
-                token outputs:surface
-            }
-        }
-
-        def Material "Green"
-        {
-            token outputs:surface.connect = </World/Looks/Green/PBRShader.outputs:surface>
-
-            def Shader "PBRShader"
-            {
-                uniform token info:id = "UsdPreviewSurface"
-                color3f inputs:diffuseColor = (0.463, 0.725, 0)
-                token outputs:surface
-            }
-        }
-    }
-
-    def Mesh "Mesh"
-    {
-        uniform vector3f[] extent = [(0, 0, 0), (1, 1, 1)]
-        uniform int[] faceVertexCounts = [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]
-        uniform int[] faceVertexIndices = [0, 2, 3, 2, 0, 1, 0, 5, 4, 5, 0, 3, 4, 7, 6, 7, 4, 5, 3, 7, 5, 7, 3, 2, 1, 7, 2, 7, 1, 6, 0, 6, 1, 6, 0, 4]
-        uniform vector3f[] points = [(0, 0, 0), (0, 1, 0), (1, 1, 0), (1, 0, 0), (0, 0, 1), (1, 0, 1), (0, 1, 1), (1, 1, 1)]
-        uniform normal3f[] primvars:normals = [(0, 0, -1), (0, -1, 0), (-1, 0, 0), (0, 0, -1), (0, 1, 0), (-1, 0, 0), (0, 0, -1), (1, 0, 0), (0, 1, 0), (0, 0, -1), (0, -1, 0), (1, 0, 0), (0, -1, 0), (0, 0, 1), (-1, 0, 0), (0, -1, 0), (0, 0, 1), (1, 0, 0), (0, 0, 1), (0, 1, 0), (-1, 0, 0), (0, 0, 1), (1, 0, 0), (0, 1, 0)] (
-            interpolation = "faceVarying"
-        )
-        uniform int[] primvars:normals:indices = [0, 6, 9, 6, 0, 3, 1, 15, 12, 15, 1, 10, 13, 21, 18, 21, 13, 16, 11, 22, 17, 22, 11, 7, 4, 23, 8, 23, 4, 19, 2, 20, 5, 20, 2, 14]
-        uniform token subdivisionScheme = "none"
-
-        def GeomSubset "subset_0" (
-            prepend apiSchemas = ["MaterialBindingAPI"]
-        )
-        {
-            uniform token elementType = "face"
-            uniform int[] indices = [0, 1, 4, 5, 10, 11]
-            rel material:binding = </World/Looks/Black>
-        }
-
-        def GeomSubset "subset_1" (
-            prepend apiSchemas = ["MaterialBindingAPI"]
-        )
-        {
-            uniform token elementType = "face"
-            uniform int[] indices = [2, 3, 6, 7, 8, 9]
-            rel material:binding = </World/Looks/Green>
-        }
-    }
-}
 
 ```
 </details>
