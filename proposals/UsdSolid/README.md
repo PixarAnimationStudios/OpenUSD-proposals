@@ -1,5 +1,26 @@
 # **Solid Models in USD Proposal**
 
+# **0. Preamble**
+
+Boundary Representations (Breps) are a fundamental tool for CAD/CAE workflows.
+With this proposal, the Geometry WG has designed a robust and flexible Brep design for use in OpenUSD. 
+We feel this design will complement and enhance other tools in the marketplace, enabling an aggregation and simulation of data unique to the capabilities of OpenUSD.
+
+This preliminary schema has been reviewed by AOUSD Geom WG and will continue to be iterated upon in a public draft proposal.
+We are publishing the schema in this preliminary form to share our current findings and take the next step in addressing uses of the design.
+By making the schema public we hope to engage the broader CAD/CAE community, kicking off efforts to produce datasets using this schema to further unlock exploratory work for downstream integration.
+Potential use cases are recorded [here](https://docs.google.com/document/d/1kXiZPhkUh6JfohE2Q7qVA4hSuJD3UyiBdYW_nEsEIJU/edit?tab=t.0)
+
+
+Adding Breps to OpenUSD creates questions with answers outside the scope of the Geometry WG. 
+For example, we hope to address the ways in which data can be connected in USD.
+Breps and Meshes are a source and derived data pair that don't have a natural connectivity in OpenUSD.
+A Brep prim should know if it has a Mesh on the stage, so it doesn't have to be tessellated.
+A Mesh prim should know if there is an associated Brep on the stage when picked.
+Further, a Brep could have multiple meshes in the stage (e.g., LoDs).
+These relationships all have to be managed.
+
+
 
 # **1. Purpose and scope**
 
@@ -427,6 +448,17 @@ Further, _GeomSubset_ wasn't an option for applying material properties to Breps
 
 This schema was shelved because it deviated too far from _USD_ norms.
 
+### **2.6.4 Breps as a black box**
+
+One proposed design was to treat Breps as a black box, from the OpenUSD perspective, a la Volumes.
+The advantage here lies in the common use case of tessellation.
+It is possible to reuse existing standards and technology, such as STEP and open geometry kernels, to reduce the OpenUSD Brep implementation to a file reference, then import to OpenUSD mesh representations of Breps ad hoc.
+
+The AOUSD Geometry Working Group found this design too limiting.
+Including the whole Brep model topology and geometry allows for more flexibility in how Breps can be utilized in OpenUSD.
+For example, CAD tools and modelers can assign per Face properties, such as tolerances or material textures; or properties to regions such as material densities.
+This could also enable future assembly design, where constraints are assigned between different Brep bodies.
+
 
 ## **2.7 Assemblies**
 
@@ -524,22 +556,23 @@ These rules will be included in the schema prior to publishing.
 #usda 1.0
 (
     subLayers = [
-        @usd/schema.usda@,
-        @usdGeom/schema.usda@
+        @usd/schema.usda@,    # defines base class /Typed for IsA schemas
+        @usdGeom/schema.usda@ # defines class /Gprim derived from /Typed
     ]
 )
 
 over "GLOBAL" (
     customData = {
-        string libraryName   = "usdSolid"
+        string libraryName   = "prelimUsdSolid"
         string libraryPath   = "./"
-        string libraryPrefix = "UsdSolid"
-        string tokensPrefix  = "UsdSolid"
+        string libraryPrefix = "PrelimUsdSolid"
+        string tokensPrefix  = "PrelimUsdSolid"
         bool skipCodeGeneration = true
     }
 ) {
 }
 
+#************************************************************************************
 class BrepArray "BrepArray" (
     inherits = </Gprim>
     doc = """ Solid boundary representation models (Breps) rigorously partition space into regions by connecting sets of surfaces into region boundaries.  Regions are the set of points that can be connected by curves of any shape that don't cross boundaries.  The boundaries between regions must be watertight to prevent the points of each region from being connectable to one another.  Manifold solid objects partition space into one solid region and one or more void regions. Non-manifold objects can partition space from one to any number of regions, where every point in space classifies to one of the model's regions.  In the world of geometric modeling, where mathematical approximations of shape are rife, gaps between adjacent surfaces are common. In this model, the connections of adjacent surfaces are explicit objects that can fill the gaps and create the necessary partition of space.
@@ -550,7 +583,7 @@ class BrepArray "BrepArray" (
     
     For compact storage of the radial edge data model redundant elements are removed from the flattened representation.  There are no attributes for Vertexuses and Loopuses.  The lists of Edgeuses represents pairs, so the arrays size() are half the number of Edgeuses in the Brep model.
 
-    Objects related to a single Brep must be consecutive in the BrepArray.  For example, the Edges of Brep i are the brep:edgeCount[i] consecutive Edges starting at SUM(brep:edgeCount[n]), for n in [0,i).
+    Objects related to a single Brep must be consecutive in the BrepArray.  For example, the Edges of Brep i are the brep:edgeCount[i] consecutive Edges starting at SUM(brep:edgeCount[n]), for n in [0,i).  """ 
 ) {
     uniform  int[]     brep:userId                ( doc = """ optional User applied ID. size() = Number of Breps. """ )
     uniform uint[]     brep:regionCount           ( doc = """ Number of Regions in this Brep. size() = Number of Breps """ )
@@ -563,20 +596,21 @@ class BrepArray "BrepArray" (
     uniform uint[]     brep:vertexCount           ( doc = """ Number of Vertices in this Brep. size() = Number of Breps """ )
                                                   
     uniform int[]      region:userId              ( doc = """ optional User applied ID for region_ii. size() = number of regions. """ )
-    uniform int2[]     region:shellCount          ( doc = """ {startShellIndx, numberOfShells} for region_ii. 1st shell = outerShell, subsequent shells = innerShells. size() = number of regions. """ )
+    uniform int2[]     region:shellList           ( doc = """ Region_ii's shellList = {startShellIndx, numberOfShells}. 1st shell = outerShell, subsequent shells = innerShells. size() = number of regions. """ )
                                                   # type to be changed to uint2[] when uint touples get supported
     uniform token[]    region:type                ( allowedTokens = ["solidRegion", "voidRegion"]
-                                                    doc = """ solid = region_ii points are in the Brep. void = region_ii points are out of the Brep. size() = number of regions. """ )
+                                                    doc = """ solidRegion = region_ii points are in the Brep. voidRegion = region_ii points are out of the Brep. size() = number of regions. """ )
                                                   
     uniform int[]      shell:userId               ( doc = """ optional User applied ID for shell_ii. size() = number of shells. """ )
     uniform token[]    shell:type                 ( allowedTokens = ["faceuse", "wireEdge", "vertex"] 
                                                     doc = """ vertex = shell_ii is a vertex shell embedded in a region containing one and only one vertex not connected to any edges or faces. 
                                                               wireEdge = shell_ii is a wireEdge shell embedded in a region containing only connected wireEdges (and their connected vertices). 
-                                                              faceuse = shell_ii is a faceuse shell embedded in a region containing connected faceuses and any attached wireEdges (and their conneced edges and vertices).
+                                                              faceuse = shell_ii is a faceuse shell embedded in a region containing connected faceuses and any attached wireEdges (and their connected edges and vertices).
                                                     size() = number of shells. """ )
-    uniform int4[]     shell:childCount           ( doc = """ if shell_ii:type == faceuse,  {StartFaceuseIndx, numberOfFfaceuses, StartWireEdgeIndx, numberOfWireEdges} for shell_ii.
-                                                              if shell_ii:type == wireEdge, {StartEdgeIndx,    numberOfWireEdges, -1 = not used, -1 = not used} for shell_ii.
-                                                              if shell_ii:type == vertex,   {StartVertexIndx,  1 (number of vertices is always 1), -1 = not used, -1 = not used } for shell_ii.
+    uniform int4[]     shell:childList            ( doc = """ Shell_ii's memberList = 
+                                                              if shell_ii:type == faceuse,  {StartFaceuseIndx, numberOfFfaceuses, StartWireEdgeIndx, numberOfWireEdges}.
+                                                              if shell_ii:type == wireEdge, {StartEdgeIndx,    numberOfWireEdges, -1 = not used, -1 = not used}.
+                                                              if shell_ii:type == vertex,   {StartVertexIndx,  1 (number of vertices is always 1), -1 = not used, -1 = not used }.
                                                               size() = number of shells. """ )
                                                   # type to be changed to uint4[] when uint touples get supported
                                                   
@@ -587,7 +621,7 @@ class BrepArray "BrepArray" (
                                                               size() = number of faceuses = 2 x number of faces. """ )
                                                   
     uniform int[]      face:userId                ( doc = """ optional User applied ID for face_ii. size() = number of faces. """ )  
-    uniform int2[]     face:loopCount             ( doc = """ {startLoopIndex, numberOfLoops} for face_ii. 1st loop = outerLoop, subsequent loops = innerLoops. size() = number of faces. """ )
+    uniform int2[]     face:loopList              ( doc = """ face_ii's loopList {startLoopIndex, numberOfLoops}. 1st loop = outerLoop, subsequent loops = innerLoops. size() = number of faces. """ )
                                                   # type to be changed to uint2[] when uint touples get supported
                                                   
     uniform token[]    face:surfaceType           ( allowedTokens = ["BrepSurfaceNurbsAPI"]
@@ -604,10 +638,11 @@ class BrepArray "BrepArray" (
     uniform token[]    loop:type                  ( allowedTokens = ["edgeuse", "vertex"] 
                                                     doc = """ edgeuse = loop_ii is an edgeuseLoop consisting of any number of edgeuses connected in a head-to-tail circular list embedded in a face forming an 'in' patch boundary.
                                                               vertex = loop_ii is a vertexLoop consisting of one vertex embedded in a face. size() = number of loops. """ )
-    uniform int2[]     loop:childTopology         ( doc = """ if loop:type[loop_ii] == edgeuse, {StartEdgeuseIndex, NumberOfEdgeuses} for loop_ii
-                                                              if loop:type[loop_ii] == vertex,  {StartVertexIndex, 1} for loop_ii. size() = number of Loops. """ )
+    uniform int2[]     loop:childList             ( doc = """ Loop_ii's memberList =
+                                                              if loop:type[loop_ii] == edgeuse, {StartEdgeuseIndex, NumberOfEdgeuses}
+                                                              if loop:type[loop_ii] == vertex,  {StartVertexIndex, 1}. size() = number of Loops. """ )
                                                   # type to be changed to uint2[] when uint touples get supported
-                                                  
+
     uniform uint[]     edgeuse:edgeIndex          ( doc = """ owningEdge index. size() = Number of one-sided edge_to_face connections. """ )
     uniform token[]    edgeuse:TopEU_orientation  ( allowedTokens = ["same", "opposite"] 
                                                     doc = """ same = edgeuse_ii's TopEdgeuse parametric direction is the same as the owningEdge's, running from from StartVertex to EndVertex.
@@ -630,7 +665,7 @@ class BrepArray "BrepArray" (
                                                               size() = Number of edges. """ )
     uniform uint[]     edge:curveIndex            ( doc = """ edge_ii's 3d curve index in the associated curveType array. size() = Number of edges. """ )
     uniform double2[]  edge:range                 ( doc = """ {min, max} for edge_ii's domain interval. size() = number of Edges. """ )
-    uniform int2[]     edge:vertexIndices         ( doc = """ {StartVertexIndex, EndVertexIndex} for edge_ii 
+    uniform int2[]     edge:vertexList            ( doc = """ Edge_ii's VertexList = {StartVertexIndex, EndVertexIndex}.
                                                                    where Vertex_StartVertexIndex:position = Edge_ii:Curve(Edge:Range(0)).
                                                                          Vertex_EndVertexIndex:position   = Edge_ii:Curve(Edge:Range(1)).
                                                                    size() = number of Edges. """ )
@@ -640,21 +675,23 @@ class BrepArray "BrepArray" (
     uniform token[]    vertex:pointType           ( allowedTokens = ["BrepVertexPointAPI"] 
                                                     doc = """ BrepVertexPointAPI = shape for vertex_ii is a point in the pointType array. size() = number of Vertices. """ )
     uniform uint[]     vertex:pointIndex          ( doc = """ vertex_ii's point index in the pointType array. size() = number of Vertices. """ )
-}
+} # end class BrepArray "BrepArray"
 
+#************************************************************************************
 class "BrepVertexPointAPI" (
     inherits = </APISchemaBase>
-    doc = """ Packed Point Vertex description for use as a Brep geometry source """ 
+    doc = """ Packed Point Vertex description for use as a Brep geometry source """
 )
 {
     uniform point3d[] brep:vertex:point:position (
-        doc = """ Vertex position. size() = number of Vertices. """ 
+        doc = """ Vertex position. size() = number of Vertices. """
         customData = {
             string apiName = "position"
         }
     )
-}
+} # end class "BrepVertexPointAPI"
 
+#************************************************************************************
 class "BrepCurveNurbsAPI" (
     inherits = </APISchemaBase>
     doc = """ Packed Nurbs Curve description for use as a Brep geometry source
@@ -665,23 +702,17 @@ class "BrepCurveNurbsAPI" (
     and modeling curves. We require 'numSegments + 2 * degree + 1' knots (2 more than maya does). This is to be more
     consistent with RenderMan's NURBS patch specification.  
     
-    To express a periodic curve:
-    - knot[0] = knot[1] - (knots[-2] - knots[-3]; 
-    - knot[-1] = knot[-2] + (knot[2] - knots[1]);
     
-    To express a nonperiodic curve:
-    - knot[0] = knot[1];
-    - knot[-1] = knot[-2];
-    """ 
+    """
     customData = {
         token apiSchemaType = "singleApply"
-        token[] apiSchemaCanOnlyApplyTo = ["UsdSolidBrepArray"]
+        token[] apiSchemaCanOnlyApplyTo = ["PrelimUsdSolidBrepArray"]
     }
 )
 {
     uniform point3d[] brep:curve:nurbs:controlVertices (
         doc = """ Control vertices of the NurbsCurve.
-        size() = SUM(vertexCount). """ 
+        size() = SUM(vertexCount). """
         customData = {
             string apiName = "controlVertices"
         }
@@ -689,24 +720,24 @@ class "BrepCurveNurbsAPI" (
     
     uniform int[] brep:curve:nurbs:vertexCount (
         doc = """ Number of control vertices per curve.
-        size() = number of NURBS curves. """ 
+        size() = number of NURBS curves. """
         customData = {
             string apiName = "vertexCount"
         }
     )
     
     uniform int[] brep:curve:nurbs:order (
-        doc = """ Order of the curve. 
+        doc = """ Order of the curve. Order = Degree + 1.
         Order must be positive and is equal to the degree of the polynomial basis to be evaluated, plus 1.
         Its value for the 'i'th curve must be less than or equal to vertexCount[i].
-        size() = number of NURBS curves. """ 
+        size() = number of NURBS curves. """
         customData = {
             string apiName = "order"
         }
     )
     
     uniform double[] brep:curve:nurbs:knots (
-        doc = """ Knot vector providing curve parameterization.
+        doc = """Knot vector providing curve parameterization.
         The length of the slice of the array for the ith curve must be ( vertexCount[i] + order[i] ), and its entries
         must take on non-decreasing values. Knots are listed in multiplicity, e.g. [0, 0, 1, 1]."""
         customData = {
@@ -715,31 +746,33 @@ class "BrepCurveNurbsAPI" (
     )
     
     uniform double[] brep:curve:nurbs:weights (
-        doc = """Provides "w" component for each control point, thus must be the same length as the
-        controlVertices attribute. All weights must be positive, w>0. \\note Some DCC's pre-weight the \\em points, but in this schema, \\em points are not pre-weighted."""
+        doc = """ Provides "w" weight components for each control vertex. Must be the same length as the controlVertices attribute. 
+        Weights must be positive, w>0. 
+        \\note Some DCC's pre-weight the \\em points, but in this schema, \\em points are not pre-weighted. """ 
         customData = {
             string apiName = "weights"
         }
     )
 
-}
+} # end class "BrepCurveNurbsAPI"
 
+#************************************************************************************
 class "BrepCurveUvAPI" (
     inherits = </APISchemaBase>
-    doc = """ Packed UV Curve description for use as a Brep geometry source """ 
+    doc = """ Packed UV Curve description for use as a Brep geometry source """
 )
 {
     uniform double2[] brep:curve:uv:controlVertices (
-        doc = """ 2D Control points (u, v) that comprise the curves.
-        size() = SUM(vertexCount). """ 
+        doc = """2D Control points (u, v) that comprise the curves.
+        size() = SUM(vertexCount). """
         customData = {
             string apiName = "controlVertices"
         }
     )
     
     uniform int[] brep:curve:uv:vertexCount (
-        doc = """ Number of control vertices for each of the curves.
-        size() = number of curves. """ 
+        doc = """Number of control vertices for each of the curves.
+        size() = number of curves. """
         customData = {
             string apiName = "vertexCount"
         }
@@ -749,14 +782,14 @@ class "BrepCurveUvAPI" (
         doc = """ Order of the curves.
         Order must be positive and is equal to the degree of the polynomial basis to be evaluated, plus 1.
         Its value for the 'i'th curve must be less than or equal to vertexCount[i].
-        size() = number of curves. """ 
+        size() = number of curves. """
         customData = {
             string apiName = "order"
         }
     )
     
     uniform double[] brep:curve:uv:knots (
-        doc = """Knot vector providing curve parameterization.
+        doc = """ Knot vector providing curve parameterization.
         The length of the slice of the array for the ith curve must be ( vertexCount[i] + order[i] ), and its entries
         must take on non-decreasing values. Knots are listed in multiplicity, e.g. [0, 0, 1, 1]."""
         customData = {
@@ -765,15 +798,16 @@ class "BrepCurveUvAPI" (
     )
 
     uniform double[] brep:curve:uv:weights (
-        doc = """Provides "w" components for each control point, thus must be the same length as the
-        controlVertices attribute. All weights must be positive, w>0. \\note Some DCC's pre-weight the \\em points, but in this schema, \\em points are not pre-weighted."""
-        size() = controlVertices.size()"""
+        doc = """ Provides "w" weight components for each control vertex. 
+        Must be the same length as the controlVertices attribute. Weights must be positive, w>0. 
+        size() = controlVertices.size() """
         customData = {
             string apiName = "weights"
         }
     )
-}
+} # end class "BrepCurveUvAPI"
 
+#************************************************************************************
 class "BrepSurfaceNurbsAPI" (
     inherits = </APISchemaBase>
     doc = """ Packed Nurbs Surface description for use as a Brep geometry source
@@ -787,85 +821,87 @@ class "BrepSurfaceNurbsAPI" (
     The layout of control vertices in the \\em points attribute is row-major with U considered rows, and V columns.
 
     The authored points, orders, knots, weights, and ranges are all that is required to render the nurbs patch.
-    """ 
+    """
     customData = {
         token apiSchemaType = "singleApply"
-        token[] apiSchemaCanOnlyApplyTo = ["UsdSolidBrepArray"]
+        token[] apiSchemaCanOnlyApplyTo = ["PrelimUsdSolidBrepArray"]
     }
 )
 {
     uniform point3d[] brep:surface:nurbs:controlVertices (
         doc = """ Control vertices of the NurbsSurface.
         The layout is row-major with U considered rows, and V columns.
-        size() = SUM_i(uVertexCount[i] * vVertexCount[i]). """ 
+        size() = SUM_i(uVertexCount[i] * vVertexCount[i]). """
         customData = {
             string apiName = "controlVertices"
         }
     )
 
     uniform int[] brep:surface:nurbs:uVertexCount (
-        doc = """ Number of control vertices per surface in U dir.
-        size() = number of NURBS surfaces. """ 
+        doc = """Number of control vertices per surface in U dir.
+        size() = number of NURBS surfaces. """
         customData = {
             string apiName = "uVertexCount"
         }
     )
 
     uniform int[] brep:surface:nurbs:vVertexCount (
-        doc = """ Number of control vertices per surface in V dir.
-        size() = number of NURBS surfaces. """ 
+        doc = """Number of control vertices per surface in V dir.
+        size() = number of NURBS surfaces. """
         customData = {
             string apiName = "vVertexCount"
         }
     )
     
     uniform int[] brep:surface:nurbs:uOrder (
-        doc = """ Order in the U direction.
+        doc = """Order in the U direction.
         Order must be positive and is equal to the degree of the polynomial basis to be evaluated, plus 1.
-        size() = number of NURBS surfaces. """ 
+        size() = number of NURBS surfaces. """
         customData = {
             string apiName = "uOrder"
         }
     )
     
     uniform int[] brep:surface:nurbs:vOrder (
-        doc = """ Order in the V direction.
+        doc = """Order in the V direction.
         Order must be positive and is equal to the degree of the polynomial basis to be evaluated, plus 1.
-        size() = number of NURBS surfaces. """ 
+        size() = number of NURBS surfaces. """
         customData = {
             string apiName = "vOrder"
         }
     )
     
     uniform double[] brep:surface:nurbs:uKnots (
-        doc = """Knot vector for U direction providing parameterization.
+        doc = """Knot vector for U direction providing U parameterization.
         The length of the slice of the array for the ith surface must be ( uVertexCount[i] + uOrder[i] ), and its entries
         must take on non-decreasing values.  Knots are listed in multiplicity, e.g. [0, 0, 1, 1].
-        size() = SUM(uVertexCount) + SUM(uOrder)."""
+        size() = SUM(uVertexCount) + SUM(uOrder). """
         customData = {
             string apiName = "uKnots"
         }
     )
 
     uniform double[] brep:surface:nurbs:vKnots (
-        doc = """Knot vector for V direction providing parameterization.
+        doc = """Knot vector for V direction providing V parameterization.
         The length of the slice of the array for the ith surface must be ( vVertexCount[i] + vOrder[i] ), and its entries
         must take on non-decreasing values.  Knots are listed in multiplicity, e.g. [0, 0, 1, 1].
-        size() = SUM(vVertexCount) + SUM(vOrder)."""
+        size() = SUM(vVertexCount) + SUM(vOrder). """
         customData = {
             string apiName = "vKnots"
         }
     )
 
     uniform double[] brep:surface:nurbs:weights (
-        doc = """Provides "w" components for each control point, thus must be the same length as the
-        controlVertices attribute. All weights must be positive, w>0. \\note Some DCC's pre-weight the \\em points, but in this schema, \\em points are not pre-weighted."""        
+        doc = """ Provides "w" weight components for each control vector. Must be the same length as the controlVertices attribute. 
+        All weights must be positive, w>0. 
+        \\note Some DCC's pre-weight the \\em points, but in this schema, \\em points are not pre-weighted. """ 
         customData = {
             string apiName = "weights"
         }
     )
 
-}
+} # end class "BrepSurfaceNurbsAPI" 
+
 ```
 </details>
 
@@ -960,7 +996,6 @@ When tessellated and authored as a _UsdGeomMesh_, _UsdGeomSubset_ is used to ass
   <summary> Click to expand </summary>
 
 ```
-
 ```
 </details>
 
