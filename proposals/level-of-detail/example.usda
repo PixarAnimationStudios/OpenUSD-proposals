@@ -1,0 +1,103 @@
+#usda 1.0
+(
+    "Example usage of the proposed LOD schema"
+)
+
+def Xform "ExampleModel" (
+    kind = "component"
+)
+{
+    def LodGroup "LodGroup" (
+        lodMetric = "distance"
+        lodRanges = [10.0, 50.0, 200.0]
+        fadeTransitions = true
+        fadeTransitionWidth = 5.0
+    )
+    {
+        rel lodTargets = [
+            </ExampleModel/LodGroup/HighDetail>,
+            </ExampleModel/LodGroup/MediumDetail>,
+            </ExampleModel/LodGroup/LowDetail>,
+            </ExampleModel/LodGroup/VeryLowDetail>
+        ]
+        
+        def LodLevel "HighDetail" (
+            lodIndex = 0
+            complexity = 1.0
+        )
+        {
+            def Mesh "Geometry"
+            {
+                # High detail mesh data would go here
+                int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+                int[] faceVertexIndices = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]
+                point3f[] points = [(0, 0, 0), (1, 0, 0), (1, 1, 0), (0, 1, 0), (0, 0, 1), (1, 0, 1), (1, 1, 1), (0, 1, 1)]
+                # Additional high-detail attributes would be defined here
+            }
+        }
+        
+        def LodLevel "MediumDetail" (
+            lodIndex = 1
+            complexity = 0.5
+        )
+        {
+            def Mesh "Geometry"
+            {
+                # Medium detail mesh data would go here
+                # Fewer polygons, simplified geometry
+            }
+        }
+        
+        def LodLevel "LowDetail" (
+            lodIndex = 2
+            complexity = 0.2
+        )
+        {
+            def Mesh "Geometry"
+            {
+                # Low detail mesh data would go here
+                # Significantly reduced polygon count
+            }
+        }
+        
+        def LodLevel "VeryLowDetail" (
+            lodIndex = 3
+            complexity = 0.05
+        )
+        {
+            def Mesh "Geometry"
+            {
+                # Very low detail mesh data would go here
+                # Minimal representation for distant viewing
+            }
+        }
+    }
+}
+
+def Xform "Scene" (
+    kind = "assembly"
+)
+{
+    def Xform "Buildings" (
+        kind = "group"
+    )
+    {
+        def "Building1" (
+            references = </ExampleModel>
+        )
+        {
+            double3 xformOp:translate = (0, 0, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+        
+        def "Building2" (
+            references = </ExampleModel>
+        )
+        {
+            double3 xformOp:translate = (20, 0, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+        
+        # Additional buildings would be defined here
+    }
+}
