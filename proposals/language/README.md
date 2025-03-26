@@ -5,23 +5,40 @@
 ## Summary
 
 We propose additions to USD to allow specifying the human language locale used so that content may be
-localized to provide language and locale context for rendered text, speech synthesis, assistive technologies, or other applications.
+localized to provide language and locale context for rendered text, speech synthesis, assistive technologies, or other
+applications.
 
 We propose use of [BCP-47](https://www.w3.org/International/core/langtags/rfc3066bis.html) specifiers according
 to the [Unicode CLDR](https://cldr.unicode.org) specification, using underscores as the delimiter.
 
-We propose specifying the language as [metadata](https://openusd.org/release/glossary.html#usdglossary-metadata),
-or as an [attribute](https://openusd.org/release/glossary.html#attribute)
-on [prims](https://openusd.org/release/glossary.html#usdglossary-prim) as well as a purpose on attributes.
+We propose specifying the language as a binding to a language catalog, and a new metadata key to signify
+localizations are available.
 
 ```
-def Foo(
+def Xform "Sherrif" (
     prepend apiSchemas = ["LocaleAPI"]
+    localized = true
 ) { 
-    uniform string locale:langue = "en_US"
-    string text = "There's a snake in my boot"
-    string text:fr_CA = "Il y a un serpent dans ma botte"
-    string text:hi = "मेरे जूते में एक सांप है"
+    rel locale:translations = </Foo/Translations>
+    string name = "There's a snake in my boot" (
+        localized = true
+    )
+    
+    def LocalizationCatalog "Translations" () {
+        string sourceLanguage = "en_US"
+        
+        def Localization "Sherrif" () {
+            string identifier = "Sherrif"
+            string text:fr_CA = "shérif"
+            string text:hi = "शेरिफ"
+        }
+        
+        def Localization "SnakeInMyBoot" () {
+            string identifier = "There's a snake in my boot"
+            string text:fr_CA = "Il y a un serpent dans ma botte"
+            string text:hi = "मेरे जूते में एक सांप है"
+        }
+    }
 }
 ```
 
@@ -60,6 +77,8 @@ when used by language-aware technologies.
 * [Unicode: Language Tag Equivalences](https://cldr.unicode.org/index/cldr-spec/language-tag-equivalences)
 * [Common list of Locales](https://gist.github.com/typpo/b2b828a35e683b9bf8db91b5404f1bd1)
 * [Apple: Choosing localization regions and Scripts](https://developer.apple.com/documentation/xcode/choosing-localization-regions-and-scripts)
+* [Apple:Discover String Catalogs](https://developer.apple.com/videos/play/wwdc2023/10155)
+* [XLIFF](https://en.wikipedia.org/wiki/XLIFF)
 
 ## Details
 
@@ -69,7 +88,7 @@ This addition to USD is designed to be generic over several other schema types t
 
 The primary use case is the
 current [Text proposal from Autodesk](https://github.com/PixarAnimationStudios/OpenUSD-proposals/tree/main/proposals/text)
-, where text is a really good pairing for language specification.
+, where text is a superb pairing for language specification.
 
 Hypothetically, in the future, we could see it also being useful for other use cases like:
 
@@ -158,7 +177,7 @@ def foo {
 
 One advantage of this system is that you can have your translations in different layer files and referenced it in.
 
-It would be recommended that at least one version of the attribute exclude the language token, so that it can 
+It would be recommended that at least one version of the attribute exclude the language token, so that it can
 fallback to the inherited language and also be used as the fallback if a user asks for a language that has no matching
 languages available.
 
@@ -175,7 +194,7 @@ string text:lang:en_us
 ```
 
 This perhaps makes things longer, but does make it easier to discern that a token represents a language in a wider
-range of use cases. 
+range of use cases.
 
 #### Why not Variants?
 
@@ -205,7 +224,7 @@ Using the example above, a call to `GetLanguagePurposes(foo, "text")` would give
 - (en_US, foo:text:en_US)
 - (fr, foo:fr)
 
-In this case, the `<Fallback or Unknown>` represents that it should follow the logic 
+In this case, the `<Fallback or Unknown>` represents that it should follow the logic
 in the `Unspecified Language Fallback` section.
 
 I would suggest another function like
@@ -220,7 +239,8 @@ requirement.
 
 #### Language Selection Recommendations
 
-When the requested or desired language is not represented in the set of languages within the file, there are some recommendations
+When the requested or desired language is not represented in the set of languages within the file, there are some
+recommendations
 on how a runtime can pick a fallback option.
 
 Following the recommendations of CLDR and BCP-47, we suggest:
