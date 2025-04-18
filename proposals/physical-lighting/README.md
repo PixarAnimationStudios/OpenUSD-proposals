@@ -151,20 +151,43 @@ This should integrate the power emitted by a Rect, Sphere, Cylinder or DiskLight
 
 If this method is called on a DomeLight or DistantLight then it should return 1.0.
 
-> [!IMPORTANT]
-> Formulae
+The renderer should then multiply the exitant radiance/luminance of the lightsource by the user-specified power, $\Phi$ and the power scale factor returned by `ComputePowerScaleFactor()`, $k_\phi$, to obtain the power-adjusted exitant radiance/luminance, $L_e$, which is used in place of $L$:
+
+```math
+\begin{align}
+L_e &= L \Phi k_\phi \\ \notag
+k_\phi &= \frac{1}{L(\lambda) T(\lambda) D(\omega) A} \\ \notag
+\end{align}
+```
+
+$L(\lambda)$ is the luminance integral of the light's illuminant distribution, scaled by the luminance of the light's color, its intensity and exposure. In the photometric case, this is weighted by CIE $\bar{Y}$, while for the radiometric case this is unweighted.
+
+$T(\lambda)$ is the integral of the pixel luminance (defined by the rendering color space) of the texture applied to the light in uv space. If no texture is applied, or the source is point-like, this is 1.
+
+$D(\omega)$ is the integral of the shaping functions (including cone, focus and IES terms) over the sphere of directions around the light's origin
+
+$A$ is the surface area of the light source in meters squared. In the case of a point source, this is 1.
 
 ### `HdLight::ComputeIlluminanceScaleFactor()`
 
-This should integrate the illuminance emitted by a Dome or DistantLight given all the other attributes of the light (intensity, color, texture, shaping etc.) and return the reciprocal of that integrated illuminance such that the user can simply multiply the emitted luminance/radiance by that value in order that the emitted illuminance of the light is exactly that specified by `photometric:illuminance` or `radiometric:illuminance`.
+This should integrate the illuminance emitted by a Dome or DistantLight given all the other attributes of the light (intensity, color, texture etc.) and return the reciprocal of that integrated illuminance such that the user can simply multiply the emitted luminance/radiance by that value in order that the emitted illuminance of the light is exactly that specified by `photometric:illuminance` or `radiometric:illuminance`.
 
 For a DomeLight, this method computes the illuminance at an upward-facing patch (relative to the stage up-axis). For a distant light it computes the illuminance at a patch facing the light.
 
 If this method is called on a Rect, Sphere, Cylinder or DiskLight then it should return 1.0.
 
-> [!IMPORTANT]
-> Formulae
+The renderer should then multiply the exitant radiance/luminance of the lightsource by the user-specified illuminance, $E$ and the illuminance scale factor returned by `ComputeIlluminanceScaleFactor()`, $k_E$, to obtain the illuminance-adjusted exitant radiance/luminance, $L_e$, which is used in place of $L$:
 
+```math
+\begin{align}
+L_e &= L E k_E \\ \notag
+k_E &= \frac{1}{L(\lambda) T(\omega, \lambda)} \\ \notag
+\end{align}
+```
+
+$L(\lambda)$ is the luminance integral of the light's illuminant distribution, scaled by the luminance of the light's color, its intensity and exposure. In the photometric case, this is weighted by CIE $\bar{Y}$, while for the radiometric case this is unweighted.
+
+$T(\lambda)$ is the integral of the pixel luminance (defined by the rendering color space) of the texture applied to the light over the upward-facing hemisphere (according to the stage up-axis) in spherical coordinates. If no texture is applied, or the source is point-like, this is 1.
 
 # 3. PhysicalCamera APIs
 This consists of two schema: `PhysicalCameraResponsivityAPI` and `PhysicalColorFilterArrayAPI`, which both describe the same concept but with different parameterizations that are suited to different use cases.
