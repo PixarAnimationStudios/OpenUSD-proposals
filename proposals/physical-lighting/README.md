@@ -183,8 +183,8 @@ The renderer should then multiply the exitant radiance/luminance of the lightsou
 \begin{align}
 L_e &= L E k_E \\ \notag
 k_E &= \frac{1}{L(\lambda) T(\omega, \lambda)} \\ \notag
+L &= luminance(\mathtt{inputs:color}) \cdot \mathtt{inputs:intensity} \cdot 2^{\mathtt{inputs:exposure}} \\ \notag
 \end{align}
-L &= luminance(\mathtt{inputs:color}) \cdot \mathtt{inputs:intensity} \cdot 2^{\mathtt{inputs:exposure}}
 ```
 
 $L(\lambda)$ is the luminance integral of the light's illuminant distribution scaled by $L$, the product of the luminance of the light's color, its intensity and exposure. In the photometric case, this is weighted by CIE $\bar{Y}$, while for the radiometric case this is unweighted.
