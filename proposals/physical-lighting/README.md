@@ -1,8 +1,8 @@
 # Introduction
 
-Many applications across many different industries need to be able to specify, simulate, and measure the brightness and colour of lights in absolute, physical units. 
+Many applications across many different industries need to be able to specify, simulate, and measure the brightness and color of lights in absolute, physical units. 
 
-The updates to the UsdLux documentation in OpenUSD 25.05 clarify the units used in those APIs to be units of photometric luminance, i.e. nit or candela-per-meter-squared. While this clears up current abiguity in the definition, it intentionally does not add any new parameterization to the lights.
+The updates to the UsdLux documentation in OpenUSD 25.05 clarify the units used in those APIs to be units of photometric luminance, i.e. nit or candela-per-meter-squared. While this clears up current ambiguity in the definition, it intentionally does not add any new parameterization to the lights.
 
 This proposal describes:
 1. An API schema for specifying the illuminant spectrum of a light 
@@ -13,7 +13,7 @@ The schema here are relatively lightweight. The majority of the implementation f
 
 # 1. PhysicalLightIlluminantAPI
 
-This schema allows specifying the wavelength-dependent emission spectrum for a lightsource. This is essential for spectral rendering, and for rendering outside of the visual spectrum where notions of colour as an RGB value do not apply. For RGB renderers it is essentially a better version of the current "color temperature" controls.
+This schema allows specifying the wavelength-dependent emission spectrum for a lightsource. This is essential for spectral rendering, and for rendering outside of the visual spectrum where notions of color as an RGB value do not apply. For RGB renderers it is essentially a better version of the current "color temperature" controls.
 
 ## Schema
 
@@ -31,7 +31,7 @@ class PhysicalLightIlluminantAPI (
 )
 {
     token physical:illuminant = "white" (
-        doc = """The illuminant spectrum of the light in spectral radiance. The default of "white" specifies that the spectrum matches the whitepoint of the rendering colour space. "blackbody" specifies a blackbody spectrum of temperature defined by "colorTemperature", and "custom" specifies that the spectrum in "physical:customIlluminant" should be used.
+        doc = """The illuminant spectrum of the light in spectral radiance. The default of "white" specifies that the spectrum matches the whitepoint of the rendering color space. "blackbody" specifies a blackbody spectrum of temperature defined by "colorTemperature", and "custom" specifies that the spectrum in "physical:customIlluminant" should be used.
         "white" and "blackbody" are defined over the domain [380nm, 780nm]."""
         allowedTokens = ["white", "blackbody", "custom"]
         displayName = "Illuminant"
@@ -50,7 +50,7 @@ HdLight should provide:
 
 ### `HdLight::ComputeIlluminantRGB()` 
 
-Converts the illuminant spectrum to an RGB colour in the rendering colour space. If `PhysicalLightIlluminantAPI` is not applied to the light, then if `enableColorTemperature` is true, it should convert `colorTemperature` to an RGB colour according to the [UsdLuxLightAPI documentation](https://openusd.org/dev/api/class_usd_lux_light_a_p_i.html#ad990b3360a3c172c5340ce4e7af463a6). If `enableColorTemperature` is false, then it should return white.
+Converts the illuminant spectrum to an RGB color in the rendering color space. If `PhysicalLightIlluminantAPI` is not applied to the light, then if `enableColorTemperature` is true, it should convert `colorTemperature` to an RGB color according to the [UsdLuxLightAPI documentation](https://openusd.org/dev/api/class_usd_lux_light_a_p_i.html#ad990b3360a3c172c5340ce4e7af463a6). If `enableColorTemperature` is false, then it should return white.
 
 # 2. Photo/Radiometric Light APIs
 While this is not strictly necessary for interchange of lighting information (everything ends up as radiance/luminance in the renderer after all), the conversion from units of power or irradiance/illuminance to exitant radiance/luminance on a light source can be subtle and there are many ways for an implementation to diverge.
@@ -67,7 +67,7 @@ class PhotometricAreaLightAPI (
 )
 {
     float photometric:power = 1600 (
-        doc = """Photometric power of the light in lumen."""
+        doc = """Photometric power of the light in lumens."""
         displayName = "Power"
     )
 }
@@ -81,7 +81,7 @@ class RadiometricAreaLightAPI (
 )
 {
     float radiometric:power = 2.34 (
-        doc = """Radiometric power of the light, in Watt, integrated over the domain of the light's illuminant spectrum."""
+        doc = """Radiometric power of the light, in Watts, integrated over the domain of the light's illuminant spectrum."""
         displayName = "Power"
     )
 }
@@ -109,7 +109,7 @@ class RadiometricDomeLightAPI (
 )
 {
     float radiometric:irradiance = 14.64 (
-        doc = """Irradiance, in Watt per meter squared, received by an upward-facing patch from this light, integrated over the domain of the the light's illuminant spectrum."""
+        doc = """Irradiance, in Watts per meter squared, received by an upward-facing patch from this light, integrated over the domain of the the light's illuminant spectrum."""
         displayName = "Irradiance"
     )
 }
@@ -137,7 +137,7 @@ class RadiometricDistantLightAPI (
 )
 {
     float radiometric:irradiance = 14.64 (
-        doc = """Irradiance, in Watt per meter squared, received by a patch facing this light, integrated over the domain of the the light's illuminant spectrum."""
+        doc = """Irradiance, in Watts per meter squared, received by a patch facing this light, integrated over the domain of the the light's illuminant spectrum."""
         displayName = "Irradiance"
     )
 }
@@ -179,13 +179,13 @@ While this is mostly relevant to spectral renderers, it can still add value to R
 
 ## `PhysicalCameraResponsivityAPI`
 
-`PhysicalCameraResponsivityAPI` is intended for cameras that are generating RGB images in the camera-native colour space and is parameterized by three dimensionless functions, one each for R, G and B, that map between spectral exposure at the sensor and a resulting RGB pixel value in camera-native colour space.
+`PhysicalCameraResponsivityAPI` is intended for cameras that are generating RGB images in the camera-native color space and is parameterized by three dimensionless functions, one each for R, G and B, that map between spectral exposure at the sensor and a resulting RGB pixel value in camera-native color space.
 
 This is the model proposed in [Weta's Physlight work](https://github.com/wetadigital/physlight). That repository also contains example responsivity functions for a variety of DSLR cameras. The [rawtoaces repository](https://github.com/AcademySoftwareFoundation/rawtoaces) also has a selection of camera responsivity data.
 
 ## `PhysicalColorFilterArrayAPI`
 
-`PhysicalColorFilterArrayAPI` is intended for camera sensors that are generating raw images and is parameterized by four functions, one for each of the four colour filters in the sensor's matrix, describing the ratio of electrons generated by the sensor for each photon arriving at a given wavelength. The API also specifies the pattern of colour filters in the sensor matrix, e.g. "RGGB"
+`PhysicalColorFilterArrayAPI` is intended for camera sensors that are generating raw images and is parameterized by four functions, one for each of the four color filters in the sensor's matrix, describing the ratio of electrons generated by the sensor for each photon arriving at a given wavelength. The API also specifies the pattern of color filters in the sensor matrix, e.g. "RGGB"
 
 > [!IMPORTANT]
 > How do we specify an arbitrary number of curves here?
@@ -204,17 +204,29 @@ class PhysicalCameraResponsivityAPI (
     }
 )
 {
-    float2[] physical:responsivity:r = [(380, 1), (780, 1)] (
+    float2[] physical:responsivity:r = [
+        (380, 0.0354000000000),
+        # default to e.g. 5D mk II
+        (780, 0.0027000000000)
+    ] (
         doc = """Responsivity of the camera's red channel to light."""
         displayName = "R"
     )
 
-    float2[] physical:responsivity:g = [(380, 1), (780, 1)] (
+    float2[] physical:responsivity:g = [
+        (380, 0.0359000000000),
+        # default to e.g. 5D mk II
+        (780, 0.0027000000000)
+    ] (
         doc = """Responsivity of the camera's green channel to light."""
         displayName = "G"
     )
 
-    float2[] physical:responsivity:b = [(380, 1), (780, 1)] (
+    float2[] physical:responsivity:b = [
+        (380, 0.0334000000000),
+        # default to e.g. 5D mk IV
+        (780, 0.0027000000000)
+    ] (
         doc = """Responsivity of the camera's blue channel to light."""
         displayName = "B"
     )
@@ -228,30 +240,58 @@ class PhysicalColorFilterArrayAPI (
 )
 {
     string physical:colorFilterArray:pattern = "RGGB" (
-        doc = """The pattern of the sensor's CFA. This four-character string dictates which the order and inclusion of the 
-        filterN attributes. Specifying less than four characters means that the missing filter attributes will be ignored.
+        doc = """The pattern of the sensor's CFA. This string dictates which the order and inclusion of the 
+        filterN attributes. Specifying less than eight characters means that the missing filter attributes will be ignored.
         For example, specifying 'GG' would mean that only filter1 and filter2 would be used."""
         displayName = "Color Filter Array Pattern"
     )
 
-    float2[] physical:colorFilterArray:filter1 = [(380, 1), (780, 1)] (
+    float2[] physical:colorFilterArray:filter1 = [
+        # some sensible default
+    ] (
         doc = """Responsivity of the camera's first filter to light."""
         displayName = "Filter 1"
     )
 
-    float2[] physical:colorFilterArray:filter2 = [(380, 1), (780, 1)] (
+    float2[] physical:colorFilterArray:filter2 = [
+        # some sensible default
+    ] (
         doc = """Responsivity of the camera's second filter to light."""
         displayName = "Filter 2"
     )
 
-    float2[] physical:colorFilterArray:filter3 = [(380, 1), (780, 1)] (
+    float2[] physical:colorFilterArray:filter3 = [
+        # some sensible default
+    ] (
         doc = """Responsivity of the camera's third filter to light."""
         displayName = "Filter 3"
     )
 
-    float2[] physical:colorFilterArray:filter4 = [(380, 1), (780, 1)] (
+    float2[] physical:colorFilterArray:filter4 = [
+        # some sensible default
+    ] (
         doc = """Responsivity of the camera's fourth filter to light."""
         displayName = "Filter 4"
+    )
+
+    float2[] physical:colorFilterArray:filter5 = [] (
+        doc = """Responsivity of the camera's fifth filter to light."""
+        displayName = "Filter 5"
+    )
+
+    float2[] physical:colorFilterArray:filter6 = [] (
+        doc = """Responsivity of the camera's sixth filter to light."""
+        displayName = "Filter 6"
+    )
+
+    float2[] physical:colorFilterArray:filter7 = [] (
+        doc = """Responsivity of the camera's seventh filter to light."""
+        displayName = "Filter 7"
+    )
+
+    float2[] physical:colorFilterArray:filter8 = [] (
+        doc = """Responsivity of the camera's eighth filter to light."""
+        displayName = "Filter 8"
     )
 
 }
