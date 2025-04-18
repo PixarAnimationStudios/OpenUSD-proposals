@@ -46,7 +46,7 @@ HdLight should provide:
 
 ### `HdLight::ComputeIlluminantRGB()` 
 
-Converts the illuminant spectrum to an RGB color in the rendering color space. If `PhysicalLightIlluminantAPI` is not applied to the light, then if `enableColorTemperature` is true, it should convert `colorTemperature` to an RGB color according to the [UsdLuxLightAPI documentation](https://openusd.org/dev/api/class_usd_lux_light_a_p_i.html#ad990b3360a3c172c5340ce4e7af463a6). If `enableColorTemperature` is false, then it should return white.
+Converts the illuminant spectrum to an RGB color in the rendering color space using CIE 1931 Standard Observer. If `PhysicalLightIlluminantAPI` is not applied to the light, then if `enableColorTemperature` is true, it should convert `colorTemperature` to an RGB color according to the [UsdLuxLightAPI documentation](https://openusd.org/dev/api/class_usd_lux_light_a_p_i.html#ad990b3360a3c172c5340ce4e7af463a6). If `enableColorTemperature` is false, then it should return white.
 
 # 2. Photo/Radiometric Light APIs
 While this is not strictly necessary for interchange of lighting information (everything ends up as radiance/luminance in the renderer after all), the conversion from units of power or irradiance/illuminance to exitant radiance/luminance on a light source can be subtle and there are many ways for an implementation to diverge.
@@ -157,10 +157,11 @@ The renderer should then multiply the exitant radiance/luminance of the lightsou
 \begin{align}
 L_e &= L \Phi k_\phi \\ \notag
 k_\phi &= \frac{1}{L(\lambda) T(\lambda) D(\omega) A} \\ \notag
+L &= luminance(\mathtt{inputs:color}) \cdot \mathtt{inputs:intensity} \cdot 2^{\mathtt{inputs:exposure}}
 \end{align}
 ```
 
-$L(\lambda)$ is the luminance integral of the light's illuminant distribution, scaled by the luminance of the light's color, its intensity and exposure. In the photometric case, this is weighted by CIE $\bar{Y}$, while for the radiometric case this is unweighted.
+$L(\lambda)$ is the luminance integral of the light's illuminant distribution scaled by $L$, the product of the luminance of the light's color, its intensity and exposure. In the photometric case, this is weighted by CIE $\bar{Y}$, while for the radiometric case this is unweighted.
 
 $T(\lambda)$ is the integral of the pixel luminance (defined by the rendering color space) of the texture applied to the light in uv space. If no texture is applied, or the source is point-like, this is 1.
 
@@ -170,7 +171,7 @@ $A$ is the surface area of the light source in meters squared. In the case of a 
 
 ### `HdLight::ComputeIlluminanceScaleFactor()`
 
-This should integrate the illuminance emitted by a Dome or DistantLight given all the other attributes of the light (intensity, color, texture etc.) and return the reciprocal of that integrated illuminance such that the user can simply multiply the emitted luminance/radiance by that value in order that the emitted illuminance of the light is exactly that specified by `photometric:illuminance` or `radiometric:illuminance`.
+This should integrate the illuminance emitted by a Dome or DistantLight given all the other attributes of the light (intensity, color, texture etc.) and return the reciprocal of that integrated illuminance such that the user can simply multiply the emitted luminance/radiance by that value in order that the emitted illuminance of the light is exactly that specified by `photometric:illuminance` or `radiometric:irradiance`.
 
 For a DomeLight, this method computes the illuminance at an upward-facing patch (relative to the stage up-axis). For a distant light it computes the illuminance at a patch facing the light.
 
@@ -183,9 +184,10 @@ The renderer should then multiply the exitant radiance/luminance of the lightsou
 L_e &= L E k_E \\ \notag
 k_E &= \frac{1}{L(\lambda) T(\omega, \lambda)} \\ \notag
 \end{align}
+L &= luminance(\mathtt{inputs:color}) \cdot \mathtt{inputs:intensity} \cdot 2^{\mathtt{inputs:exposure}}
 ```
 
-$L(\lambda)$ is the luminance integral of the light's illuminant distribution, scaled by the luminance of the light's color, its intensity and exposure. In the photometric case, this is weighted by CIE $\bar{Y}$, while for the radiometric case this is unweighted.
+$L(\lambda)$ is the luminance integral of the light's illuminant distribution scaled by $L$, the product of the luminance of the light's color, its intensity and exposure. In the photometric case, this is weighted by CIE $\bar{Y}$, while for the radiometric case this is unweighted.
 
 $T(\lambda)$ is the integral of the pixel luminance (defined by the rendering color space) of the texture applied to the light over the upward-facing hemisphere (according to the stage up-axis) in spherical coordinates. If no texture is applied, or the source is point-like, this is 1.
 
@@ -309,6 +311,48 @@ class PhysicalColorFilterArrayAPI (
 }
 
 ```
+
+### Alternative PhysicalColorFilterArrayAPI
+
+An alternative formulation for the CFA schema is to represent the filter QE curves as a 2D array of values, rather than (up to) eight separate filter arrays. This has the advantage of being extendable if we ever need more than eight filters (such sensors exist but are not common in practical usage) and avoiding having extra, unused attributes.
+
+```python
+
+class PhysicalColorFilterArrayAPI (
+    customData = {
+        token apiSchemaType = "singleApply"
+        token[] apiSchemaCanOnlyApplyTo = ["Camera"]
+    }
+)
+{
+    string physical:colorFilterArray:pattern = "RGGB" (
+        doc = """The pattern of the sensor's CFA. This string dictates the order and size of the filters attribute.
+        For example, specifying 'GG' would mean that filters must be a 2 * len(wavelengths) size array."""
+        displayName = "Color Filter Array Pattern"
+    )
+
+    float[] physical:colorFilterArray:wavelengths = [
+        380.0,
+        # ...
+        780.0
+    ] (
+        doc = """Wavelengths corresponding to each 'row" of entries in the filters array."""
+        displayName = "Filter 1"
+    )
+
+    float[] physical:colorFilterArray:filters = [
+        # some sensible default
+    ] (
+        doc = """Responsitivity of the camera's filters to light. This is an NxM 2-dimensional array of values flattened to a 1-d array, where the fastest-changing index is the index of the filter in the pattern specified by `physical:colorFilterArray:pattern`, and the slowest-changing index is the wavelength. Thus the array is M filters by N wavelengths, where M is the length of the filter pattern string and N is the length of the `physical:colorFilterArray:wavelengths` array."""
+        displayName = "Filters"
+    )
+}
+
+```
+
+
+```
+
 
 ## Implementation
 
