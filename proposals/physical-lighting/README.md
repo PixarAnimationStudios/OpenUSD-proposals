@@ -236,7 +236,7 @@ class PhysicalCameraResponsivityAPI (
 
     float2[] physical:responsivity:b = [
         (380, 0.0334000000000),
-        # default to e.g. 5D mk IV
+        # default to e.g. 5D mk II
         (780, 0.0027000000000)
     ] (
         doc = """Responsivity of the camera's blue channel to light."""
