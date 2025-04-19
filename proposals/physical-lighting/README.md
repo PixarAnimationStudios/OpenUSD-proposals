@@ -11,6 +11,11 @@ This proposal describes:
 
 The schema here are relatively lightweight. The majority of the implementation falls on the renderer side, which while not particularly difficult, can be slightly fiddly and nuanced, making it easy for implementations to diverge. The good news is that all of the required functionality could be implemented in Hydra, with renderers just calling `Compute...()` methods to get the necessary factors to multiply in to an existing conforming UsdLux implementation.
 
+## Demo
+This demo video walks through a prototype implementation in Omniverse, showing how to use photometric lighting controls to create physically realistic lighting:
+
+https://drive.google.com/file/d/15afllixoq29Fjkltq9gv8sKrc7za_Xn2/view?usp=sharing
+
 # 1. PhysicalLightIlluminantAPI
 
 This schema allows specifying the wavelength-dependent emission spectrum for a lightsource. This is essential for spectral rendering, and for rendering outside of the visual spectrum where notions of color as an RGB value do not apply. For RGB renderers it is essentially a better version of the current "color temperature" controls.
