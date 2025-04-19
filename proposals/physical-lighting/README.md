@@ -355,10 +355,6 @@ class PhysicalColorFilterArrayAPI (
 
 ```
 
-
-```
-
-
 ## Implementation
 
 HdCamera should provide:
