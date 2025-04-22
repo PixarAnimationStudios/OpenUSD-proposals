@@ -59,41 +59,36 @@ powerful and familiar to many.  However, in OpenUSD many array-valued attributes
 essential to provide operations that are guaranteed not to change the modified
 array's size, in addition to ones that can change its size.
 
-An Array Edit consists of two parts:
-
-* A set of named dense arrays that may be referred to for source data in override instructions.  
-* A list of instructions that mutate the destination array at specified indexes using values from the named dense arrays, the destination array so-far, or literal values.
+An Array Edit consists of a list of instructions that mutate the destination
+array at specified indexes using immediate literal values or by indexing from
+the destination array so-far.
 
 The proposed instructions are:
 
-* `write opt-src-array<slice> to <slice>`  
-* `write literal-value to <slice>`  
-* `insert opt-src-array<slice> at <index>`
+* `write literal-value to <index>`
+* `write <index> to <index>`
 * `insert literal-value at <index>`
+* `insert <index> at <index>`
 * `prepend ...` (alias for `insert ... at [0]`)
 * `append ...` (alias for `insert ... at [end]`)
-* `erase <slice>`
+* `erase <index>`
 * `minsize N` (append default elements as needed until size is at least N)
 * `maxsize N` (erase elements from the end as needed until size is at most N)
 * `resize N`  (append or erase elements as needed until size is exactly N)
 
-The `write-to` instruction overwrites array elements, but never changes array
-size. In contrast, the `insert-at`, `append`/`prepend`, `erase` and `*size`
+The `write to` instruction overwrites array elements, but never changes array
+size. In contrast, the `insert at`, `append`/`prepend`, `erase` and `*size`
 instructions can change array size.
 
 Above, an `<index>` is either a bracketed numeric index, like `[123]`, including
 negative indexing, meaning to subtract from the array's length to form the true
 index, as in Python, or the bracketed special token `[end]` meaning the index
 past-the-end of the array.  This is useful for appending, by insertion at `end`.
-A `<slice>` is either an `<index>` or a bracketed Python-style slice
-specification, like `[start:stop:step]`.  These values are optional in the same
-way as for Python slicing.
 
-An `opt-src-array` is an optional source array name.  If omitted, the `<slice>`
-refers to elements of the destination array being edited.  A `literal-value` is
-a literal element value using the existing `.usda` syntax for array elements.
-For example, for a `string`\-valued array, this could be `"hello"`, or for a
-`GfVec3f`\-valued array this could be `(1.2, 3.4, 5.6)`.
+An `<index>` refers to elements of the destination array being edited.  A
+`literal-value` is a literal element value using the existing `.usda` syntax for
+array elements.  For example, for a `string`\-valued array, this could be
+`"hello"`, or for a `GfVec3f`\-valued array this could be `(1.2, 3.4, 5.6)`.
 
 ### Examples of Array Edit Instructions
 
@@ -102,30 +97,18 @@ literal values are `int`s.
 
 ```
 ########################################################################
-# 'write-to' never changes array size, it only overwrites existing elements.
+# 'write to' never changes array size, it only overwrites existing elements.
 
 # writing literals...
 write 3 to [10]           # Set array index 10 to 3.
 write 9 to [-1]           # Set the last array index to 9.
 write 86 to [end]         # Error: write out-of-bounds.
-write 9 to [10:20]        # Set array indexes 10..19 to 9.
-write 0 to [:20]          # Set indexes 0..19 to 0.
-write 0 to [:]            # Set all indexes to 0.
-write -1 to [::2]         # Set even-numbered indexes to -1.
 
 # writing destination array elements to other indexes...
 write [-1] to [0]         # Set index 0 to the value of the last elt.
-write [-10:] to [:10]     # Set the first ten values to the last ten values.
-
-# writing named source array elements to the destination...
-write src[23] to [13]     # Set index 13 to source array index 23.
-write src[:] to [::-1]    # Write `src` to the array backward, starting from the 
-                          # array's end.
-write src[::-1] to [:]    # Write `src` backward to the array, starting from the 
-                          # array's beginning.
 
 ########################################################################
-# 'insert-at' can change array size by adding new elements.
+# 'insert at' can change array size by adding new elements.
 
 # inserting literals...
 insert 3 at [10]           # Shift elts at index >=10 up by 1, insert 3 at [10]
@@ -136,13 +119,6 @@ append 86                  # Same as above.
 # inserting destination array elements at other indexes...
 insert [-1] at [0]         # Insert a copy of the last elt at the beginning.
 prepend [-1]               # Same as above.
-insert [-10:] at [0]       # Insert a copy of the last 10 elts at the beginning.
-prepend [-10:]             # Same as above.
-
-# inserting named source array elements in the destination...
-insert src[23] at [13]     # Shift elts at index >=13 up by 1, insert src[23].
-insert src[::2] at [end]   # Append the even-indexed elts from src to destination.
-append src[::2]            # Same as above
 
 ########################################################################
 # 'erase' can change array size by deleting elements.
@@ -150,7 +126,6 @@ append src[::2]            # Same as above
 erase [10]                 # Erase element 10, shifting elts at >=10 down 1.
 erase [-1]                 # Erase the last element.
 erase [end]                # Error: erase out-of-bounds.
-erase [1::2]               # Erase odd-indexed elts.
 
 ########################################################################
 # '*size' can change array size by appending or erasing elements.
@@ -164,8 +139,11 @@ This language is intentionally not Turing-complete.  There are no conditionals
 of any kind, so applying an edit always terminates, and each instruction
 executes exactly once.
 
-Implementations are permitted to make action-preserving changes to instruction
-sequences, for example to remove redundant writes.
+Array edits should not be used to record an "editing history".  Implementations
+are permitted to make action-preserving changes to instruction sequences.  For
+example, if one instruction writes a value to index N, and a subsequent
+instruction writes a different value to index N, the first instruction (a "dead
+store") can be eliminated.
 
 We will provide a C++ class, `VtArrayEdit<T>`, that can represent a sequence of
 edits as described above, as well as apply those edits to a `VtArray<T>`.  In
@@ -409,33 +387,16 @@ The astute reader notes that we have not stated what happens with out-of-range
 indexes and the like.  We believe we can define most behavior sensibly, even
 when indexes are out-of-range, so that value resolution produces reasonable
 results.  We attempt to do this as much as possible, since a sparse edit can
-easily be “invalidated” by a non-local change to an upstream asset.  In
-contrast, out-of-bounds indexing on a `src` array is a local error.  It's
-confined to a single edit opinion.  In this case we emit a `TF_WARN()`
-explaining the error, and optionally channel these to the validation system, but
-still define the behavior (see below for details).  To help with debugging
-sparse edits, we will provide `TF_DEBUG` flags that report details whenever
-out-of-bounds indexing occurs to help track down asset issues.
+easily be “invalidated” by a non-local change to an upstream asset.  To help
+with debugging sparse edits, we will provide `TF_DEBUG` flags that report
+details whenever out-of-bounds indexing occurs to help track down asset issues.
 
-For `write-to` instructions, since the intent is never to change the array size,
-we silently ignore attempts to write to any out-of-bounds indexes.  If a
-`write-to` a slice is partially in-bounds and partially out, only the in-bounds
-portion will be written.  We will report these out-of-bounds errors if desired
-via setting a `TF_DEBUG` flag.
+For `write to` instructions, since the intent is never to change the array size,
+we silently ignore attempts to write to any out-of-bounds indexes.  We will
+report these out-of-bounds errors if desired via setting a `TF_DEBUG` flag.
 
-Similarly, for `write-to` instructions, if the left-hand-side provides more
-elements than are needed, those additional elements are ignored.  If the
-left-hand-side provides fewer elements than are needed, those elements will be
-repeated (cyclically as if indexed by modular arithmetic) as needed.
-
-For `insert-at` instructions, we similarly silently truncate source slices to
-their in-bounds portions, and ignore any out-of-bounds portions or indexes.
+For `insert at` instructions, we similarly ignore any out-of-bounds indexes.
 Again we will optionally report these errors if desired via a `TF_DEBUG` flag.
-
-In either case if a `src` array is indexed out-of-bounds, we will emit a
-`TF_WARN` about the error, and truncate the slice to the in-bounds portion.  If
-the result is empty, this instruction is ignored and we proceed to the next
-instruction.
 
 ## Code Structure and Refactoring
 
@@ -453,13 +414,12 @@ representing array edit opinions in `.usda` files, such as:
 
 ```
 over "geom_mesh" {
-    point3f[] points = edit (source src1 = <bracketed array data>,
-                             source src2 = <bracketed array data>,
-                             ...,
-                             write (1, 2, 3) to [10],
-                             erase [-1],
-                             insert src1[:] at [:0]
-                             )
+    point3f[] points = edit (
+        write (1, 2, 3) to [10],
+        erase [-1],
+        insert [-1] at [0],
+        minsize 1024
+    )
 }
 ```
 
@@ -510,6 +470,11 @@ to the future.
 There is no special handling for indexed primvars.  It is left to DCCs to author
 sparse overrides of the `primvars:foo` and `primvars:foo:indices` attributes
 separately.
+
+An earlier version of this proposal allowed Python-style slicing in the edit
+instructions, like `[start:stop:step]`.  We've removed this from the initial
+work due to complexity and tooling concerns.  They could be re-added as a future
+enhancement.
 
 The possibility of handling interpolation by interpolating sparse array edits
 was discussed.  However, interpolating the sparse edits themselves is not
