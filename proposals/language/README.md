@@ -5,23 +5,42 @@
 ## Summary
 
 We propose additions to USD to allow specifying the human language locale used so that content may be
-localized to provide language and locale context for rendered text, speech synthesis, assistive technologies, or other applications.
+localized to provide language and locale context for rendered text, speech synthesis, assistive technologies, or other
+applications.
 
 We propose use of [BCP-47](https://www.w3.org/International/core/langtags/rfc3066bis.html) specifiers according
 to the [Unicode CLDR](https://cldr.unicode.org) specification, using underscores as the delimiter.
 
-We propose specifying the language as [metadata](https://openusd.org/release/glossary.html#usdglossary-metadata),
-or as an [attribute](https://openusd.org/release/glossary.html#attribute)
-on [prims](https://openusd.org/release/glossary.html#usdglossary-prim) as well as a purpose on attributes.
+We propose specifying the language as a binding to a language catalog, and a new metadata key to signify
+localizations are available.
 
 ```
-def Foo(
-    prepend apiSchemas = ["LocaleAPI"]
+def Xform "Sherrif" (
+    prepend apiSchemas = ["LocalizationAPI"]
+    displayName = "Sherrif"
+    localized = true
 ) { 
-    uniform string locale:langue = "en_US"
-    string text = "There's a snake in my boot"
-    string text:fr_CA = "Il y a un serpent dans ma botte"
-    string text:hi = "मेरे जूते में एक सांप है"
+    string localization:sourceLanguage = "en_US"
+    rel localization:catalog = </Foo/Translations>
+    string name = "There's a snake in my boot" (
+        localized = true
+    )
+    
+    def LocalizationCatalog "Translations" () {
+        string sourceLanguage = "en_US"
+        
+        def LocalizedString "Sherrif" () {
+            string identifier = "Sherrif"
+            string text:fr_CA = "shérif"
+            string text:hi = "शेरिफ"
+        }
+        
+        def LocalizedString "SnakeInMyBoot" () {
+            string identifier = "There's a snake in my boot"
+            string text:fr_CA = "Il y a un serpent dans ma botte"
+            string text:hi = "मेरे जूते में एक सांप है"
+        }
+    }
 }
 ```
 
@@ -29,15 +48,25 @@ def Foo(
 
 Today, most 3D formats assume a single unspecified language across the represented content.
 
-A few changes and upcoming changes to USD increase the need to specify language:
+However, USD is expanding into more domains than traditional 3D scene formats where the ability to localize content
+opens the doors for more consumers of content.
 
-1. With Unicode support in USD, it is more attractive to people in a wider range of locales.
-2. Upcoming text support feels like a natural area for representing content in different locales
-3. USD is now used as part of interactive content (games, spatial computing), where
-   localization for user playback and assistive technologies may be useful.
+Areas such as the following would benefit from being able to provide localized content:
 
-Since there is no language specification, it is unclear for tooling and users how content should be interpreted
-when used by language-aware technologies.
+1. Interactive content (games, spatial computing)
+2. Education content
+3. E-Commerce
+
+A lack of langauge guidance and features in 3D formats, not just USD, makes this a much more difficult proposition.
+However, we believe a few very simple changes could really open up USD content to many more people.
+
+We would like to localize the following items as they are presented to users in user interfaces:
+
+1. String attributes
+2. Prim display names when presented in a consuming (not editing) UI like QuickLook.
+3. Variant Sets and Variant identifiers
+
+Additionally, in the future, it may be useful to localize other data types but we defer those to a later time.
 
 ## Glossary of Terms
 
@@ -61,27 +90,92 @@ when used by language-aware technologies.
 * [Common list of Locales](https://gist.github.com/typpo/b2b828a35e683b9bf8db91b5404f1bd1)
 * [Apple: Choosing localization regions and Scripts](https://developer.apple.com/documentation/xcode/choosing-localization-regions-and-scripts)
 
+## Existing Language Localization Formats
+
+* [Apple:Discover String Catalogs](https://developer.apple.com/videos/play/wwdc2023/10155)
+* [XLIFF](https://en.wikipedia.org/wiki/XLIFF)
+
 ## Details
 
-### What would use it?
+### Localization Relationships
 
-This addition to USD is designed to be generic over several other schema types that might benefit from it.
+We propose the addition of a `LocalizationAPI` that would allow for various Localization style metadata.
+For the purposes of this proposal, we will only focus on language but this may include other types of localization info
+in the future.
 
-The primary use case is the
-current [Text proposal from Autodesk](https://github.com/PixarAnimationStudios/OpenUSD-proposals/tree/main/proposals/text)
-, where text is a really good pairing for language specification.
+This API would have two properties:
 
-Hypothetically, in the future, we could see it also being useful for other use cases like:
+1. `string localization:sourceLanguage` that denotes the default language of this prim. Refer to the language resolution
+   section for more on how this is resolved if not present.
+2. `rel localization:catalog` which points to a `LocalizationCatalog` prim. The binding does inherit down a prim
+   hierarchy.
 
-- User facing assistive metadata
-- Texture
-- Geometry
+Additionally, we propose adding a `localized` metadata that can apply to any UsdObject type to denote that it is
+localized.
 
-We do not expect these to support languages right away, but we believe this is a good future looking feature that
-would allow for the use of USD in specific multi-language pipelines.
+When applied to a property, it denotes that attribute is localized. While initially, we plan to only support strings,
+this would also allow for localizing other attributes that are stringly typed such as asset paths e.g for localized
+textures.
 
-For this proposal, we do not require that other schemas explicitly adopt language support. We suggest that this is
-something that can be adopted in runtimes over time to support in conjunction with other schemas.
+When applied to a Prim, it denotes that the prims displayName , as well as any Variant Sets or Variants are
+localized as well. The Localized metadata does not inherit down the prim hierarchy.
+
+### Language Catalogs
+
+A new prim type acts as a container for multiple localizations.
+
+A Language Catalog is inspired by the Xcode String Catalog and includes a top level sourceLanguage, and includes
+multiple localizations.
+
+In this case the container includes a single attribute `string sourceLanguage` that defines what the default
+language is for any `LocalizedString` prims.
+
+The use of a container like this allows for a runtime to quickly build up its mapping ahead of time as needed.
+
+The Language Catalog also maps to both Xcode String Catalogs and the standard XLIFF translation format structures.
+This allows for pipeline tools to quickly translate between them, and allows for future file format plugins if that
+was a direction one wanted to go in.
+
+By providing a shareable container, we also allow for multiple uses of the same string to share a single translation.
+
+### Localized String
+
+A new prim type encodes strings that have been localized.
+By default, it must contain at least a single attribute: `string identifier`.
+
+This identifier is what a runtime would use to match a localized attribute value or path identifier against.
+The name of the prim itself is irrelevant.
+
+It may include any number of translations in the form `string text:<locale>` which provide translations for that
+locale.
+
+For example if a runtime encounters the string "There's a snake in my boot", it can see if any `LocalizedString` prims
+define the same identifier and lookup appropriate translations for it.
+
+```
+def LocalizedString "SnakeInMyBoot" () {
+    string identifier = "There's a snake in my boot"
+    string text:fr_CA = "Il y a un serpent dans ma botte"
+    string text:hi = "मेरे जूते में एक सांप है"
+}
+```
+
+Similarly, a prims  display name can be looked up against this localized string and translated for a user.
+
+USD itself would not substitute the values for the runtime, and there should not be any overhead for systems that do
+not provide localizations to the user.
+
+## Language Semantics
+
+### Language Resolution
+
+In the event that a source language is not specified on a prim, we prescribe the following fallback behaviour.
+
+1. If your prim is missing a source language, check the parent hierarchy for an inherited value.
+2. If no language is specified, and if your runtime can infer a language, it is free to do so but does not have to.
+3. If you cannot or choose not to infer a language, assume the user's current locale.
+
+This matches the behaviour of common assistive technologies like screen readers.
 
 ### Language Encoding
 
@@ -96,131 +190,11 @@ significant overlap with the POSIX locale standards ([ISO/IEC 15897](https://www
 
 An example list of languages is provided in the relevant links section above.
 
-### Unspecified Language Fallback
 
-In the event that a language is not specified, it is recommended to specify a fallback behaviour.
+### Language Selection Recommendations
 
-Our recommendation is:
-
-1. If your attribute or prim is missing a language, check the parent hierarchy for an inherited value
-2. If no language is specified, and if your runtime can infer a language, it is free to do so but does not have to.
-3. If you cannot or chose not to infer a language, assume the user's current locale.
-
-This matches the behaviour of common assistive technologies like screen readers.
-
-### Default Metadata
-
-Most content will prescribe to one primary language, which tends to be the region of the content creator.
-To facilitate this, we encourage but do not require content authors to specify a language.
-
-As is the current convention, layer metadata is used for stage level hints. However the
-[Revise Use of Layer Metadata proposal](https://github.com/PixarAnimationStudios/OpenUSD-proposals/pull/45)
-suggests moving this to an applied API Schema.
-
-If we assume current conventions of a layer metadata, we recommend the following field.
-
-```
-#usda 1.0
-(
-    language = "en_CA"
-)
-```
-
-However, per the new proposal this should move to an API schema, and we'd propose the following
-
-```
-def Foo(
-    prepend apiSchemas = ["LocaleAPI"]
-) {
-    uniform string locale:langue = "en_US"
-}
-```
-
-In both scenarios, the language is inherited as the default value for every prim and attribute below it.
-
-### Attribute Purposes
-
-We take inspiration from web and application development conventions, where it is common to provide resources
-for multiple languages in a single context.
-
-For this we recommend that languages specification be a purpose on the attribute rather than having a single
-attribute language.
-
-Our recommendation is for this to be the last token in the attribute namespaces to work towards the most specific.
-
-```
-def foo {
-     string text = "Colours are awesome"
-     string text:en_us = "Colors are awesome, but the letter U is not"
-     string text:fr = "La couleur est géniale"
-}
-```
-
-One advantage of this system is that you can have your translations in different layer files and referenced it in.
-
-It would be recommended that at least one version of the attribute exclude the language token, so that it can 
-fallback to the inherited language and also be used as the fallback if a user asks for a language that has no matching
-languages available.
-
-#### Token Delimiter
-
-The proposal currently implicitly uses the last token as the language.
-It might however be preferable to be explicit about this by also prefixing `lang_` or `lang:` to the last token.
-
-This could look like one of the below
-
-```
-string text:lang_en_us
-string text:lang:en_us
-```
-
-This perhaps makes things longer, but does make it easier to discern that a token represents a language in a wider
-range of use cases. 
-
-#### Why not Variants?
-
-Variants are also a possible solution, however we believe that this becomes difficult for systems to work with as
-variants are effectively unbounded.
-
-We also find in some of our use cases, that we'd want variants for the core data itself, and doing language
-variants per each of these variants would quickly become exponential in variant count and complexity.
-
-Purposes on attributes feel like the best match to existing paradigms in the web and app development, and easiest for
-systems to work with.
-
-### API Suggestions
-
-We do not recommend that OpenUSD itself include all possible language tags. However, it would be beneficial for USD
-to provide API to lookup languages specified in the file.
-
-This could look like the following behaviour where it returns a map of Language and attribute.
-
-```
-std::map<TfToken, UsdAttribute> UsdLocaleAPI::GetLanguagePurposes(const UsdPrim& prim, TfToken attributeName) {...}
-```
-
-Using the example above, a call to `GetLanguagePurposes(foo, "text")` would give
-
-- (`<Fallback or Unknown>`, foo:text)
-- (en_US, foo:text:en_US)
-- (fr, foo:fr)
-
-In this case, the `<Fallback or Unknown>` represents that it should follow the logic 
-in the `Unspecified Language Fallback` section.
-
-I would suggest another function like
-
-```
-TfToken UsdLocaleAPI::ComputeFallbackLanguage(const UsdPrim& prim)
-```
-
-That would return either the inherited value or a sentinel `Unknown` value when no language is specified.
-Perhaps USD could have some convenience function to do user locale lookup, but I do not think that needs to be a
-requirement.
-
-#### Language Selection Recommendations
-
-When the requested or desired language is not represented in the set of languages within the file, there are some recommendations
+When the requested or desired language is not represented in the set of languages within the file, there are some
+recommendations
 on how a runtime can pick a fallback option.
 
 Following the recommendations of CLDR and BCP-47, we suggest:
@@ -233,21 +207,53 @@ Following the recommendations of CLDR and BCP-47, we suggest:
 4. If a less specific version isn't available, take the version without any language specified.
    e.g. `en_US` matches `text`
 
-## Risks
+## Common Discussion Items
+
+### Why not Variants?
+
+Variants are also a possible solution, however we believe that this becomes difficult for systems to work with as
+variants are effectively unbounded.
+
+We also find in some of our use cases, that we'd want variants for the core data itself, and doing language
+variants per each of these variants would quickly become exponential in variant count and complexity.
+
+Localization catalogs like this also allow for localizations to be shared across multiple instances of a string
+being used. Additionally, the catalog allows for the translations to be authored independent of the primary content
+while separating the two concerns.
+
+### API Suggestions
+
+We recommend that USD itself does not provide any translation lookup APIs.
+However, we can provide convenience methods on the LocalizedString prim type to look up all available languages on it.
+
+A runtime can then quickly find all LocalizedString items under a LocalizationCatalog, and then query LocalizedString
+for any strings that have been translated. 
+
+### Localizing Other Types
+
+Strings presented to a user seem like the best place to start.
+
+However in the future, creators may want to also support localizing other data types.
+We think that is currently out of scope for this proposal, however, we recognize that it is a possible desire and
+therefore have included the Type in the name of LocalizedString. 
+
+Future localization types could be `Localized<Type>`, such as `LocalizedAsset` etc...
+
+We do not recommend tackling those at this time as there are several factors involved with other types.
+However, I think it should be able to scale this pattern up for localizing assets and relationships if truly needed.
+
+### Risks
 
 I do not see significant risk with this proposal. There is a potential for significantly more attributes,
 but the number of attributes this would apply to is fairly limited.
 
-One potential issue is that you may want to swap out geometry or assigned textures by locale too.
-e.g An English texture vs a French texture. This proposal would allow for that, but the risk is
-that support may be very renderer dependent.
 
 ## Excluded Topics
 
 This API specifically does not approach other locale based data like currencies, units and Timezones.
 At this time, we are not sure if those other locale based metadata have a strong use case within USD.
 
-However, we suggest naming it something like `UsdLocaleAPI` such that it allows for future additions to those
+However, we suggest naming it something like `UsdLocaleAPI` or `UsdLocalizationAPI` such that it allows for future additions to those
 types of metadata.
 
 
