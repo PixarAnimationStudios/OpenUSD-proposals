@@ -121,7 +121,7 @@ It was brought up that explicit waiting (the ability to wait on a specific job) 
 A diagram illustrating what the build configuration would look like. "workXX" can be any alternate work implementation and also does not need to be prefixed by "work"
  
 ### Additional Build Details:
-The Taskflow and libdispatch implementations will be kept under `pxr/extras` in order to provide examples showcasing how to implement work with another library, while also indicating that these examples are not currently being tested and supported by Pixar. The default TBB/OneTBB implementation will be kept under `pxr/base/workTBB` so as to to more easily isolate building workTBB from building work.
+The Taskflow and libdispatch implementations will be kept under `pxr/extras` in order to provide examples showcasing how to implement work with another library, while also indicating that these examples are not currently being tested and supported by Pixar. The default TBB/OneTBB implementation will be kept either under `pxr/base/workTBB` or `pxr/base/work/workTBB` depending on which organization allows us to more easily isolate building workTBB from work. This is still under discussion.
 
 Other build configurations that were considered were having the alternate work implementation live inside or sibling to work, similar to workTBB as discussed above. While this allows alternate implementations to have dependencies within pxr, it means that users will need to rebuild USD every time they modify their code. This method would also require users to edit source code (the target audience for this proposal is experienced engineers who understand what they're doing and should thus be familiar with building and modifying USD, but it is still not preferable). 
 
