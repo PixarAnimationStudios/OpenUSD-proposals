@@ -70,24 +70,24 @@ Here is a list of API the work abstraction that will need to be implemented:
 - void _RunDetachedTaskImpl(fn)
 - void _WorkParallelSortImpl(container)
 - void _WorkParallelForNImpl(n, callback, size_t grainSize)
-- void _WorkParallelForEach_Impl(first, last, fn);
+- void _WorkParallelForEach_Impl(first, last, fn)
 - V _WorkParallelReduceNImpl(identity, n, loopCallback, reductionCallback, grainSize)
-- unsigned _WorkGetPhysicalConcurrencyLimitImpl();
-- void _InitializeThreadingImpl( threadLimit);
-- bool _WorkSupportsGranularThreadLimits();
+- unsigned _WorkGetPhysicalConcurrencyLimitImpl()
+- void _InitializeThreadingImpl( threadLimit)
+- bool _WorkSupportsGranularThreadLimits()
 - auto _WorkWithScopedParallelismImpl(fn)
-- unsigned _WorkGetConcurrencyLimitImpl();
-class Dispatcher
+- unsigned _WorkGetConcurrencyLimitImpl()
+- class Dispatcher \
 {
-    - Dispatcher();
-    - ~Dispatcher() noexcept;
-    - Dispatcher(Dispatcher const &) = delete;
-    - Dispatcher &operator=(Dispatcher const &) = delete;
+    - Dispatcher()
+    - ~Dispatcher() noexcept
+    - Dispatcher(Dispatcher const &) = delete
+    - Dispatcher &operator=(Dispatcher const &) = delete
     - inline void Run(callable)
     - void Reset()
     - void Wait()
     - void Cancel()
-    - DeferTask Defer(callable)
+    - DeferTask Defer(callable)\
 }
 
 ## Work API Callouts
@@ -117,6 +117,8 @@ It was brought up that explicit waiting (the ability to wait on a specific job) 
     + While it is more inefficient to pull in all of the work implementation whenever it is included ,lib work itself is relatively small (~3,300 lines) and it prevents breaking the abstraction if we need to add more API under work in the future
 * Must provide a config file to tell OpenUSD where to look for dependencies
 * Users will be able to switch between different implementations via setting WORKIMPL_ROOT_DIR to their config file. Users can leave it empty to default to TBB.
+
+### Build Diagram
 ![](build-diagram.png)
 A diagram illustrating what the build configuration would look like. "workXX" can be any alternate work implementation and also does not need to be prefixed by "work"
  
