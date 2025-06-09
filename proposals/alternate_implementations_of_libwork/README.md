@@ -77,8 +77,7 @@ Here is a list of API the work abstraction that will need to be implemented:
 - bool _WorkSupportsGranularThreadLimits()
 - auto _WorkWithScopedParallelismImpl(fn)
 - unsigned _WorkGetConcurrencyLimitImpl()
-- class Dispatcher \
-{
+- class Dispatcher
     - Dispatcher()
     - ~Dispatcher() noexcept
     - Dispatcher(Dispatcher const &) = delete
@@ -87,8 +86,7 @@ Here is a list of API the work abstraction that will need to be implemented:
     - void Reset()
     - void Wait()
     - void Cancel()
-    - DeferTask Defer(callable)\
-}
+    - DeferTask Defer(callable)
 
 ## Work API Callouts
 
@@ -101,7 +99,7 @@ While most lib work use cases are implementation agnostic, OpenExec takes advant
 We will be adding a new API, WorkDispatcher::Defer, which allocates memory for a task and returns the task handle without running it immediately. OpenExec's task emulation layer will be built on top of WorkDispatcher and thus needs a method to take advantage of TBB's task recycling, spawning continuation tasks, and bypassing the scheduler, which all require tbb::task_group::defer. Although Taskflow and libdispatch do not provide this level of control, we still would like to continue to support these behaviors in our TBB implementation and also provide a plugin point from which a user can optimize their work implementation if their task management library allows it. 
 
 ### ThreadLimits
-Not all task management systems enable users to limit the number of threads spawned in the way that TBB does. As a result, we will not require users to support this functionality but we will still provide an interface in case a user would like to use a task management system that allows for that level of control. We do however want to maintain the option to limit our programs to run serially vs. at the maximum physical concurrency (i.e. PXR_WORK_THREAD_LIMIT set to 1 or 0 respectively). If the thread limit is set to a value between 1 and the physical concurrency then we will default to physical concurrency in the non granular case. We will move the logic for a single threaded implementation into the work abstraction layer such that the user is only responsible for writing a multi-threaded implementation.  
+Not all task management systems enable users to limit the number of threads spawned in the way that TBB does. As a result, we will not require users to support this functionality but we will still provide an interface in case a user would like to use a task management system that allows for that level of control. We do however want to maintain the option to limit our programs to run serially vs. at the maximum physical concurrency (i.e. `PXR_WORK_THREAD_LIMIT` set to 1 or 0 respectively). If the thread limit is set to a value between 1 and the physical concurrency then we will default to physical concurrency in the non granular case. We will move the logic for a single threaded implementation into the work abstraction layer such that the user is only responsible for writing a multi-threaded implementation.  
 
 Unsurprisingly testWorkThreadLimits fails when we do not provide a thread limits implementation and instead default to the maximum physical concurrency. This test is very TBB specific for example it checks that any calls to TBB that happen before the work API is touched is unrestricted so we will add means to only enable this test only when built with TBB and add additional unit tests to test the ability to toggle between single threaded and multithreaded execution. 
 
@@ -116,7 +114,7 @@ It was brought up that explicit waiting (the ability to wait on a specific job) 
 * Must provide all function declarations in a file called impl.h as opposed to having seperate header files for each functionality (dispatcher.h, sort.h etc.) 
     + While it is more inefficient to pull in all of the work implementation whenever it is included ,lib work itself is relatively small (~3,300 lines) and it prevents breaking the abstraction if we need to add more API under work in the future
 * Must provide a config file to tell OpenUSD where to look for dependencies
-* Users will be able to switch between different implementations via setting WORKIMPL_ROOT_DIR to their config file. Users can leave it empty to default to TBB.
+* Users will be able to switch between different implementations via setting `WORKIMPL_ROOT_DIR` to their config file. Users can leave it empty to default to TBB.
 
 ### Build Diagram
 ![](build-diagram.png)
