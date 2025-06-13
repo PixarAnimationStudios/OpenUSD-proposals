@@ -35,7 +35,7 @@ OpenExec by itself is not a rigging system. Pixar’s rigging system in Presto c
 
 1. The Presto Execution System
 2. A rigging object model (OM) built on top of the Execution System
-3. A library of deformers and rigging primitives built on-top of the rigging OM \
+3. A library of deformers and rigging primitives built on-top of the rigging OM
 
 
 With OpenExec, our immediate plans are to add item #1 to USD. As the project progresses, we also plan on delivering many of the pieces that make up item #2, effectively giving you the ability to implement a rigging OM similar (or equal) to Pixar’s. We have no immediate plans to open-source Pixar’s library of deformers and other rigging primitives (item #3), although we may revisit this decision in the future.
@@ -52,18 +52,18 @@ OpenExec will ship with the OpenUSD distribution as a set of libraries built on 
 
 ![drawing](1.png)
 
-We are developing OpenExec in pxr/exec. It comprises several new libraries: \
+We are developing OpenExec in pxr/exec. It comprises several new libraries:
 
 
 
 
-* **vdf (vectorized dataflow)** - Low-level vectorized dataflow library. Implements concepts of the dataflow network (nodes, connectors, edges) as well as the low-level evaluation engine and scheduler. The term “vectorized” refers to the fact that the network has the ability to optionally encode the topology of vector data, unlocking additional sparsity and parallelism during evaluation and invalidation. More on this later. \
+* **vdf (vectorized dataflow)** - Low-level vectorized dataflow library. Implements concepts of the dataflow network (nodes, connectors, edges) as well as the low-level evaluation engine and scheduler. The term “vectorized” refers to the fact that the network has the ability to optionally encode the topology of vector data, unlocking additional sparsity and parallelism during evaluation and invalidation. More on this later.
 
-* **ef (execution foundation)** - Foundational execution library. Implements higher-level concepts on top of vdf that form the foundation of a fully functional execution system. For example, ef introduces concrete node types, as well as a scheduler with awareness of higher-level execution concepts and network structure. \
+* **ef (execution foundation)** - Foundational execution library. Implements higher-level concepts on top of vdf that form the foundation of a fully functional execution system. For example, ef introduces concrete node types, as well as a scheduler with awareness of higher-level execution concepts and network structure.
 
-* **esf (execution scene foundation)** - A scene abstraction layer closely modeled after USD that enables OpenExec to interface with the scene without creating a dependency on specific USD types. This library provides a mechanism for “journaling” scene access, allowing the system to maintain its internal dataflow network by mapping changes to scene objects to edits of corresponding dataflow network. \
+* **esf (execution scene foundation)** - A scene abstraction layer closely modeled after USD that enables OpenExec to interface with the scene without creating a dependency on specific USD types. This library provides a mechanism for “journaling” scene access, allowing the system to maintain its internal dataflow network by mapping changes to scene objects to edits of corresponding dataflow network.
 
-* **exec (execution)** - High-level execution library. This is the high-level OpenExec library that interfaces with efs. It is built on top of vdf and ef and introduces the concept of compilation, which converts scene description and computation definitions (see below) into a vectorized dataflow network. Exec maintains this network and updates it in response to scene changes. \
+* **exec (execution)** - High-level execution library. This is the high-level OpenExec library that interfaces with efs. It is built on top of vdf and ef and introduces the concept of compilation, which converts scene description and computation definitions (see below) into a vectorized dataflow network. Exec maintains this network and updates it in response to scene changes.
 
 * **esfUsd, execUsd** - Specializations of esf and exec, respectively for USD. **execUsd** is the primary library that OpenExec clients will be interfacing with.
 
@@ -94,12 +94,12 @@ With OpenExec, any USD scene object can be a computation provider, publishing an
 
 Every computation will take zero or more (most will take at least one) input parameter(s), as well as a C++ computation callback responsible for reading input values, performing the computational work, and then outputting (typically one) value.
 
-Computations are published from two sources: \
+Computations are published from two sources:
 
 
 
 
-1. **Built-in computations**: These are computations that every USD object automatically publishes by default (e.g., a computation that provides the scene graph path of the object), or every USD object of a specific type publishes by default (.e.g., a computation that provides the resolved value of a `UsdAttribute` object). \
+1. **Built-in computations**: These are computations that every USD object automatically publishes by default (e.g., a computation that provides the scene graph path of the object), or every USD object of a specific type publishes by default (.e.g., a computation that provides the resolved value of a `UsdAttribute` object).
 
 2. **Registered computations**: Schema registration will be extended with the ability to register arbitrary computations that perform computational work as defined by a C++ callback (e.g., a computation `computeExtent` registered on `UsdGeomBoundable` doing the work equivalent to `UsdGeomBoundable::ComputeExtent()`).
 
@@ -164,12 +164,12 @@ This mechanism will allow selected metadata to be flagged as *configuration meta
 
 #### Actions and Execution Markers
 
-In Presto, computations can alias attributes, meaning calling the equivalent of `UsdAttribute::Get()` may return a computed value instead of an authored value. This is manifested through two Presto-specific concepts: \
+In Presto, computations can alias attributes, meaning calling the equivalent of `UsdAttribute::Get()` may return a computed value instead of an authored value. This is manifested through two Presto-specific concepts:
 
 
 
 
-1. **Attribute expressions**: Execution registration in Presto gives users the ability to register a computation as the value-provider for an attribute. Scene description API will then return the result of this computation instead of the attribute’s authored value – unless the authored value is specifically requested. \
+1. **Attribute expressions**: Execution registration in Presto gives users the ability to register a computation as the value-provider for an attribute. Scene description API will then return the result of this computation instead of the attribute’s authored value – unless the authored value is specifically requested.
 
 2. **Action Prims**: Actions provide controller-like behavior expressed via relationship targets, targeting attribute(s) in the scene. The action provides a computation that “drives” (“affects” in OpenExec lingo) the targeted attribute value. Action computations see the attribute value before the action takes effect as an input value and have the opportunity to modify or overwrite this value. Multiple actions can target the same attribute(s) and form an action stack – a deformation chain – executed in reverse namespace order. When querying an attribute that is affected by action(s) for its value, an **execution marker** needs to be provided to disambiguate which attribute value (as in, after which action in the stack) the client is requesting. The system also provides canonical execution markers, such as at-final to refer to the computed value after all actions affecting the requested attribute have been executed. When querying the value of an affected attribute through scene description API, Presto will return the computed result at-final by default, unless the value is requested at a different execution marker.
 
@@ -200,7 +200,7 @@ Here is a non-exhaustive list of proposed builtin combiners:
 * **Plus (+)** - combines connected attributes by adding their `computeValue` results
 * **PlusEquals (+=)** - combines connected attribute by adding their `computeValue` results, as well as adds the attribute’s own authored value
 * **Times (*) **- combines connected attributes by multiplying their `computeValue` results
-* **TimesEquals (*=)** - combines connected attributes by multiplying their `computeValue` results, as well as multiplies the attribute’s own authored value \
+* **TimesEquals (*=)** - combines connected attributes by multiplying their `computeValue` results, as well as multiplies the attribute’s own authored value
 
 ![drawing](3.png)
 
@@ -278,13 +278,13 @@ Calling into OpenExec – for example to immediately compute values – from wit
 
 ### Architecture
 
-OpenExec consists of three major subsystems: \
+OpenExec consists of three major subsystems:
 
 
 
 
 1. **Compilation**: Turns computation definitions (resultant from execution registration) in combination with the authored USD scene into dataflow network. Compilation is also responsible for responding to changes to the USD scene and maintaining the dataflow network to be up-to-date with the authored scene. Structural edits (e.g., reparenting a prim) causes un-compilation of sub-network affected by the edits, and the affected subnetwork is re-compiled the next time the client requests a computed value.. Changes that are not structural in nature (e.g., attribute value changes), do not trigger compilation and are instead handled by value invalidation and dataflow network value initialization prior to evaluation. Decoupling the dataflow network from scene description through compilation enables the object model (OM) to leverage richer, higher-level concepts that can evolve separately from the evaluation engine. In a way, the language expressing execution behaviors through execution registration and scene description can be thought of as a complex instruction set that gets mapped to a much reduced instruction set (the dataflow network) through compilation.
-2. **Scheduling**: Traversing large graph structures is comparatively inefficient (pointer chasing), unless the graphs are laid out in contiguous traversal order in memory. OpenExec dataflow networks are generally too complex to be reliably laid out optimally for common traversal paths. Also, different clients may require different traversal paths through the same network. Schedules are a way of addressing this problem. They serve as an acceleration structure for evaluation, generally guaranteeing that dataflow nodes are visited no more than once, and that data is accessed in contiguous order. Schedules are specific to request objects (keying off the set of requested values), and they are cached so that frequently making the same request for values does not incur repeated scheduling costs. \
+2. **Scheduling**: Traversing large graph structures is comparatively inefficient (pointer chasing), unless the graphs are laid out in contiguous traversal order in memory. OpenExec dataflow networks are generally too complex to be reliably laid out optimally for common traversal paths. Also, different clients may require different traversal paths through the same network. Schedules are a way of addressing this problem. They serve as an acceleration structure for evaluation, generally guaranteeing that dataflow nodes are visited no more than once, and that data is accessed in contiguous order. Schedules are specific to request objects (keying off the set of requested values), and they are cached so that frequently making the same request for values does not incur repeated scheduling costs.
 
 3. **Evaluation**: This is the process of evaluating dataflow nodes to satisfy a request for values. Nodes are processed as laid out in the schedule, traversing the dataflow network in a pull-based fashion: Starting at the leaf nodes, the evaluation engine traverses data dependencies until a cache hit or a root node is discovered. Then, unwinding the evaluation stack, node callbacks are invoked beginning with the root nodes, and nodes with fully cached input dependencies. Nodes are evaluated in parallel, only synchronizing on their input dependencies. Computed values are intelligently managed and aggressively cached along the way.
 
@@ -298,7 +298,7 @@ Speaking of time, it should be noted that OpenExec treats time as an input value
 
 It has been mentioned above that OpenExec’s dataflow network is a **vectorized** dataflow network. This means that, in addition to scalar values, connections can flow vectors of data, and the topology of these vectors can be surfaced in the network topology itself. Connections in the OpenExec network are outfitted with masks (run-length encoded, fly-weighted bitsets) that indicate which specific elements in the vector a computation depends on. On connections that flow scalar values this mask is typically set to length one (1), value one (1).
 
- \
+
 Encoding vector topology in the network enables compilation to produce an optimized network that stores data of the same data type (e.g., many short curves) contiguously in memory, without producing false data dependencies. It also enables deformers to limit themselves to an operational subset of mesh points as bounded by weighting. The evaluation engine also exploits this additional information to track per-vector-element data dependencies and automatically extracts additional parallelism. The disadvantage of this encoding scheme is that these types of vectors are of fixed topology with respect to evaluation itself. For example, in Presto, character deformation cannot change the authored mesh topology, unless this evaluation fast-path is opted out of.
 
 
@@ -317,16 +317,16 @@ To eventually be turned into:
 
 ![drawing](7.png)
 
-We initially considered porting the existing Presto Compiler to USD, but this approach would have introduced several complicating factors: \
+We initially considered porting the existing Presto Compiler to USD, but this approach would have introduced several complicating factors:
 
 
 
 
-1. The existing Presto compiler is large in code size, and supports many features. We were unable to find a straightforward way to port this code outside of an all-or-nothing approach. Having to port all of the existing compilation code dramatically increases the scope of this task – slowing down OpenExec progress. We prefer to land OpenExec features in the USD distribution in an incremental fashion, unlocking its full feature set over time. \
+1. The existing Presto compiler is large in code size, and supports many features. We were unable to find a straightforward way to port this code outside of an all-or-nothing approach. Having to port all of the existing compilation code dramatically increases the scope of this task – slowing down OpenExec progress. We prefer to land OpenExec features in the USD distribution in an incremental fashion, unlocking its full feature set over time.
 
-2. The Presto compiler exercises aspects of the scene that are not found in USD, or have been supplanted by more modern patterns in USD. Moreover, a few of the existing features are infrequently exercised, and of questionable value outside of the studio. We believe that some of this code would then be introduced as baggage into OpenUSD. We prefer revisiting the feature set from first principles, giving us the opportunity to decide whether a specific feature should be carried forward into OpenExec, or revisited in favor of a more modern pattern. \
+2. The Presto compiler exercises aspects of the scene that are not found in USD, or have been supplanted by more modern patterns in USD. Moreover, a few of the existing features are infrequently exercised, and of questionable value outside of the studio. We believe that some of this code would then be introduced as baggage into OpenUSD. We prefer revisiting the feature set from first principles, giving us the opportunity to decide whether a specific feature should be carried forward into OpenExec, or revisited in favor of a more modern pattern.
 
-3. The Presto compiler is tightly coupled to Presto scene APIs, some of which have no equivalence in USD (as per point #2). Porting the compiler would require a layer of abstraction for scene access, which constitutes a significant refactor and further shifts the cost-benefit analysis in favor of revisiting the compiler architecture from first principles. \
+3. The Presto compiler is tightly coupled to Presto scene APIs, some of which have no equivalence in USD (as per point #2). Porting the compiler would require a layer of abstraction for scene access, which constitutes a significant refactor and further shifts the cost-benefit analysis in favor of revisiting the compiler architecture from first principles.
 
 4. There are two architectural deficiencies in the Presto compiler architecture that the team has been planning to address: 1) Some code paths for first-time compilation are different from the code paths for re-compilation in response to processing scene changes. This carries a code maintenance burden. 2) The compiler architecture was built on top of scene description libraries that didn’t allow for concurrent access, and therefore it wasn’t designed with concurrency in mind. Although some multithreading was retrofitted, designing the relevant data structures with concurrency in mind promises big performance improvements.
 
@@ -337,7 +337,7 @@ At the core of this new compilation architecture, OpenExec will introduce a stat
 
 
 1. The `EsfStage` will maintain a journal of queries made of the scene, and connect those journal entries to the generated dataflow sub-network. This automatically records which scene changes should lead to un-compilation, and eventual re-compilation, of specific parts of the dataflow network.
-2. It allows the compiler to ask questions about the scene through an interface that is consistent regardless of whether it is talking to a USD or Presto scene. Since, this is not a fully generic abstraction layer, it will mirror concepts that are common between USD and Presto (and since a Presto scene is a superset of USD, there are many such common concepts). \
+2. It allows the compiler to ask questions about the scene through an interface that is consistent regardless of whether it is talking to a USD or Presto scene. Since, this is not a fully generic abstraction layer, it will mirror concepts that are common between USD and Presto (and since a Presto scene is a superset of USD, there are many such common concepts).
 
 
 
