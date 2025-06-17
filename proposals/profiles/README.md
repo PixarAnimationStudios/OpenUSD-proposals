@@ -507,52 +507,53 @@ Late binding could enable:
 This topology is a suggestion, and is meant to be sufficient to form the basis of a prototype.
 
 ```mermaid
- GRAPH TD
- subgraph Simplified
-        subgraph S_base[base]
-            S_usd[usd] --> S_usd-format[usd.format]
-            S_usd --> S_usd-asset[usd.asset]
-            S_usd --> S_usd-typed[usd.typed]
+graph TD;
+ subgraph Simplified;
+        subgraph S_base[base];
+            S_usd[usd] --> S_usd-format[usd.format];
+            S_usd --> S_usd-asset[usd.asset];
+            S_usd --> S_usd-typed[usd.typed];
 
-            subgraph S_todo[to do]
-                S_usd-proc[usd.procedural]
-                S_usd-matx[usd.materialX]
-            end
-        end
-        subgraph S_Rendering[Rendering]
-            S_usd-typed --> S_usd-volume[usd.volume]
-            S_usd-typed --> S_usd-rendering[usd.rendering]
-            S_usd-volume --> S_usd-lighting[usd.lighting]
-            S_usd-typed --> S_usd-shade[usd.shade]
-            subgraph S_Imageable[imageable]
-                S_usd-typed --> S_usd-imageable[usd.imageable]
-                S_usd-imageable --> S_usd-pointInstancer[usd.pointInstancer]
-                S_usd-imageable --> S_usd-animation[usd.animation]
-                S_usd-imageable --> S_usd-physics
-            end
-            S_usd-imageable --> S_usd-collection[usd.collection]
-            S_usd-collection --> S_usd-lighting
-            S_usd-imageable --> S_usd-coordinateSystem[usd.coordinateSystem]
+            subgraph S_todo[to do];
+                S_usd-proc[usd.procedural];
+                S_usd-matx[usd.materialX];
+            end;
+        end;
+        subgraph S_Rendering[Rendering];
+            S_usd-typed --> S_usd-volume[usd.volume];
+            S_usd-typed --> S_usd-rendering[usd.rendering];
+            S_usd-volume --> S_usd-lighting[usd.lighting];
+            S_usd-typed --> S_usd-shade[usd.shade];
+            subgraph S_Imageable[imageable];
+                S_usd-typed --> S_usd-imageable[usd.imageable];
+                S_usd-imageable --> S_usd-pointInstancer[usd.pointInstancer];
+                S_usd-imageable --> S_usd-animation[usd.animation];
+                S_usd-imageable --> S_usd-physics;
+            end;
+            S_usd-imageable --> S_usd-collection[usd.collection];
+            S_usd-collection --> S_usd-lighting;
+            S_usd-imageable --> S_usd-coordinateSystem[usd.coordinateSystem];
         
-            subgraph S_Renderers[renderers]
-                S_usd-ri[usd.renderman]
-                S_usd-hydra[usd.hydra]
-            end
-        end
-        S_usd-shade --> S_usd-coordinateSystem
+            subgraph S_Renderers[renderers];
+                S_usd-ri[usd.renderman];
+                S_usd-hydra[usd.hydra];
+            end;
+        end;
+        S_usd-shade --> S_usd-coordinateSystem;
 
-        S_usd-typed --> S_Renderers      
-        S_usd-typed --> S_usd-physics[usd.physics]
-        S_usd-typed --> S_todo
+        S_usd-typed --> S_Renderers;
+        S_usd-typed --> S_usd-physics[usd.physics];
+        S_usd-typed --> S_todo;
 
-        subgraph S_misc
-            S_usd-semantics[usd.semantics]
-            S_usd-media[usd.media]
-            S_usd-ui[usd.ui]
-        end
-        S_usd-typed --> S_misc
-    end
+        subgraph S_misc;
+            S_usd-semantics[usd.semantics];
+            S_usd-media[usd.media];
+            S_usd-ui[usd.ui];
+        end;
+        S_usd-typed --> S_misc;
+  end;
 ```
+
 
 ### Appendix B: # Vendor Adoption Pathway: Epic Nanite to USD Meshlet
 
