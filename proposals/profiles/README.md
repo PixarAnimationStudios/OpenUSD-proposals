@@ -507,6 +507,7 @@ Late binding could enable:
 This topology is a suggestion, and is meant to be sufficient to form the basis of a prototype.
 
 ```mermaid
+ GRAPH TD
  subgraph Simplified
         subgraph S_base[base]
             S_usd[usd] --> S_usd-format[usd.format]
