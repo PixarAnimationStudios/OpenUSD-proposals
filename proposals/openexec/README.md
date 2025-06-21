@@ -1,26 +1,26 @@
 # OpenExec
 
-Version 1 - June 9, 2025
+Version 2 - June 21, 2025
 
 
 ## Background
 
 Many schemas in USD provide computations as part of their C++ schema class interface, for example, `UsdGeomBoundable::ComputeExtent()` or the `UsdGeomXformCache`. Some schemas, like `UsdSkel`, involve more computation than others, and their computational implementations can span several layers of the OpenUSD framework (e.g., imaging). Moreover, there is a desire to grow USD’s computational abilities beyond the existing schemas, for example, in the domain of rigging and posing of characters, as well as constraint target computation.
 
-Additionally, expensive computation often necessitates caching of resulting values, which in turn requires consideration of cache invalidation in response to input value changes. In addition to driving cache invalidation, tracking input dependencies is critical for debuggability, e.g. to be able to query whether a given computed result depends on time.
+Additionally, expensive computation often necessitates caching of resulting values, which in turn requires consideration of cache invalidation in response to input value changes. In addition to driving cache invalidation, tracking input dependencies is critical for debuggability, e.g., to be able to query whether a given computed result depends on time.
 
 Lastly, there is a desire to author and combine building blocks for solving computational challenges within a scene. This is especially important for, but not limited to, the domain of character rigging.
 
 
 ## What it is
 
-With OpenExec, we are adding a general-purpose framework for expressing and evaluating computational behaviors in a USD scene. This framework is built on top of USD and introduces new first-class concepts, including custom and built-in named computations associated with USD scene objects. The framework will include with a fast, multi-threaded evaluation engine, and data management concepts for automatically caching and invalidating computed values.
+With OpenExec, we are adding a general-purpose framework for expressing and evaluating computational behaviors in a USD scene. This framework is built on top of USD and introduces new first-class concepts, including custom and built-in named computations associated with USD scene objects. The framework will include a fast, multi-threaded evaluation engine, and data management concepts for automatically caching and invalidating computed values.
 
-This framework already exists in Pixar’s in-house digital content creation (DCC) application, Presto, where it is called the Presto Execution System. We use this system, for example, for character rigging, direct manipulation, computation of transform hierarchies, attribute inheritance chains, dataflow connections, bounding volumes, constraint target computation, aspects of validation, etc.
+Behind the scenes, it builds and maintains a dataflow network with computational tasks encoded as nodes within this network, and data traveling between computations encoded as edges (we use the term “connections”). More on our dataflow network later.
+
+This framework already exists in Presto, Pixar’s in-house digital content creation (DCC) application, where it is called the Presto Execution System. We use this system to support character rigging, direct manipulation, computation of transform hierarchies, attribute inheritance chains, dataflow connections, bounding volumes, constraint target computation, aspects of validation, etc.
 
 The OpenExec project involves open-sourcing this existing system, as well as redesigning how it interfaces with USD when used outside of Presto.
-
-Behind the scenes, OpenExec builds and maintains a dataflow network with computational tasks encoded as nodes within this network, and data traveling between computations encoded as edges (we use the term “connections”). More on our dataflow network later.
 
 
 ## What it is not
@@ -50,7 +50,10 @@ Lastly, OpenExec is a value-driven computation system, as opposed to being event
 
 OpenExec will ship with the OpenUSD distribution as a set of libraries built on top of USD. In terms of dataflow, OpenExec will observe the composed USD stage, and sit between USD and Imaging. Where applicable, we also plan on modifying imaging to prefer computed values over authored values when both exist.
 
-![drawing](1.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./1-inv.png">
+  <img alt="Code organization" src="./1.png">
+</picture>
 
 We are developing OpenExec in pxr/exec. It comprises several new libraries:
 
@@ -69,9 +72,9 @@ We are developing OpenExec in pxr/exec. It comprises several new libraries:
 
 OpenExec code leverages concepts from `pxr/base` (e.g., `arch`, `tf`, `trace`, `work`, …) as well as `pxr/usd/sdf`, and `pxr/usd/usd` and will therefore depend on these libraries, as well as appear after them in the build order.
 
-We also want to outfit core USD schemas (e.g., `usdGeom`) with computational behaviors. The core schemas are currently located at `pxr/usd`, where they build after `pxr/usd/usd`. This means that the OpenExec libraries will sit downstream of the core schemas in the library stack. Therefore, we are proposing locating the code that registers the computational behaviors on core schemas in a separate library. We are proposing these separate libraries will be placed in `pxr/exec` (e.g. `pxr/exec/execGeom`).
+We also want to outfit core USD schemas (e.g., `usdGeom`) with computational behaviors. The core schemas are currently located at `pxr/usd`, where they build after `pxr/usd/usd`. This means that the OpenExec libraries will sit downstream of the core schemas in the library stack. Therefore, we propose placing the code that registers the computational behaviors on core schemas in separate libraries  to be located in `pxr/exec` (e.g. `pxr/exec/execGeom`).
 
-We are considering eventually moving existing USD core schemas outside of `pxr/usd` into a separate library downstream of `pxr/usd` and `pxr/exec`. This would solve the library dependency problem (amongst other things), and make for a cleaner library structure. Such a change, however, would require significant (although, mostly mechanical) updates to client code (e.g., header include paths, linker arguments), which makes us hesitant to move forward with this at the current time.
+We are considering eventually moving existing USD core schemas outside of `pxr/usd` into a separate library downstream of `pxr/usd` and `pxr/exec`. This would solve the library dependency problem (amongst other things), and make for a cleaner library structure. Such a change, however, would require mainly mechanical but rather significant updates to client code (like header include paths and linker arguments), which makes us hesitant to move forward with this at the current time.
 
 
 ### New concepts
@@ -84,7 +87,7 @@ OpenExec will introduce new, first-class concepts to USD:
 * Static, declarative input parameters to computations
 * Custom computation callbacks
 * Execution behavior registration as an extension to USD schema registration
-* Actions for “driving” (affecting) computed values, and execution markers to locate the sources of a computed value in a stack of actions
+* *Actions* for “affecting” (i.e., driving) computed values, and execution markers for locating the sources of a computed value in a stack of actions
 * Client API for requesting computed values
 
 
@@ -92,14 +95,14 @@ OpenExec will introduce new, first-class concepts to USD:
 
 With OpenExec, any USD scene object can be a computation provider, publishing an arbitrary number of named computations. 
 
-Every computation will take zero or more (most will take at least one) input parameter(s), as well as a C++ computation callback responsible for reading input values, performing the computational work, and then outputting (typically one) value.
+Every computation will take zero or more input parameters (typically at least one), as well as a C++ computation callback responsible for reading input values, performing the computational work, and then outputting values (typically one).
 
 Computations are published from two sources:
 
 
 
 
-1. **Built-in computations**: These are computations that every USD object automatically publishes by default (e.g., a computation that provides the scene graph path of the object), or every USD object of a specific type publishes by default (.e.g., a computation that provides the resolved value of a `UsdAttribute` object).
+1. **Built-in computations**: These are computations that every USD object automatically publishes by default (e.g., a computation that provides the scene graph path of the object), or that every USD object of a specific type publishes by default (.e.g., a computation that provides the resolved value of a `UsdAttribute` object).
 
 2. **Registered computations**: Schema registration will be extended with the ability to register arbitrary computations that perform computational work as defined by a C++ callback (e.g., a computation `computeExtent` registered on `UsdGeomBoundable` doing the work equivalent to `UsdGeomBoundable::ComputeExtent()`).
 
@@ -108,13 +111,15 @@ Named computations can be referred to by using an `ExecUsdValueKey`, which takes
 
 #### Input Parameters
 
-Computations take zero or more input parameters. In practice, most computations take at least one input parameter with the exception of constant computations that always return the same value, serving as sources (root nodes) to the computational network. Constant computations are typically built-ins as opposed to registered computations.
+Input parameters allow computations to ingest anything from resolved attribute values to results of other computations. Moreover, such attributes and computations may live on any prim or property in the scene. In order to find these values, therefore, the execution system may need to, for example, traverse a relationship, or look up or down the transform hierarchy.  As part of its computation definition language, OpenExec provides different input parameter types with which to specify how a computation should source its inputs in these and other cases. 
+
+In practice, most computations take at least one input parameter with the exception of constant computations that always return the same value, serving as sources (root nodes) to the computational network. Constant computations are typically built-ins as opposed to registered computations.
 
 An input parameter sources one or more values from the outputs of other computations in the computational dataflow network that OpenExec maintains under the hood. The computation on the source end need not be published on the same scene object as the consuming computation, so in order to resolve the input parameter to the source computation, input parameters generally encode three pieces of information:
 
 
 
-1. **Computation provider resolution**: This determines the scene object the system is going to use for looking up the computation by name. The OpenExec extensions to USD schema registration (see below) will provide many different kinds of inputs with unique provider resolution behaviors (e.g., an attribute input that resolves to a named `UsdAttribute` on a prim, or a relationship-targeted input that resolves to zero or more scene object(s) targeted by a specified `UsdRelationship`). 
+1. **Computation provider resolution**: This determines the scene object the system is going to use in order to look up the computation by name. The OpenExec extensions to USD schema registration (see below) will provide many different kinds of inputs with unique provider resolution behaviors (e.g., an attribute input that resolves to a named `UsdAttribute` on a prim, or a relationship-targeted input that resolves to zero or more scene object(s) targeted by a specified `UsdRelationship`). 
 2. **Computation name**: This is the name of the source computation as built-in, or registered on the computation provider explained above.
 3. **Computation result type / input value type**: OpenExec dataflow values are strongly typed. This denotes the data type of the input value as expected by the computation callback, and it must match the data type of the output value returned from the source computation.
 
@@ -184,9 +189,12 @@ When requesting an attribute’s computed value via a value key as mentioned abo
 
 With OpenExec, authoring connections between `UsdAttribute`s implies dataflow between those attributes by default. For example, requesting the `computeValue` builtin computation provided by an attribute A, which is connected to attribute B, will return the result of the `computeValue` builtin computation provided by attribute B. In effect, attribute A is then aliasing the computed value of the connected attribute B, a mechanism critical to building interfaces between independent object models.
 
-Note that OpenExec will define semantics that apply to all attribute connections by default, but it will also be possible for schemas to specialize the meaning of attribute connection dataflow for particular domains. E.g., shader schemas will likely need to specialize how connections flow data through shading networks.
+Note that OpenExec will define semantics that apply to all attribute connections by default, but it will also be possible for schemas to specialize the meaning of attribute connection dataflow (including turning it off) for particular domains. E.g., shader schemas will likely need to specialize how connections flow data through shading networks.
 
-![drawing](2.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./2-inv.png">
+  <img alt="Connectable behaviors" src="./2.png">
+</picture>
 
 
 ##### Authored Combiners
@@ -202,7 +210,10 @@ Here is a non-exhaustive list of proposed builtin combiners:
 * **Times (*) **- combines connected attributes by multiplying their `computeValue` results
 * **TimesEquals (*=)** - combines connected attributes by multiplying their `computeValue` results, as well as multiplies the attribute’s own authored value
 
-![drawing](3.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./3-inv.png">
+  <img alt="Authored combiners" src="./3.png">
+</picture>
 
 
 ##### Expressions
@@ -218,7 +229,10 @@ Relationships generally do not participate in dataflow the same way that connect
 
 Input parameters that provide values sourced via relationship targets will automatically resolve the input computation provider to the terminal targeted objects in a chain of relationship targets passing through one or more other relationships. This behavior again is critical in modeling interfaces where a relationship can be exposed as a “gateway” into computations hidden behind said interface.
 
-![drawing](4.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./4-inv.png">
+  <img alt="Relationship forwarding" src="./4.png">
+</picture>
 
 
 #### Baking Computations
@@ -292,7 +306,10 @@ The three subsystems – or stages of execution – are listed in order of opera
 
 The three stages are also listed in order of increasing frequency, and in decreasing order of computational cost: Compilation is very expensive, but only occurs after structural changes to the USD stage have been made. Evaluation is comparatively fast, but typically occurs for each rendered image, for example, after changing values in the animation interface of a character rig, or evaluating a time-dependent computation during playback.
 
-![drawing](5.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./5-inv.png">
+  <img alt="Architecture" src="./5.png">
+</picture>
 
 Speaking of time, it should be noted that OpenExec treats time as an input value to the dataflow network, and initializes a special root node with the current time code. A transitive, topological dependency on this special root node indicates that a dataflow node – and therefore a computation – is time-dependent. When setting a new time value, however, no topological edits need to be made: Value invalidation will automatically flag all time-dependent data as invalid, before value initialization sets a new time code on the time input node. During the next round of evaluation, time-dependent computations will be re-computed with the new time code value.
 
@@ -311,11 +328,17 @@ As mentioned earlier, much of the OpenExec functionality and architecture alread
 
 While the execution engine and scheduling sub-systems can be ported to USD in a straight-forward manner, porting compilation is more challenging: Presto introduces concepts that are not found in USD, or that have been subsumed by other features in USD. Furthermore, there are significant differences in the scene description APIs, as well as semantic differences between how scene description objects behave. To address these challenges, we are building a new compiler in OpenUSD, with the intention of it eventually replacing the one internal to Presto.
 
-![drawing](6.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./6-inv.png">
+  <img alt="New exec compiler" src="./6.png">
+</picture>
 
 To eventually be turned into:
 
-![drawing](7.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./7-inv.png">
+  <img alt="New exec compiler" src="./7.png">
+</picture>
 
 We initially considered porting the existing Presto Compiler to USD, but this approach would have introduced several complicating factors:
 
