@@ -610,10 +610,10 @@ graph TD
     end
 
     %% Styling
-    classDef coreCapability fill:#e1f5fe,stroke:#01579b,stroke-width:2px
-    classDef vendorCapability fill:#fff3e0,stroke:#f57c00,stroke-width:2px
-    classDef coreProfile fill:#f3e5f5,stroke:#4a148c,stroke-width:3px
-    classDef vendorProfile fill:#fff8e1,stroke:#ff8f00,stroke-width:3px
+    classDef coreCapability fill:#e1f5fe,stroke:#01579b,stroke-width:2px,color:#112233
+    classDef vendorCapability fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#112233
+    classDef coreProfile fill:#f3e5f5,stroke:#4a148c,stroke-width:3px,color:#112233
+    classDef vendorProfile fill:#fff8e1,stroke:#ff8f00,stroke-width:3px,color:#112233
     
     class V1_GeomSubset,V1_GeomModelAPI,V1_MeshAPI,V1_PointsAPI,V1_BasisCurvesAPI,V1_Gaussian coreCapability
     class V1_EpicNanite vendorCapability
@@ -672,12 +672,12 @@ graph TD
     end
 
     %% Styling
-    classDef coreCapability fill:#e1f5fe,stroke:#01579b,stroke-width:2px
-    classDef aousdCapability fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
-    classDef vendorCapability fill:#fff3e0,stroke:#f57c00,stroke-width:2px
-    classDef coreProfile fill:#f3e5f5,stroke:#4a148c,stroke-width:3px
-    classDef aousdProfile fill:#e1f5fe,stroke:#1976d2,stroke-width:3px
-    classDef vendorProfile fill:#fff8e1,stroke:#ff8f00,stroke-width:3px
+    classDef coreCapability fill:#e1f5fe,stroke:#01579b,stroke-width:2px,color:#112233
+    classDef aousdCapability fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px,color:#112233
+    classDef vendorCapability fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#112233
+    classDef coreProfile fill:#f3e5f5,stroke:#4a148c,stroke-width:3px,color:#112233
+    classDef aousdProfile fill:#e1f5fe,stroke:#1976d2,stroke-width:3px,color:#112233
+    classDef vendorProfile fill:#fff8e1,stroke:#ff8f00,stroke-width:3px,color:#112233
     
     class V2_GeomSubset,V2_GeomModelAPI,V2_MeshAPI,V2_PointsAPI,V2_BasisCurvesAPI,V2_Gaussian coreCapability
     class V2_AOUSDMeshlet aousdCapability
@@ -740,14 +740,14 @@ graph TD
     end
 
     %% Styling
-    classDef coreCapability fill:#e1f5fe,stroke:#01579b,stroke-width:2px
-    classDef newCoreCapability fill:#c8e6c9,stroke:#388e3c,stroke-width:3px
-    classDef aousdCapability fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
-    classDef vendorCapability fill:#fff3e0,stroke:#f57c00,stroke-width:2px
-    classDef coreProfile fill:#f3e5f5,stroke:#4a148c,stroke-width:3px
-    classDef enhancedCoreProfile fill:#c8e6c9,stroke:#1b5e20,stroke-width:4px
-    classDef aousdProfile fill:#e1f5fe,stroke:#1976d2,stroke-width:3px
-    classDef vendorProfile fill:#fff8e1,stroke:#ff8f00,stroke-width:3px
+    classDef coreCapability fill:#e1f5fe,stroke:#01579b,stroke-width:2px,color:#112233
+    classDef newCoreCapability fill:#c8e6c9,stroke:#388e3c,stroke-width:3px,color:#112233
+    classDef aousdCapability fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px,color:#112233
+    classDef vendorCapability fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#112233
+    classDef coreProfile fill:#f3e5f5,stroke:#4a148c,stroke-width:3px,color:#112233
+    classDef enhancedCoreProfile fill:#c8e6c9,stroke:#1b5e20,stroke-width:4px,color:#112233
+    classDef aousdProfile fill:#e1f5fe,stroke:#1976d2,stroke-width:3px,color:#112233
+    classDef vendorProfile fill:#fff8e1,stroke:#ff8f00,stroke-width:3px,color:#112233
     
     class V3_GeomSubset,V3_GeomModelAPI,V3_MeshAPI,V3_PointsAPI,V3_BasisCurvesAPI,V3_Gaussian coreCapability
     class V3_USDMeshlet newCoreCapability
@@ -951,17 +951,17 @@ graph TD
     %% STYLING
     %% =====================================================
     
-    classDef usdCore fill:#e3f2fd,stroke:#1976d2,stroke-width:3px
-    classDef usdCapability fill:#e1f5fe,stroke:#01579b,stroke-width:2px
-    classDef newCoreCapability fill:#c8e6c9,stroke:#388e3c,stroke-width:3px
-    classDef aousdCapability fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
-    classDef vendorCapability fill:#fff3e0,stroke:#f57c00,stroke-width:2px
-    classDef profileV3 fill:#f3e5f5,stroke:#7b1fa2,stroke-width:3px
-    classDef profileV4 fill:#c8e6c9,stroke:#1b5e20,stroke-width:4px
-    classDef aousdProfile fill:#e1f5fe,stroke:#1976d2,stroke-width:3px
-    classDef vendorProfile fill:#fff8e1,stroke:#ff8f00,stroke-width:3px
-    classDef timelineNode fill:#fce4ec,stroke:#c2185b,stroke-width:2px
-    classDef benefitNode fill:#f1f8e9,stroke:#558b2f,stroke-width:2px
+    classDef usdCore fill:#e3f2fd,stroke:#1976d2,stroke-width:3px,color:#112233
+    classDef usdCapability fill:#e1f5fe,stroke:#01579b,stroke-width:2px,color:#112233
+    classDef newCoreCapability fill:#c8e6c9,stroke:#388e3c,stroke-width:3px,color:#112233
+    classDef aousdCapability fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px,color:#112233
+    classDef vendorCapability fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#112233
+    classDef profileV3 fill:#f3e5f5,stroke:#7b1fa2,stroke-width:3px,color:#112233
+    classDef profileV4 fill:#c8e6c9,stroke:#1b5e20,stroke-width:4px,color:#112233
+    classDef aousdProfile fill:#e1f5fe,stroke:#1976d2,stroke-width:3px,color:#112233
+    classDef vendorProfile fill:#fff8e1,stroke:#ff8f00,stroke-width:3px,color:#112233
+    classDef timelineNode fill:#fce4ec,stroke:#c2185b,stroke-width:2px,color:#112233
+    classDef benefitNode fill:#f1f8e9,stroke:#558b2f,stroke-width:2px,color:#112233
     
     %% Apply core USD styling
     class USDRoot,USDTyped,USDImageable,USDBoundable,USDGprim usdCore
@@ -1044,8 +1044,8 @@ graph TD
     S1_PointsAPI --> S1_GeomUtilitiesProfile
 
     %% Styling
-    classDef originalCapability fill:#e1f5fe,stroke:#01579b,stroke-width:2px
-    classDef profileNode fill:#fff3e0,stroke:#e65100,stroke-width:3px
+    classDef originalCapability fill:#e1f5fe,stroke:#01579b,stroke-width:2px,color:#112233
+    classDef profileNode fill:#fff3e0,stroke:#e65100,stroke-width:3px,color:#112233
     
     class S1_Imageable,S1_Boundable,S1_GeomSubset,S1_GeomModelAPI,S1_BasisCurvesAPI,S1_MeshAPI,S1_PointsAPI originalCapability
     class S1_GeomUtilitiesProfile profileNode
@@ -1090,10 +1090,10 @@ graph TD
     S2_FashionableMeshAPI --> S2_GeomUtilitiesProfile_v2
 
     %% Styling
-    classDef originalCapability fill:#e1f5fe,stroke:#01579b,stroke-width:2px
-    classDef newCapability fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
-    classDef profileNode fill:#fff3e0,stroke:#e65100,stroke-width:3px
-    classDef evolvedProfile fill:#f3e5f5,stroke:#4a148c,stroke-width:3px
+    classDef originalCapability fill:#e1f5fe,stroke:#01579b,stroke-width:2px,color:#112233
+    classDef newCapability fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px,color:#112233
+    classDef profileNode fill:#fff3e0,stroke:#e65100,stroke-width:3px,color:#112233
+    classDef evolvedProfile fill:#f3e5f5,stroke:#4a148c,stroke-width:3px,color:#112233
     
     class S2_Imageable,S2_Boundable,S2_GeomSubset,S2_GeomModelAPI,S2_BasisCurvesAPI,S2_MeshAPI,S2_PointsAPI originalCapability
     class S2_GaussianSplatsAPI,S2_FashionableMeshAPI newCapability
@@ -1146,11 +1146,11 @@ graph TD
     %% Note: Fashionable Mesh API is NOT connected to v3 (elided)
 
     %% Styling
-    classDef originalCapability fill:#e1f5fe,stroke:#01579b,stroke-width:2px
-    classDef newCapability fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
-    classDef deprecatedCapability fill:#ffebee,stroke:#c62828,stroke-width:2px,stroke-dasharray: 5 5
-    classDef profileNode fill:#fff3e0,stroke:#e65100,stroke-width:3px
-    classDef evolvedProfile fill:#f3e5f5,stroke:#4a148c,stroke-width:3px
+    classDef originalCapability fill:#e1f5fe,stroke:#01579b,stroke-width:2px,color:#112233
+    classDef newCapability fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px,color:#112233
+    classDef deprecatedCapability fill:#ffebee,stroke:#c62828,stroke-width:2px,,color:#112233,stroke-dasharray: 5 5
+    classDef profileNode fill:#fff3e0,stroke:#e65100,stroke-width:3px,color:#112233
+    classDef evolvedProfile fill:#f3e5f5,stroke:#4a148c,stroke-width:3px,color:#112233
     
     class S3_Imageable,S3_Boundable,S3_GeomSubset,S3_GeomModelAPI,S3_BasisCurvesAPI,S3_MeshAPI,S3_PointsAPI originalCapability
     class S3_GaussianSplatsAPI newCapability
