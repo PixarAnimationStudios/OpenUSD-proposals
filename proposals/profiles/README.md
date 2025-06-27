@@ -1148,7 +1148,7 @@ graph TD
     %% Styling
     classDef originalCapability fill:#e1f5fe,stroke:#01579b,stroke-width:2px,color:#112233
     classDef newCapability fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px,color:#112233
-    classDef deprecatedCapability fill:#ffebee,stroke:#c62828,stroke-width:2px,,color:#112233,stroke-dasharray: 5 5
+    classDef deprecatedCapability fill:#ffebee,stroke:#c62828,stroke-width:2px,color:#112233,stroke-dasharray: 5 5
     classDef profileNode fill:#fff3e0,stroke:#e65100,stroke-width:3px,color:#112233
     classDef evolvedProfile fill:#f3e5f5,stroke:#4a148c,stroke-width:3px,color:#112233
     
