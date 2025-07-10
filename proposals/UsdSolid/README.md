@@ -972,8 +972,6 @@ class "BrepSurfaceNurbAPI" (
 
 To exhibit this model we present 4 examples: a unit cube; a unit cube with IDs assigned to each topology object; a non-manifold brep consisting of 2 cubes sharing a face; and nested cubes, creating a void space in a manifold brep.
 
-## **On 2/20/25 a new schema was released. At that time the examples became stale and need to be regenerated. This work is pending.**
-
 ## **4.1. Cube**
 
 A simple cube, as shown in the following wireframe model.
