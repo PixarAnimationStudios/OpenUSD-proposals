@@ -32,20 +32,51 @@ In addition, the following new hints are proposed for inclusion in the `uiHints`
 
 |Field Name|Relevant Core Object|Value Type|Description|
 | --- | --- | --- | --- |
-|locked|UsdObject|bool|Whether the object can be modified from the UI|
 |shownIf|UsdProperty|string|Conditional visibility expression for the property|
 |valueLabels|UsdAttribute|dictionary|Expected/valid values an attribute can take on, keyed by string labels to be used in a combo box widget|
 |valueLabelsOrder|UsdAttribute|token array|The order in which the keys from ValueLabels should be presented in the combo box|
-|widgetType|UsdAttribute|string|The name of a widget to be used for displaying and editing an attribute|
-|widgetOptions|UsdAttribute|dictionary|Configuration options for the named widget|
+|~widgetType~ (deferred, see section below)|~UsdAttribute~|~string~|~The name of a widget to be used for displaying and editing an attribute~|
+|~widgetOptions~ (deferred, see section below)|~UsdAttribute~|~dictionary~|~Configuration options for the named widget~|
 |displayGroupsExpanded|UsdPrim|dictionary|Default open/closed state for the prim's display groups|
 |displayGroupsShownIf|UsdPrim|dictionary|Conditional visibility expressions for the prim's display groups|
 
 ### Limits
 
-Finally, we also propose adding a new `limits` top-level metadata field on UsdAttribute for holding minimum and maximum values. It's dictionary-valued so that the held min and max values can match the value type of the attribute. As a dictionary, `limits` can also hold additional information about how to interpret the given min and max, such as a `strict` flag to denote whether they are hard or soft limits.
+We also propose adding a new `limits` top-level metadata field on UsdAttribute for holding minimum and maximum values. It's not part of the `uiHints` dictionary since, while relevant to UIs, it also has important non-UI applications.
 
-The `limits` field is not part of the `uiHints` dictionary since, while relevant to UIs, it also has important non-UI applications. For UI-specific limits, we can encode a `uiHints` sub-dictionary within the main `limits` dictionary to store min, max, and a `strict` flag.
+`limits` will be dictionary-valued so that the held min and max values can match the value type of the attribute. Actual values will be held in sub-dictionaries corresponding to a particular purpose. Primarily, this means separate "soft" and "hard" limits sub-dictionaries that specify suggested and strict min/max values, but the access API will support reading and writing other sub-dictionaries as well.
+
+So for example we might have the following limits dictionary that specifies a soft range of [1, 100] for a sphere radius, and a hard minimum at 0. 
+
+```
+def Sphere "MySphere"
+{
+    double radius = 10.0 (
+        limits = {
+            dictionary "soft" = {
+                double minimum = 1.0
+                double maximum = 100.0
+            }
+            dictionary "hard" = {
+                double minimum = 0.0
+            }
+        }
+    )
+}
+```
+
+USD itself will not enforce limits values in its authoring APIs, though it may be useful to provide a validator to flag instances where an authored value is out-of-range.
+
+### ArraySizeConstraint
+
+Finally, we also propose adding an `arraySizeConstraint` metadata field of type `int64` to UsdAttribute to describe information commonly specified in shaders relating to expected array size and encoding. The value encoding is as follows:
+* `arraySizeConstraint == 0` (the fallback value) indicates the array is dynamic and its size unrestricted
+* `arraySizeConstraint > 0` indicates the exact, fixed size of the array
+* `arraySizeConstraint < 0` indicates a tuple-length (i.e., column count) of `N = abs(arraySizeConstraint)`; the array's size is unrestricted, but must be a multiple of `N`
+
+This multi-purpose encoding aims to minimize the number of metadata reads needed, and reduce the potential for contradictory values, e.g, specifying a fixed array size that is not a multiple of the tuple size. Multidimensional tuple-length and arrays with a fixed number of tuples are not possible with this encoding, but we think this is unlikely to be an issue in practice.
+
+As with `limits`, USD will not formally enforce these constraints. They will be for use by UIs and other clients to guide how they present and edit array-valued attributes.
 
 ### Access API
 
@@ -173,6 +204,8 @@ def Scope "Scope"
 The popup UI for the `level` attribute would display "low", "medium", "high", and “all the way” options, and author the corresponding numeric values when the user makes a selection. Since dictionary entries are always sorted lexicographically by key, we also have the list-valued `valueLabelsOrder` field to specify display order.
 
 ### Widget Type and Widget Options
+
+**NOTE: After additional discussion and external feedback, we think it's prudent to defer implementation of the `widgeType` and `widgetOptions` fields. They will remain in the proposal as a reference and starting point for future discussions.**
 
 The `widgetType` field provides a way to specify the editor widget that UIs should use for an attribute. This field is string-valued and freeform, but we’d also like to describe, and provide key tokens for, a set of basic widget types as a starting point for DCCs to use and extend.
 
