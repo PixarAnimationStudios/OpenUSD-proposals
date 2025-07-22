@@ -26,9 +26,9 @@ We also propose deprecating the `displayGroupOrder` field entirely (see the "Int
 |propertyOrder|UsdPrim|token array|No|The (partial) order in which the prim's properties should appear|
 |displayGroupOrder|UsdPrim|string array|No|The order in which the prim's display groups should appear|
 
-In addition, the following new hints are proposed for inclusion in the `uiHints` dictionary. See the discussion sections below for more details on what some of these new values mean.
+### New `uiHints` Fields
 
-### New Hint Fields
+In addition, the following new hints are proposed for inclusion in the `uiHints` dictionary. See the discussion sections below for more details on what some of these new values mean.
 
 |Field Name|Relevant Core Object|Value Type|Description|
 | --- | --- | --- | --- |
@@ -40,7 +40,9 @@ In addition, the following new hints are proposed for inclusion in the `uiHints`
 |displayGroupsExpanded|UsdPrim|dictionary|Default open/closed state for the prim's display groups|
 |displayGroupsShownIf|UsdPrim|dictionary|Conditional visibility expressions for the prim's display groups|
 
-### Limits
+### New Core Fields
+
+#### Limits
 
 We also propose adding a new `limits` top-level metadata field on UsdAttribute for holding minimum and maximum values. It's not part of the `uiHints` dictionary since, while relevant to UIs, it also has important non-UI applications.
 
@@ -65,9 +67,9 @@ def Sphere "MySphere"
 }
 ```
 
-USD itself will not enforce limits values in its authoring APIs, though it may be useful to provide a validator to flag instances where an authored value is out-of-range.
+USD will not enforce limits values in its authoring APIs, but will provide a validator to flag instances where an authored value is out of the hard range. Such out-of-bounds values should be considered errors.
 
-### ArraySizeConstraint
+#### ArraySizeConstraint
 
 Finally, we also propose adding an `arraySizeConstraint` metadata field of type `int64` to UsdAttribute to describe information commonly specified in shaders relating to expected array size and encoding. The value encoding is as follows:
 * `arraySizeConstraint == 0` (the fallback value) indicates the array is dynamic and its size unrestricted
@@ -76,7 +78,7 @@ Finally, we also propose adding an `arraySizeConstraint` metadata field of type 
 
 This multi-purpose encoding aims to minimize the number of metadata reads needed, and reduce the potential for contradictory values, e.g, specifying a fixed array size that is not a multiple of the tuple size. Multidimensional tuple-length and arrays with a fixed number of tuples are not possible with this encoding, but we think this is unlikely to be an issue in practice.
 
-As with `limits`, USD will not formally enforce these constraints. They will be for use by UIs and other clients to guide how they present and edit array-valued attributes.
+As with `limits`, USD will not enforce these constraints at the level of authoring, but will provide validation that the authored array size is consistent with `arraySizeConstraint`.
 
 ### Access API
 
@@ -203,57 +205,6 @@ def Scope "Scope"
 
 The popup UI for the `level` attribute would display "low", "medium", "high", and “all the way” options, and author the corresponding numeric values when the user makes a selection. Since dictionary entries are always sorted lexicographically by key, we also have the list-valued `valueLabelsOrder` field to specify display order.
 
-### Widget Type and Widget Options
-
-**NOTE: After additional discussion and external feedback, we think it's prudent to defer implementation of the `widgeType` and `widgetOptions` fields. They will remain in the proposal as a reference and starting point for future discussions.**
-
-The `widgetType` field provides a way to specify the editor widget that UIs should use for an attribute. This field is string-valued and freeform, but we’d also like to describe, and provide key tokens for, a set of basic widget types as a starting point for DCCs to use and extend.
-
-Relatedly, `widgetOptions` is a dictionary-valued field for configuring the named widget.
-
-#### Basic Types and Options
-
-This list of "basics" is derived from those supported by the args format, adapted to USD. It leans toward generality and minimalism since it’s only a starting point. It's meant to encourage commonality between DCCs, but is not a contract that _must_ be implemented. DCCs are free to ignore whatever is not useful to them, and also to recognize non-standard widget types and options that may be useful for their specific purposes.
-
-|Widget Type|Widget Description|Options|Option Type|Option Fallback|Option Description|
-| --- | --- | --- | --- | --- | --- |
-|checkBox|A simple checkbox widget||||
-|number|A numeric field, handling both floating point and integer attributes|forceInt|bool|false|For float fields, whether to require integer input|
-|||digits|int|-1 (full precision)|For float fields, the number of digits to display after the decimal point|
-|||base|int|10|Numeric base to display the number in (decimal, hex, etc)|
-|||sensitivity|double|1.0|Modification sensitivity for e.g., value scrub operations, if the number field itself is directly scrubbable|
-|||slider|bool|false|Whether to show a slider widget next to the number field|
-|||sliderMin|double|0.0|Minimum slider value|
-|||sliderMax|double|1.0|Maximum slider value|
-|||sliderCenter|double|0.5|Origin value of the slider|
-|||sliderSensitivity|double|0.1|Slider sensitivity|
-|||sliderExponent|int|1|Non-linear scaling factor for the slider|
-|text|A string input field|multiLine|bool|false|Whether the text field should be single- or multi-line|
-|popup|Combo box presenting predefined value options. Contents populated by the allowedTokens and valueLabels fields (see discussion section above).|editable|bool|false|Whether the combo box should allow free-form input in addition to the predefined choices|
-|color|Color picker widget||||
-|assetInput|Text field with a button to launch a filesystem browser|fileTypes|string[]|[]|List of file extensions to filter for|
-|||assetKind|string|""|General asset type (e.g., “texture”)|
-|||multiSelect|bool|false|Whether to allow multiple assets to be selected|
-|||acceptDir|bool|false|Whether directories are selectable as assets|
-|||dirsOnly|bool|false|Whether only directories are selectable|
-|scenegraphPath|Picker widget for a location in the scenegraph||||
-
-#### Array Widgets
-
-For array-valued attributes, DCCs can present a series of one of the standard widgets listed above, or define custom array widget types to handle special cases. To support array-editing UIs, the following widget options are proposed:
-
-|Widget Option|Type|Description|
-| --- | --- | --- |
-|arraySize|int|The fixed or expected size of the array|
-|arrayIsDynamic|bool|Whether the array should be allowed to grow and shrink dynamically|
-|arrayTupleSize|int|Tuple size/column count for 2-dimensional arrays stored as a flat list|
-
-#### What's Not Included in the "Basics"
-
-Some of the common widget types present in the args format are intentionally left off this list, including "boolean" (an alternate for “checkBox” that shows a Yes/No combo box), "mapper" (a combo box populated with labeled values), and float and color ramp widgets.
-
-These omissions are generally motivated by parsimony and complexity. For example, the effect of the "boolean" and "mapper" widget types can be achieved by setting WidgetType="popup" and providing an appropriate set of value labels. In our research, different DCCs and shading systems had little agreement on ramp features and encodings, so we're leaving them out for now. We can revisit down the road if it becomes clear that standardizing ramps would be desirable.
-
 ### Additional Display Group Fields
 
 We want to add hints that convey additional information about display groups (default expansion state and conditional visibility). But display groups are not first-class objects that can carry metadata on their own -- they are implicitly created by virtue of being referenced by properties. Thus we put the additional information we need into the `uiHints` dictionary of the owning UsdPrim. These new hints (`displayGroupsExpanded` and `displayGroupsShownIf`) are themselves dictionaries, keyed by group name and storing boolean values and SdfBooleanExpression strings, respectively.
@@ -339,3 +290,44 @@ We propose deprecating the `displayGroupOrder` field and relying on `propertyOrd
 Fields for the new hint values will need to be added to `SdrShaderProperty`. Its existing API and field names can remain as they are (e.g., it deals in the more shader-centric terms "label" and "page" instead of the analogous "display name" and "display group" on the USD side).
 
 The `usdgenschemafromsdr` conversion utility will also require updates to translate the new Sdr hint fields through to its generated USD schema.
+
+### Widget Type and Widget Options
+
+**NOTE: After additional discussion and external feedback, we think it's prudent to defer implementation of the `widgeType` and `widgetOptions` fields. They will remain in the proposal as a reference and starting point for future discussions.**
+
+The `widgetType` field provides a way to specify the editor widget that UIs should use for an attribute. This field is string-valued and freeform, but we’d also like to describe, and provide key tokens for, a set of basic widget types as a starting point for DCCs to use and extend.
+
+Relatedly, `widgetOptions` is a dictionary-valued field for configuring the named widget.
+
+#### Basic Types and Options
+
+This list of "basics" is derived from those supported by the args format, adapted to USD. It leans toward generality and minimalism since it’s only a starting point. It's meant to encourage commonality between DCCs, but is not a contract that _must_ be implemented. DCCs are free to ignore whatever is not useful to them, and also to recognize non-standard widget types and options that may be useful for their specific purposes.
+
+|Widget Type|Widget Description|Options|Option Type|Option Fallback|Option Description|
+| --- | --- | --- | --- | --- | --- |
+|checkBox|A simple checkbox widget||||
+|number|A numeric field, handling both floating point and integer attributes|forceInt|bool|false|For float fields, whether to require integer input|
+|||digits|int|-1 (full precision)|For float fields, the number of digits to display after the decimal point|
+|||base|int|10|Numeric base to display the number in (decimal, hex, etc)|
+|||sensitivity|double|1.0|Modification sensitivity for e.g., value scrub operations, if the number field itself is directly scrubbable|
+|||slider|bool|false|Whether to show a slider widget next to the number field|
+|||sliderMin|double|0.0|Minimum slider value|
+|||sliderMax|double|1.0|Maximum slider value|
+|||sliderCenter|double|0.5|Origin value of the slider|
+|||sliderSensitivity|double|0.1|Slider sensitivity|
+|||sliderExponent|int|1|Non-linear scaling factor for the slider|
+|text|A string input field|multiLine|bool|false|Whether the text field should be single- or multi-line|
+|popup|Combo box presenting predefined value options. Contents populated by the allowedTokens and valueLabels fields (see discussion section above).|editable|bool|false|Whether the combo box should allow free-form input in addition to the predefined choices|
+|color|Color picker widget||||
+|assetInput|Text field with a button to launch a filesystem browser|fileTypes|string[]|[]|List of file extensions to filter for|
+|||assetKind|string|""|General asset type (e.g., “texture”)|
+|||multiSelect|bool|false|Whether to allow multiple assets to be selected|
+|||acceptDir|bool|false|Whether directories are selectable as assets|
+|||dirsOnly|bool|false|Whether only directories are selectable|
+|scenegraphPath|Picker widget for a location in the scenegraph||||
+
+#### What's Not Included in the "Basics"
+
+Some of the common widget types present in the args format are intentionally left off this list, including "boolean" (an alternate for “checkBox” that shows a Yes/No combo box), "mapper" (a combo box populated with labeled values), and float and color ramp widgets.
+
+These omissions are generally motivated by parsimony and complexity. For example, the effect of the "boolean" and "mapper" widget types can be achieved by setting WidgetType="popup" and providing an appropriate set of value labels. In our research, different DCCs and shading systems had little agreement on ramp features and encodings, so we're leaving them out for now. We can revisit down the road if it becomes clear that standardizing ramps would be desirable.
