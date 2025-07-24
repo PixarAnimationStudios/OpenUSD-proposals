@@ -154,7 +154,7 @@ Here are the suggested updates to the documentation in `usdLux/schema.usda`:
   >
   > ### DomeLight / PortalLight:
   >
-  > For a dome light (and its henchman, the PortalLight), this attribute is
+  > For a dome light (and its associated PortalLight), this attribute is
   > ignored:
   >
   > <div align="center">
@@ -174,7 +174,6 @@ Here are the suggested updates to the documentation in `usdLux/schema.usda`:
   > - RectLight
   > - SphereLight
   > - CylinderLight
-  > - (deprecated) GeometryLight
   >
   > <div align="center">
   >                 <b>sizeFactor<sub>area</sub> = worldSpaceSurfaceArea(light)</b>
@@ -221,15 +220,15 @@ Here are the suggested updates to the documentation in `usdLux/schema.usda`:
   > 2. If we assume that our distant light is an approximation for a "very
   >    far" sphere light (like the sun), then (for
   >    *0 < 𝛳<sub>max</sub> ≤ 𝜋/2*) this definition agrees with the
-  >    definition used for area lights - ie, the total power of this distant
-  >    sphere light is constant when the "size" (ie, angle) changes, and our
+  >    definition used for area lights - i.e., the total power of this distant
+  >    sphere light is constant when the "size" (i.e., angle) changes, and our
   >    sizeFactor is proportional to the total surface area of this sphere.
   >
   > ### Other Lights
   >
   > The above taxonomy describes behavior for all built-in light types.
-  > (Note that the above is based on schema *family* - ie, `DomeLight_1`
-  > follows the rules for a `DomeLight`, and ignores `normalize`.)
+  > (Note that the above is based on schema *family* - i.e., `DomeLight_1`
+  > follows the rules for a `DomeLight`, and ignores `normalize`).
   >
   > Lights from other third-party plugins / schemas must document their
   > expected behavior with regards to normalize.  However, some general
@@ -237,18 +236,18 @@ Here are the suggested updates to the documentation in `usdLux/schema.usda`:
   >
   > - Lights that either inherit from or are strongly associated with one of
   >   the built-in types should follow the behavior of the built-in type
-  >   they inherit/resemble; ie, a renderer-specific "MyRendererRectLight"
-  >   should have its size factor be its world-space surface area
-  > - Lights that are boundable and have a calcuable surface area should
+  >   they inherit/resemble; i.e., a renderer-specific "MyRendererRectLight"
+  >   should have its size factor be its world-space surface area.
+  > - Lights that are boundable and have a calculable surface area should
   >   follow the rules for an Area Light, and have their sizeFactor be their
-  >   world-space surface area
+  >   world-space surface area.
   > - Lights that are non-boundable and/or have no way to concretely or even
-  >   "intuitively" associate them with a "size" will ignore this attribe
-  >   (and always set sizeFactor = 1)
+  >   "intuitively" associate them with a "size" will ignore this attribute
+  >   (and always set sizeFactor = 1).
   >
   > Lights that don't clearly meet any of the above criteria may either
   > ignore the normalize attribute or try to implement support using
-  > whatever hueristic seems to make sense - for instance,
+  > whatever heuristic seems to make sense. For instance,
   > MyMandelbulbLight might use a sizeFactor equal to the world-space
   > surface area of a sphere which "roughly" bounds it.
 
@@ -265,9 +264,10 @@ Here are the suggested updates to the documentation in `usdLux/schema.usda`:
   >
   > In the case of a spectral renderer, this color should be uplifted such
   > that it round-trips to within the limit of numerical accuracy under the
-  > rendering illuminant.  We recommend the use of a rendering color space
-  > well defined in terms of a Illuminant D illuminant, to avoid unspecified
-  > uplift.  See: \ref usdLux_quantities
+  > rendering illuminant. We recommend the use of a rendering color space
+  > well defined in terms of a Illuminant D illuminant (ideally a D
+  > illuminant whose white point has a well-defined spectral representation,
+  > such as D65), to avoid unspecified uplift. See: \ref usdLux_quantities
 
 - ##### Attribute: `inputs:colorTemperature`
 
@@ -299,7 +299,7 @@ Here are the suggested updates to the documentation in `usdLux/schema.usda`:
   > This is implemented as a multiplication with the absolute value of the
   > dot product between the light's surface normal and the emission
   > direction, raised to the power `focus`.  See `inputs:shaping:focusTint`
-  > for the complete formula - but if we assume a default `focusTint` of
+  > for the complete formula, but if we assume a default `focusTint` of
   > pure black, then that formula simplifies to:
   >
   > <div align="center">
@@ -309,7 +309,7 @@ Here are the suggested updates to the documentation in `usdLux/schema.usda`:
   > <p>
   > </div>
   >
-  > Values < 0 are ignored
+  > Values < 0 are ignored.
 
 - ##### Attribute: `inputs:shaping:focusTint`
 
@@ -338,7 +338,7 @@ Here are the suggested updates to the documentation in `usdLux/schema.usda`:
   > spread, in degrees.
   >
   > Light emissions at angles off the primary axis greater than this are
-  > guaranteed to be zero, ie:
+  > guaranteed to be zero, i.e.:
   >
   >
   > <div align="center">
@@ -352,23 +352,23 @@ Here are the suggested updates to the documentation in `usdLux/schema.usda`:
   > <p>
   > </div>
   >
-  > For angles < coneAngle, behavior is determined by shaping:cone:softness
-  > - see below.  But at the default of coneSoftness = 0, the luminance is
-  > unaltered if the emissionOffAxisAngle <= coneAngle, so the coneAngle
+  > For angles < coneAngle, see the documentation for `shaping:cone:softness`.
+  > However, at the default of coneSoftness = 0, the luminance is
+  > unaltered if emissionOffAxisAngle <= coneAngle, so the coneAngle
   > functions as a hard binary "off" toggle for all angles > coneAngle.
 
 - ##### Attribute: `inputs:shaping:cone:softness`
 
   > Controls the cutoff softness for cone angle.
   >
-  > At the default of coneSoftness = 0, the luminance is unaltered if the
+  > At the default of coneSoftness = 0, the luminance is unaltered if
   > emissionOffAxisAngle <= coneAngle, and 0 if
   > emissionOffAxisAngle > coneAngle, so in this situation the coneAngle
   > functions as a hard binary "off" toggle for all angles > coneAngle.
   >
   > For coneSoftness in the range (0, 1], it defines the proportion of the
   > non-cutoff angles over which the luminance is smoothly interpolated from
-  > 0 to 1.  Mathematically:
+  > 0 to 1. Mathematically:
   >
   > <div align="center">
   >         <b>𝛳<sub>offAxis</sub> = acos(lightAxis • emissionDir)</b>
@@ -396,10 +396,10 @@ Here are the suggested updates to the documentation in `usdLux/schema.usda`:
   >
   > https://store.ies.org/product/lm-63-19-approved-method-ies-standard-file-format-for-the-electronic-transfer-of-photometric-data-and-related-information/
   >
-  > The luminous intensity values in the ies profile are sampled using
+  > The luminous intensity values in the IES profile are sampled using
   > the emission direction in the light's local space (after a possible
-  > transformtion by a non-zero shaping:ies:angleScale, see below). The
-  > sampled value is then potentially normalized by the overal power of the
+  > transformation by a non-zero shaping:ies:angleScale, see below). The
+  > sampled value is then potentially normalized by the overall power of the
   > profile if shaping:ies:normalize is enabled, and then used as a scaling
   > factor on the returned luminance:
   >
@@ -427,10 +427,10 @@ Here are the suggested updates to the documentation in `usdLux/schema.usda`:
   > Rescales the angular distribution of the IES profile.
   >
   > Applies a scaling factor to the latitudinal theta/vertical polar
-  > coordinate before sampling the ies profile, to shift the samples more
+  > coordinate before sampling the IES profile, to shift the samples more
   > toward the "top" or "bottom" of the profile. The scaling origin varies
-  > depending on whether `angleScale` is positive or negative.  If it is
-  > positive, the scaling origin is theta = 0; if it is negative, the
+  > depending on whether `angleScale` is positive or negative. If it is
+  > positive, the scaling origin is theta = 0. If it is negative, the
   > scaling origin is theta = pi (180 degrees).  Values where
   > |angleScale| < 1 will "shrink" the angular range in which the
   > iesProfile is applied, while values where |angleScale| > 1 will
@@ -460,40 +460,41 @@ Here are the suggested updates to the documentation in `usdLux/schema.usda`:
   > </div>
   >
   > Usage guidelines for artists / lighting TDs:
-  > --------------------------------------------
   >
-  > **if you have an ies profile for a spotlight aimed "down":**
+  > **If you have an IES profile for a spotlight aimed "down":**
   >
-  > - you should use a positive angleScale (> 0)
-  > - values where 0 < angleScale < 1 will narrow the spotlight beam
-  > - values where angleScale > 1 will broaden the spotlight beam
-  > - ie, if the original ies profile is a downward spotlight with
-  >     a total cone angle of 60°, then angleScale = .5 will narrow it to
-  >     have a cone angle of 30°, and an angleScale of 1.5 will broaden it
-  >     to have a cone angle of 90°
+  > - You should use a positive angleScale (> 0).
+  > - Values where 0 < angleScale < 1 will narrow the spotlight beam.
+  > - Values where angleScale > 1 will broaden the spotlight beam.
   >
-  > **if you have an ies profile for a spotlight aimed "up":**
+  > For example, if the original IES profile is a downward spotlight with
+  > a total cone angle of 60°, then angleScale = .5 will narrow it to
+  > have a cone angle of 30°, and an angleScale of 1.5 will broaden it
+  > to have a cone angle of 90°.
   >
-  > - you should use a negative angleScale (< 0)
-  > - values where -1 < angleScale < 0 will narrow the spotlight beam
-  > - values where angleScale < -1 will broaden the spotlight beam
-  > - ie, if the original ies profile is an upward spotlight with
-  >     a total cone angle of 60°, then angleScale = -.5 will narrow it to
-  >     have a cone angle of 30°, and an angleScale of -1.5 will broaden
-  >     it to have a cone angle of 90°
+  > **If you have an IES profile for a spotlight aimed "up":**
   >
-  > **if you have an ies profile that's isn't clearly "aimed" in a single
+  > - You should use a negative angleScale (< 0).
+  > - Values where -1 < angleScale < 0 will narrow the spotlight beam.
+  > - Values where angleScale < -1 will broaden the spotlight beam.
+  >
+  > For example, if the original IES profile is an upward spotlight with
+  > a total cone angle of 60°, then angleScale = -.5 will narrow it to
+  > have a cone angle of 30°, and an angleScale of -1.5 will broaden
+  > it to have a cone angle of 90°.
+  >
+  > **If you have an IES profile that's isn't clearly "aimed" in a single
   > direction, OR it's aimed in a direction other than straight up or
   > down:**
   >
-  > - applying angleScale will alter the vertical angle mapping for your
-  >     ies light, but it may be difficult to have a clear intuitive sense
-  >     of how varying the angleScale will affect the shape of your light
+  > - Applying angleScale will alter the vertical angle mapping for your
+  >   IES light, but it may be difficult to have a clear intuitive sense
+  >   of how varying the angleScale will affect the shape of your light
   >
-  > If you violate the above rules (ie, use a negative angleScale for a
+  > If you violate the above rules (i.e., use a negative angleScale for a
   > spotlight aimed down), then angleScale will still alter the vertical-
-  > angle mapping, but in more non-intuitive ways (ie, broadening /
-  > narrowing may seem inverted, and the ies profile may seem to "translate"
+  > angle mapping, but in more non-intuitive ways (i.e., broadening /
+  > narrowing may seem inverted, and the IES profile may seem to "translate"
   > through the vertical angles, rather than uniformly scale).
 
 - ##### Attribute: `inputs:shaping:ies:normalize`
@@ -502,7 +503,7 @@ Here are the suggested updates to the documentation in `usdLux/schema.usda`:
   > of the light while preserving the overall energy output.
   >
   > The sampled luminous intensity is scaled by the overall power of the
-  > ies profile if this is on, where the total power is calculated by
+  > IES profile if this is on, where the total power is calculated by
   > integrating the luminous intensity over all solid angle patches
   > defined in the profile.
 
@@ -518,7 +519,8 @@ Here are the suggested updates to the documentation in `usdLux/schema.usda`:
   > be clipped to this range. Note that this implies that we can have a
   > distant light emitting from more than a hemispherical area of light
   > if angle > 180. While this is valid, it is possible that for large
-  > angles a DomeLight may provide better performance.
+  > angles a DomeLight may provide better performance. If angle is 0, the
+  > DistantLight represents a perfectly parallel light source.
 
 ### Alternative approaches
 
