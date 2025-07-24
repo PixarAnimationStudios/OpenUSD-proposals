@@ -455,7 +455,7 @@ Here are the suggested updates to the documentation in `usdLux/schema.usda`:
   >
   > * <i>if angleScale < 0:</i>
   > <div align="center">
-  >         <b>𝛳<sub>ies</sub> = (𝛳<sub>light</sub> - π) / -angleScale</b>
+  >         <b>𝛳<sub>ies</sub> = (𝛳<sub>light</sub> - π) / -angleScale + π</b>
   > <p>
   > </div>
   >
