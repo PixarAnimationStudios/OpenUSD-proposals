@@ -32,14 +32,19 @@ class PhysicalLightIlluminantAPI (
 )
 {
     token physical:illuminant = "white" (
-        doc = """The illuminant spectrum of the light in spectral radiance. The default of "white" specifies that the spectrum matches the whitepoint of the rendering color space. "blackbody" specifies a blackbody spectrum of temperature defined by "colorTemperature", and "custom" specifies that the spectrum in "physical:customIlluminant" should be used.
-        "white" and "blackbody" are defined at 5nm intervals over the domain [380nm, 780nm]."""
+        doc = """The illuminant spectrum of the light in spectral radiance. The default of "white" specifies that the spectrum
+                 matches the whitepoint of the rendering color space. "blackbody" specifies a blackbody spectrum of temperature
+                 defined by "colorTemperature", and "custom" specifies that the spectrum in "physical:customIlluminant" should
+                 be used. "white" and "blackbody" are defined at 5nm intervals over the domain [380nm, 780nm]."""
         allowedTokens = ["white", "blackbody", "custom"]
         displayName = "Illuminant"
     )
 
     float2[] physical:customIlluminant = [] (
-        doc = """An array of (nanometer, radiance) pairs specifying the emission spectrum of the light. The pairs must be ordered such that the wavelength values are monotonically increasing. The wavelengths of the first and last pair in the array define the bounds of the emission range, outside of which emission is zero. The illuminant may be specified at arbitrary intervals, and will be resampled to 5nm intervals according to ASTM-E308."""
+        doc = """An array of (nanometer, radiance) pairs specifying the emission spectrum of the light. The pairs must be ordered
+                 such that the wavelength values are monotonically increasing. The wavelengths of the first and last pair in the
+                 array define the bounds of the emission range, outside of which emission is zero. The illuminant may be specified
+                 at arbitrary intervals, and will be resampled to 5nm intervals according to ASTM-E308."""
         displayName = "Custom illuminant"
     )
 }
