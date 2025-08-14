@@ -264,79 +264,8 @@ class PhysicalColorFilterArrayAPI (
 )
 {
     string physical:colorFilterArray:pattern = "RGGB" (
-        doc = """The pattern of the sensor's CFA. This string dictates which the order and inclusion of the 
-        filterN attributes. Specifying less than eight characters means that the missing filter attributes will be ignored.
-        For example, specifying 'GG' would mean that only filter1 and filter2 would be used."""
-        displayName = "Color Filter Array Pattern"
-    )
-
-    float2[] physical:colorFilterArray:filter1 = [
-        # some sensible default
-    ] (
-        doc = """Responsivity of the camera's first filter to light."""
-        displayName = "Filter 1"
-    )
-
-    float2[] physical:colorFilterArray:filter2 = [
-        # some sensible default
-    ] (
-        doc = """Responsivity of the camera's second filter to light."""
-        displayName = "Filter 2"
-    )
-
-    float2[] physical:colorFilterArray:filter3 = [
-        # some sensible default
-    ] (
-        doc = """Responsivity of the camera's third filter to light."""
-        displayName = "Filter 3"
-    )
-
-    float2[] physical:colorFilterArray:filter4 = [
-        # some sensible default
-    ] (
-        doc = """Responsivity of the camera's fourth filter to light."""
-        displayName = "Filter 4"
-    )
-
-    float2[] physical:colorFilterArray:filter5 = [] (
-        doc = """Responsivity of the camera's fifth filter to light."""
-        displayName = "Filter 5"
-    )
-
-    float2[] physical:colorFilterArray:filter6 = [] (
-        doc = """Responsivity of the camera's sixth filter to light."""
-        displayName = "Filter 6"
-    )
-
-    float2[] physical:colorFilterArray:filter7 = [] (
-        doc = """Responsivity of the camera's seventh filter to light."""
-        displayName = "Filter 7"
-    )
-
-    float2[] physical:colorFilterArray:filter8 = [] (
-        doc = """Responsivity of the camera's eighth filter to light."""
-        displayName = "Filter 8"
-    )
-
-}
-
-```
-
-### Alternative PhysicalColorFilterArrayAPI
-
-An alternative formulation for the CFA schema is to represent the filter QE curves as a 2D array of values, rather than (up to) eight separate filter arrays. This has the advantage of being extendable if we ever need more than eight filters (such sensors exist but are not common in practical usage) and avoiding having extra, unused attributes.
-
-```python
-
-class PhysicalColorFilterArrayAPI (
-    customData = {
-        token apiSchemaType = "singleApply"
-        token[] apiSchemaCanOnlyApplyTo = ["Camera"]
-    }
-)
-{
-    string physical:colorFilterArray:pattern = "RGGB" (
-        doc = """The pattern of the sensor's CFA. This string dictates the order and size of the filters attribute.
+        doc = """The pattern of the sensor's CFA, specified left-to-right, top-to-bottom on the sensor. 
+        This string dictates the order and size of the filters attribute.
         For example, specifying 'GG' would mean that filters must be a 2 * len(wavelengths) size array."""
         displayName = "Color Filter Array Pattern"
     )
@@ -347,7 +276,7 @@ class PhysicalColorFilterArrayAPI (
         780.0
     ] (
         doc = """Wavelengths corresponding to each 'row" of entries in the filters array."""
-        displayName = "Filter 1"
+        displayName = "Wavelengths"
     )
 
     float[] physical:colorFilterArray:filters = [
