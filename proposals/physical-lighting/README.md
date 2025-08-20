@@ -282,7 +282,11 @@ class PhysicalColorFilterArrayAPI (
     float[] physical:colorFilterArray:filters = [
         # some sensible default
     ] (
-        doc = """Responsitivity of the camera's filters to light. This is an NxM 2-dimensional array of values flattened to a 1-d array, where the fastest-changing index is the index of the filter in the pattern specified by `physical:colorFilterArray:pattern`, and the slowest-changing index is the wavelength. Thus the array is M filters by N wavelengths, where M is the length of the filter pattern string and N is the length of the `physical:colorFilterArray:wavelengths` array."""
+        doc = """Responsitivity of the camera's filters to light. This is an NxM 2-dimensional array of values 
+        flattened to a 1-d array, where the fastest-changing index is the index of the filter in the pattern 
+        specified by `physical:colorFilterArray:pattern`, and the slowest-changing index is the wavelength. 
+        Thus the array is M filters by N wavelengths, where M is the length of the filter pattern string and N 
+        is the length of the `physical:colorFilterArray:wavelengths` array."""
         displayName = "Filters"
     )
 }
