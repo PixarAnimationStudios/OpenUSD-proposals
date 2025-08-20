@@ -229,27 +229,27 @@ class PhysicalCameraResponsivityAPI (
 )
 {
     float2[] physical:responsivity:r = [
-        (380, 0.0354000000000),
+        (380, 0.0007797031712537923),
         # default to e.g. 5D mk II
-        (780, 0.0027000000000)
+        (780, 0.00014309024185447776)
     ] (
         doc = """Responsivity of the camera's red channel to light."""
         displayName = "R"
     )
 
     float2[] physical:responsivity:g = [
-        (380, 0.0359000000000),
+        (380, 0.0012829638408719131),
         # default to e.g. 5D mk II
-        (780, 0.0027000000000)
+        (780, 0.0002004095376576469)
     ] (
         doc = """Responsivity of the camera's green channel to light."""
         displayName = "G"
     )
 
     float2[] physical:responsivity:b = [
-        (380, 0.0334000000000),
+        (380, 0.0010384453636208498),
         # default to e.g. 5D mk II
-        (780, 0.0027000000000)
+        (780, 6.834670409986804e-05)
     ] (
         doc = """Responsivity of the camera's blue channel to light."""
         displayName = "B"
