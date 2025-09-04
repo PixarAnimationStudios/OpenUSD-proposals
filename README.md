@@ -34,8 +34,11 @@ worked through.
 2. Engage the community in discussion
     1. [Discuss the proposal](#discuss-the-proposal)
 3. Understand and address community comments
-4. Shepherd proposal through to publication (see [Detailed Workflow](#detailed-workflow))
-5. [Submit a PR to OpenUSD](#implement-the-proposal) 
+4. Shepherd proposal through to publication 
+    1. [Detailed Workflow](#detailed-workflow)
+    2. [Pull Request status](#pull-request-status)
+    3. [Proposal status](#proposal-status)
+5. (If applicable) [Submit a proposed implementation to OpenUSD](#implement-the-proposal) 
 
 ### Detailed Workflow
 
@@ -65,7 +68,7 @@ sequenceDiagram
 
 #### Open PR
 
-Open PRs indicate that a proposal is still **open for comments and changes**.  
+Open PRs indicate that a proposal is still **open for comments and changes**.
 - New PRs are automatically given the _To do_ status. This indicates the 
   proposal is still in triage and has not yet been reviewed.
 - When the proposal is changed to the _Draft_ status, this indicates the 
@@ -137,27 +140,13 @@ receiving the best feedback.
    it significantly easier for someone to read the document in a well formatted 
    way.
 2. Your PR and proposal should include, and ideally start with, a short summary 
-   of what your change would achieve.
-
-   A possible structure could be:
-   1. **Summary** of what you're hoping to achieve
-   2. A **problem statement** explaining why what you are proposing is not 
-      currently possible
-   3. A **glossary of terms** that readers may not be familiar with.
-   4. If applicable, any links to **existing implementations or reference 
-      documents** that may be useful 
-   5. **Details** about your proposal, such as why you are making certain 
-      choices
-   6. **Risks** that you anticipate (if any)
-   7. **Alternate solutions** that you have considered (if any), and why you 
-      didn't go with them
-   8. Any **excluded topics**, that you have left out and why. These may be 
-      things you want to handle separately in the future for example.
-
+   of what your change would achieve. The 
+   [pull request template](https://github.com/PixarAnimationStudios/OpenUSD-proposals/blob/main.github/pull_request_template.md) 
+   offers a possible structure for reference.
 3. It is highly recommended that any submitted proposal include text examples of 
    what your proposal would look like in `.usda` syntax.
 4. It's recommended that long sentences be split over multiple lines in your 
-   Markdown file.  This allows more granular feedback, and easier viewing of the 
+   Markdown file. This allows more granular feedback, and easier viewing of the 
    files.
 
 #### Large Proposals
