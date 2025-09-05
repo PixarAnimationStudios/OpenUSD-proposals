@@ -76,6 +76,8 @@ Open PRs indicate that a proposal is still **open for comments and changes**.
   the broader community.
 - A proposal may be moved to _Hold_ status if the proposal needs more iteration 
   and/or broader consensus from the community.
+- Proposals move to the _Finalizing_ status when the proposal is nearing
+  publication and the commentary period will soon close.
 
 #### Merged PR
 
@@ -141,7 +143,7 @@ receiving the best feedback.
    way.
 2. Your PR and proposal should include, and ideally start with, a short summary 
    of what your change would achieve. The 
-   [pull request template](https://github.com/PixarAnimationStudios/OpenUSD-proposals/blob/main.github/pull_request_template.md) 
+   [pull request template](https://github.com/PixarAnimationStudios/OpenUSD-proposals/blob/main/.github/pull_request_template.md) 
    offers a possible structure for reference.
 3. It is highly recommended that any submitted proposal include text examples of 
    what your proposal would look like in `.usda` syntax.
