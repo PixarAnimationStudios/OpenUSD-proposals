@@ -1,7 +1,34 @@
 ### Description of Proposal
 
 <!--
-Please put a brief synopsis of the proposal here
+Please put a brief synopsis of the proposal here. A possible structure 
+could include:
+
+# Summary 
+_of what you're hoping to achieve_
+
+# Problem statement
+_explaining why what you are proposing is not currently possible_
+
+# Glossary 
+_of terms that readers may not be familiar with._
+
+# Reference Links
+_If applicable, of any links to existing implementations or reference 
+documents that may be useful _
+
+# Details
+_about the proposal, such as why you made certain choices_
+
+# Risks
+_that you anticipate (if any)_
+
+# Alternate solutions
+_that you have considered (if any), and why you didn't go with them_
+
+# Out of Scope Topics
+_that you have left out and why; these may be things you want to handle
+separately in the future, for example_
 
 The proposal itself should be in the PR as a markdown file to aid annotation and feedback.
 -->
