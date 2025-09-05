@@ -77,7 +77,7 @@ Open PRs indicate that a proposal is still **open for comments and changes**.
 - A proposal may be moved to _Hold_ status if the proposal needs more iteration 
   and/or broader consensus from the community.
 - Proposals move to the _Finalizing_ status when the proposal is nearing
-  publication and the commentary period will soon close.
+  publication and the commentary period is closing soon.
 
 #### Merged PR
 
@@ -104,7 +104,7 @@ renewed interest in the proposal idea later.
 |--------------|-------------------------------------------------------------------------|
 | **To do**     | Proposal needs to be triaged |
 | **Draft**    | Proposal is work-in-progress, open for feedback and reviews   |
-| **Finalizing**    | Proposal has been discussed and close to finalized   |
+| **Finalizing**    | Proposal has been discussed and is close to finalized   |
 | **Published**| Proposal is approved as a starting point for implementation    |
 | **Implemented** | Proposal has been implemented      |
 | **Hold**     | Proposal needs further iteration and/or broader community consensus    |
