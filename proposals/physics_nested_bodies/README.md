@@ -4,8 +4,6 @@
 
 This proposal amends the UsdPhysics Schema documentation & validation code to allow PhysicsRigidBodyAPI prims to have ancestor & descendant PhysicsRigidBodyAPI prims, even without the use of a resetXformStack XformOp.
 
-This change for PhysicsRigidBodyAPI prims is conditional provided the nesting occurs within an articulation. The top-most ancestor PhysicsRigidBodyAPI must be, or have an ancestor which is, a PhysicsArticulationRootAPI.
-
 ## Background
 
 [UsdPhysics](https://openusd.org/release/api/usd_physics_page_front.html) is designed around rigid body simulators, which take as input a list of rigid bodies and a list of constraints. In particular, most design decisions are based on multi-body simulation, in which bodies are modeled as single, independent entities in world space, which by default move and respond to forces and torques independently. Constraints are used to reduce the degrees of freedom between two bodies.
@@ -26,15 +24,15 @@ These restrictions are at odds with the reduced coordinate approach, where bodie
 
 It makes mapping reduced coordinate datasets to USD cumbersome for developers and confusing for content creators and consumers.
 
-The PhysicsArticulationRootAPI concept in itself implies a nested hierarchy of prims, yet such nesting is forbidden in USD hierarchy, and only exists via a computed tree of bodies and joints.
+The PhysicsArticulationRootAPI concept in itself implies a nested hierarchy of prims, yet such nesting is forbidden in USD hierarchy, and only exists via a computed tree of bodies and joints. It is logical to use this API to markup all articulation roots, however UsdValidation currently disallows its use on kinematic bodies, which effectively disallows kinematic articulations.
 
 ## Proposed Change
 
 ### Documentation
 
-Amend the UsdPhysics Schema documentation to allow nested rigid bodies, even without the use of resetXformStack, provided this nesting occurs within an articulation.
+Amend the UsdPhysics Schema documentation to allow nested rigid bodies, even without the use of resetXformStack.
 
-Make clear the intent of PhysicsArticulationRootAPI with respect to reduced coordinate simulators, why nested bodies are allowed in articulations, and add a functional example of an articulated system in the [Examples](https://openusd.org/release/api/usd_physics_page_front.html#usdPhysics_examples) section at the bottom of the document.
+Make clear the intent of PhysicsArticulationRootAPI with respect to reduced coordinate simulators, why nested bodies are allowed, and add a functional example of an articulated system in the [Examples](https://openusd.org/release/api/usd_physics_page_front.html#usdPhysics_examples) section at the bottom of the document.
 
 Update the "aggregate properties" paragraph to describe the logic change in [Mass Computation](#mass-computation).
 
@@ -57,10 +55,6 @@ The physics parsing utilities added in USD 25.05 do already allow nested bodies 
 However, in the case of the PhysicsArticulationRootAPI being applied as an ancestor of the root PhysicsRigidBodyAPI, the parser currently attempts to find the center of the graph to use as the root. It will need to be changed to explicitly select the top-most body within the articulation hierarchy as the root.
 
 Additionally, parsed nested bodies will have values computed in world space rather than parent-body space, which may be unexpected for the reduced coordinate simulation consumer. This caveat should be clearly documented so consumers know to compute relative coordinates if they are required.
-
-### Attribute Audit
-
-One of the principal benefits of the proposed change is that properties can be specified in local rather than world space. While many of the required changes have been identified above, we should also audit all Body, Collider, Joint and Mass attributes and determine if we should adjust the space in which they are defined. Any such changes need to consider backwards compatibility with existing assets & existing runtimes.
 
 ## Example
 
