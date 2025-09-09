@@ -1,7 +1,8 @@
 # Introduction
-USD already has primitives to render 3D curve-like geometries, such as hair or grass. In practice, we also need curves in sketch or CAD document. The curve has uniform width, and its width will not change when we rotate or zoom the sketch. The curve may also have dash-dot patterns. We will provide a schema which is for patterned lines or polylines. The primitive will have uniform screen-width, and can have dash-dot patterns.
+USD already has primitives to render 3D curve-like geometries, such as hair or grass. In practice, there are requirements for curves with dash-dot patterns. The curve has uniform width, and its width will not change when we rotate or zoom the sketch. One common example is that when you do selection, you will see a rectangle that highlights the selection area, and the edge of the rectangle will have a dash pattern. Another common example is that in a CAD design document, the dash-dot lines can be used to show hidden lines.
+In this proposal, we will provide a schema which is for patterned lines or polylines. The primitive will have uniform screen-width, and can have dash-dot patterns.
 
-Here is a picture of common dash dot patterns.
+Here is a picture of common dash-dot patterns.
 
 ![image of curve patterns](linePatterns.jpg)
 
@@ -26,16 +27,14 @@ The line joint is the shape at the joint of two lines, or at the joint of a poly
 ### Dash-dot Pattern
 A dash-dot pattern is a composite of dashes and dots and the composition is periodic. 
 
-You can also define other type of patterns.
-
 # The implementation of DashDot line style
 Our implementation will introduce a new type of primitive, the DashDotLines. It inherits from Curves. The primitive is a list of line segments or polylines. The width of the line will be uniform, and it will not change when camera changes. There can be no pattern in the line. Or there can be dash-dot pattern.
 
-The detail of the pattern will be put in the DashDotPatternAPI.
+The detail of the dash-dot pattern will be put in the DashDotPatternAPI.
 
-We also add a new rprim for the DashDotLines. We add a new shader file, the dashDotLines.glslfx, which includes both vertex and fragment shader. 
+We also add a new rprim for the DashDotLines. We add a two shader files, the dashDotLines.glslfx, which includes both vertex and fragment shader, and dashDotFallbackMaterialNetwork.glslfx, which is a default material for the DashDotLines.
 
-In the implementation, we also create special geometry for the primitive. Each line segment is converted to a rectangle which is composed from two triangles. 
+We provide two different implementations. In the "allDetails" implementation, we create special geometry for the primitive. Each line segment is converted to a rectangle which is composed from two triangles. The dash-dot pattern and the line width are implemented in the shader. In the "noCapJoint" implementation, the line segments or polylines are rendered as line lists, and in each part of line, we will check if the pixel is within the dash or the gap. For this implementation, the caps and joints will be ignored. And the line width is implemented in the GPU pipeline configuration, such as using glLineWidth().
 
 ### The DashDotLines schema
 A new primitive DashDotLines is added, which inherits from Curves. It inherits properties from Curves.
@@ -48,8 +47,10 @@ These are properties which inherited from Curves:
 - widths. Widths are now interpreted as the widths in screen space.
 
 The DashDotLines has the following new properties:
-- startCapType. A token uniform. It is the shape of the line cap at the start of the line. It can be "round", "triangle" or "square". The default value is "round".
-- endCapType. A token uniform. It is the shape of the line cap at the end of the line. It can be "round", "triangle" or "square". The default value is "round".
+- shapeDetail. A token uniform. It implies if the caps and joints are rendered or not. Currently it can be "allDetails" or "noCapJoint". The default value is "allDetails", which means the startCap, endCap and the joint will be rendered. If this value is "noCapJoint", the startCapType, endCapType and jointType will be ignored. 
+- startCapType. A token uniform. It is valid when shapeDetail is "allDetails". It is the shape of the line cap at the start of the line. It can be "round", "triangle" or "square". The default value is "round".
+- endCapType. A token uniform. It is valid when shapeDetail is "allDetails". It is the shape of the line cap at the end of the line. It can be "round", "triangle" or "square". The default value is "round".
+- jointType. A token uniform. It is valid when shapeDetail is "allDetails". It is the shape at the joint of two lines, or at the joint of a polyline. Currently it can only be "round". More types of joint can be added in the future.
 - patternScale. A float uniform. It is valid when the primitive inherits from a "Pattern" primitive. The default value is 1. You can lengthen or compress the line pattern by setting this property. For example, if patternScale is set to 2, the length of each dash and each gap will be enlarged by 2 times. This value will not impact on the line width.
 - screenspacePattern. A bool uniform. It is valid when the primitive inherits from a "Pattern" primitive. By default it is true, which means the dash-dot pattern will be based on screen unit. If we zoom in, the pattern on the line will change in the world space, so that the dash size and the dash gap size in the screen space will not change. If it is false, the pattern will be based on world unit. If we zoom in, the pattern on the line will not change in world space. The dash size and the dash gap size in the screen space will be larger. 
 
@@ -68,20 +69,26 @@ The DashDotPatternAPI has the following new properties:
 For example, assume the pattern is [(0, 10), (1, 4), (3, 0)]. It means the first symbol is a dash which is from 0 to 10. The second symbol is a dash which is from 11 to 15, and the third symbol is a dot which is at position 18. There are gaps between 10 and 11, and between 15 and 18. If the patternPeriod is 20, there is also a gap between 18 and 20.
 
 ### The DashDotLines rprim and shader
-In HdStorm, we will add the HdDashDotLines rprim for the DashDotLines primitive. The topology of the DashDotLines requires the curveVertexCounts, curveIndices and whether the pattern is screenspaced. In dashDotLines.glslfx, we add two sections of shader code: "DashDot.Vertex" and "DashDot.Fragment".
+In HdStorm, we will add the HdDashDotLines rprim for the DashDotLines primitive. The topology of the DashDotLines requires the shape detail ("allDetails" or "noCapJoint"), curveVertexCounts, curveIndices and whether the pattern is screenspaced. When the shapeDetail is "noCapJoint", the primitive type is PRIM_BASIS_CURVES_LINES. And when the shapeDetail is "allDetails", we add a new primitive type: PRIM_DASH_DOT_LINES, and the lines will be implemented as a list of rectangles, and each rectangle will contain two Striangles.
+
+In dashDotLines.glslfx, we add four sections of shader code: "DashDotDefault.Vertex" and "DashDotDefault.Fragment" are for the "allDetails" implementation. "NoCapJoint.Vertex" and "NoCapJoint.Fragment" are for the "noCapJoint" implementation.
+
+Different from the other primitive, the dashDotLines should not have effects under lights. So we use a different fallback material. The dashDotFallbackMaterialNetwork.glslfx save the default material shader. The surface shader will just return the color the line, so that the lights will not influent the lines.
 
 ### Other inputs for the shader and screen space pattern implementation
 For a polyline, the shader need to know the sum of line lengths before each vertex. This value can be pre-calculated in CPU. To implement screen space dash-dot pattern, the sum must be based on line lengths on the screen. So to calculate the sum, we need to do matrix transformation for the lines in CPU, and this calculation must be done when camera is changed. (Maybe we can use the compute shader to do the calculation before the rendering process in each frame)
 
 # Examples
-### 2 DashDotLines primitives with dash-dot patterns
+### 2 DashDotLines primitives with dash-dot patterns, and the shape detail is "allDetails"
 ```
 def DashDotLines "StyledPolyline1" (
     inherits = [</Pattern>]
 ){
+    uniform token shapeDetail = "allDetails"
     uniform bool screenspacePattern = true
     uniform token startCapType = "round"
     uniform token endCapType = "round"
+    uniform token jointType = "round"
     float patternScale = 5
     int[] curveVertexCounts = [3, 4]
     point3f[] points = [(0, 0, 0), (10, 10, 0), (10, 20, 0), (0, 30, 0), (-10, 40, 0), (-10, 50, 0), (0, 60, 0)]
@@ -91,12 +98,14 @@ def DashDotLines "StyledPolyline1" (
 def DashDotLines "StyledPolyline2" (
     inherits = [</Pattern>]
 ){
+    uniform token shapeDetail = "allDetails"
     uniform bool screenspacePattern = true
     uniform token startCapType = "triangle"
     uniform token endCapType = "triangle"
+    uniform token jointType = "round"
     uniform float patternScale = 11
     int[] curveVertexCounts = [3, 4]
-    point3f[] points = [(0, 0, 0), (10, 10, 0), (10, 20, 0), (0, 30, 0), (-10, 40, 0), (-10, 50, 0), (0, 60, 0)]
+    point3f[] points = [(20, 0, 0), (30, 10, 0), (30, 20, 0), (20, 30, 0), (10, 40, 0), (10, 50, 0), (20, 60, 0)]
     float[] widths = [10] (interpolation = "constant")
     color3f[] primvars:displayColor = [(0, 0, 1)]
 }
@@ -119,12 +128,59 @@ The image for the 2 DashDotLines primitives.
 
 ![image of Dashdotlines primitives](twoPolylines.png)
 
+### 2 DashDotLines primitives with dash-dot patterns, and the shape detail is "noCapJoint"
+```
+def DashDotLines "StyledPolyline1" (
+    inherits = [</Pattern>]
+){
+    uniform token shapeDetail = "noCapJoint"
+    uniform bool screenspacePattern = true
+    uniform token startCapType = "round"
+    uniform token endCapType = "round"
+    uniform token jointType = "round"
+    float patternScale = 5
+    int[] curveVertexCounts = [3, 4]
+    point3f[] points = [(0, 0, 0), (10, 10, 0), (10, 20, 0), (0, 30, 0), (-10, 40, 0), (-10, 50, 0), (0, 60, 0)]
+    float[] widths = [5] (interpolation = "constant")
+    color3f[] primvars:displayColor = [(1, 0, 0)]
+}
+def DashDotLines "StyledPolyline2" (
+    inherits = [</Pattern>]
+){
+    uniform token shapeDetail = "noCapJoint"
+    uniform bool screenspacePattern = true
+    uniform token startCapType = "triangle"
+    uniform token endCapType = "triangle"
+    uniform token jointType = "round"
+    uniform float patternScale = 11
+    int[] curveVertexCounts = [3, 4]
+    point3f[] points = [(20, 0, 0), (30, 10, 0), (30, 20, 0), (20, 30, 0), (10, 40, 0), (10, 50, 0), (20, 60, 0)]
+    float[] widths = [10] (interpolation = "constant")
+    color3f[] primvars:displayColor = [(0, 0, 1)]
+}
+
+def "Pattern" (
+    prepend apiSchemas = ["DashDotPatternAPI"]
+)
+{
+    uniform float patternPeriod = 10
+    uniform float2[] pattern    = [(0, 5), (2.5, 0)]
+}
+```
+In this example, the two DashDotLines primitive are similar as the above example. The only difference is that the shapeDetail is "noCapJoint".
+
+The image for the 2 DashDotLines primitives.
+
+![image of Dashdotlines primitives](twoPolylinesSimple.png)
+
 ### A polyline with no pattern
 ```
 def DashDotLines "StyledPolyline" (
 ){
+    uniform token shapeDetail = "allDetails"
     uniform token startCapType = "round"
     uniform token endCapType = "round"
+    uniform token jointType = "round"
     int[] curveVertexCounts = [3]
     point3f[] points = [(0, 0, 0), (10, 10, 0), (10, 20, 0)]
     float[] widths = [5] (interpolation = "constant")
