@@ -71,7 +71,7 @@ in a scene to the image plane. So that's the pivot between them.
 
 ## Proposed PHysicalCamera schema
 
-```
+```usda
 class PhysicalCamera "PhysicalCamera" (
     doc = """Physically modeled camera.
 
@@ -295,7 +295,15 @@ class PhysicalCameraLensModelPinhole "PhysicalCameraLensModelPinhole" (
         doc = '''squeeze'''
     )
 }
+```
 
+Note: The PhysicalCameraExposure and PhysicalCameraSensorRGBResponsitivity have recently been implemented as part of UsdLux, and are no longer part of this proposal. The original proposal is retained here for documentation.
+
+https://github.com/PixarAnimationStudios/OpenUSD/commit/56c4c7d6fd355a9f0408e3b49a997e605bbefe1b
+
+https://github.com/PixarAnimationStudios/OpenUSD/commit/3f4bf3882cff3b1ab3b8aad2177e5a8613c12c5f
+
+```usda
 class PhysicalCameraExposure "PhysicalCameraExposure" (
     doc = """
     Describes the exposure settings common to still and cinema cameras.
