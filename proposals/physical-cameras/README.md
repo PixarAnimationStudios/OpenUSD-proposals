@@ -1,5 +1,4 @@
 
-![Status:Draft](https://img.shields.io/badge/Draft-blue)
 ## Physical Cameras for USD
 
 ## Contents
