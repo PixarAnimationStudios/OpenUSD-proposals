@@ -34,9 +34,9 @@ class PhysicalLightIlluminantAPI (
     token physical:illuminant = "white" (
         doc = """The illuminant spectrum of the light in spectral radiance. The default of "white" specifies that the spectrum
                  matches the whitepoint of the rendering color space. "blackbody" specifies a blackbody spectrum of temperature
-                 defined by "colorTemperature", and "custom" specifies that the spectrum in "physical:customIlluminant" should
+                 defined by "colorTemperature", "illuminant D" specifies a CIE standard illuminant D spectrum defined by "colorTemperature" (for example D65 is 6504K), and "custom" specifies that the spectrum in "physical:customIlluminant" should
                  be used. "white" and "blackbody" are defined at 5nm intervals over the domain [380nm, 780nm]."""
-        allowedTokens = ["white", "blackbody", "custom"]
+        allowedTokens = ["white", "blackbody", "illuminant D", "custom"]
         displayName = "Illuminant"
     )
 
