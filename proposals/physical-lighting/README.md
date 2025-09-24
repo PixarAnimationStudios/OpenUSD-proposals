@@ -76,6 +76,16 @@ class PhotometricAreaLightAPI (
         doc = """Photometric power of the light in lumens."""
         displayName = "Power"
     )
+
+    float photometric:illuminance = 0 (
+        doc = """Illuminance received by a surface directly facing the light at "photometric:illuminance:distance" 
+                 meters. This attribute only has effect when "photometric:illuminance:distance" is non-zero."""
+    )
+
+    float photometric:illuminance:distance = 0 (
+        doc = """When non-zero, the light's brightness will be such that a surface directly facing the light at this
+                 distance, in meters, will receive "photometric:illuminance" lux."""
+    )
 }
 
 class RadiometricAreaLightAPI (
@@ -89,6 +99,16 @@ class RadiometricAreaLightAPI (
     float radiometric:power = 2.34 (
         doc = """Radiometric power of the light, in Watts, integrated over the domain of the light's illuminant spectrum."""
         displayName = "Power"
+    )
+
+    float radiometric:irradiance = 0 (
+        doc = """Irradiance received by a surface directly facing the light at "radiometric:irradiance:distance" 
+                 meters. This attribute only has effect when "radiometric:irradiance:distance" is non-zero."""
+    )
+
+    float radiometric:irradiance:distance = 0 (
+        doc = """When non-zero, the light's brightness will be such that a surface directly facing the light at this
+                 distance, in meters, will receive "radiometric:irradiance" Watts per meter squared."""
     )
 }
 
