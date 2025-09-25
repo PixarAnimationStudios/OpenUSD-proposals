@@ -91,6 +91,10 @@ reference back to the relevant proposal.
   _Implemented_ status, with indication of which version of USD the proposal was 
   implemented in.   
 
+**Exception**: Merged proposals that have a status prefix (e.g. [DRAFT] or 
+[HOLD]) in the proposal's (folder) name have the status indicated in the 
+prefix and are still open for comments and changes.  
+
 #### Closed PR
 
 Closed PRs indicate that a proposal **has been retracted** and is not continuing 
