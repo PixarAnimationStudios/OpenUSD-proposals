@@ -91,9 +91,10 @@ reference back to the relevant proposal.
   _Implemented_ status, with indication of which version of USD the proposal was 
   implemented in.   
 
-**Exception**: Merged proposals that have a status prefix (e.g. [DRAFT] or 
-[HOLD]) in the proposal's (folder) name have the status indicated in the 
-prefix and are still open for comments and changes.  
+**Exception**: Proposals in the _notPublished folder are still open for 
+comments and changes.  These are proposals that were merged into the repo as 
+part of a legacy process.The subfolders (draft vs hold) indicate the proposal's
+actual status. 
 
 #### Closed PR
 
