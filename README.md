@@ -93,7 +93,7 @@ reference back to the relevant proposal.
 
 **Exception**: Proposals in the _notPublished folder are still open for 
 comments and changes.  These are proposals that were merged into the repo as 
-part of a legacy process.The subfolders (draft vs hold) indicate the proposal's
+part of a legacy process. The subfolders (draft vs hold) indicate the proposal's
 actual status. 
 
 #### Closed PR
