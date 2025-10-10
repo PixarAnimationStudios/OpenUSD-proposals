@@ -1,8 +1,8 @@
-![Status:Published](https://img.shields.io/badge/Published-green)
+
 # Spline Animation in USD
 
-This project aims to support spline animation on USD attributes.  The project is
-called **USD Anim** for short.
+This project aims to support spline animation on floating-point scalar USD
+attributes.  The project is called **USD Anim** for short.
 
 Spline animation means that time-varying attribute values are specified using
 sparse _knots_, from which values can be _interpolated_ or _extrapolated_ at any
@@ -10,8 +10,8 @@ time coordinate.  The knots of an attribute form a _spline_, which is a function
 mapping times to values.  A spline is a familiar concept in digital animation;
 it is an artist-friendly mathematical representation of a value changing over
 time, usually continuously.  USD already has _time samples_, which are discrete
-time-varying values, interpolated linearly; splines will complement time samples
-and support additional uses.
+time-varying values, interpolated linearly in the case of floating-point
+scalars; splines will complement time samples and support additional uses.
 
 ## Purposes
 
@@ -40,9 +40,9 @@ drive OpenExec rigging, and we see it as a prerequisite for OpenExec.
 
 ## Splines Versus Time Samples
 
-Splines and time samples will coexist in USD.  Time-varying data may be authored
-in either form; if both are present on the same attribute, time samples will
-take precedence.  The tradeoffs are:
+Splines and time samples will coexist in USD.  Time-varying data for
+floating-point scalars may be authored in either form; if both are present on
+the same attribute, time samples will take precedence.  The tradeoffs are:
 
 |                   | Splines                     | Time Samples          |
 | ----------------- | --------------------------- | --------------------- |
@@ -138,17 +138,10 @@ When we say _curve_, we mean a function that may be curved, or may consist of
 straight lines.
 
 We use the word _spline_ to mean the animation control curve for a
-floating-point value.  This is both more and less than the word might otherwise
-mean.
-
-- Less: we reserve _spline_ for floating-point values in order to emphasize that
-  they are the most common case, even though, for example, quaternion splines
-  are still spline curves.
-
-- More: we say _spline_ even when curves contain held or linear segments.  These
-  straight-line segments are not the first example of a spline that probably
-  comes to mind, and they are not interpolated using spline math, but we still
-  call them splines.
+floating-point value.  This is true even when curves contain held or linear
+segments.  These straight-line segments are not the first example of a spline
+that probably comes to mind, and they are not interpolated using spline math,
+but we still call them splines.
 
 We refer to the points where curve segments join as _knots_.  In a
 character-animation context, these are typically called _keyframes_; we are
@@ -191,17 +184,10 @@ Here is a summary of the proposed data fields that will make up splines and
 related classes.  This is an abstract description, not a literal data structure.
 However, the USD Anim API will follow this description at least partly.
 
-We are proposing a generalization of splines that we call _series_.  A series is
-a set of values over time for any value type.  _Splines_ are the most important
-subtype of series, specifically for floating-point scalars.  Details are given
-below.
-
 ```
-//
-// Common interface.
-//
-
-Series <ValueType>
+Spline <ValueType>
+    curveType : enum { bezier, hermite }
+    knots : array <Knot <ValueType> >
     innerLoopParams : InnerLoopParams
     preExtrapolation, postExtrapolation : Extrapolation <ValueType>
 
@@ -210,21 +196,8 @@ Knot <ValueType>
     postInterpolation : enum { held, linear, curve }
     value : ValueType
     preValue : ValueType (when dual-valued)
-
-//
-// Spline subtype.  For the value-type category of floating-point scalars.
-//
-
-Spline <ValueType> : Series <ValueType>
-    curveType : enum { bezier, hermite }
-    knots : array <SplineKnot <ValueType> >
-
-SplineKnot <ValueType> : Knot <ValueType>
     preTangent, postTangent : Tangent <ValueType> (when segment is curve)
-
-//
-// Detailed parameters.
-//
+    customData : Dictionary
 
 Tangent <ValueType>
     timeLength : double
@@ -239,148 +212,75 @@ InnerLoopParams
     numPreLoops : int
     numPostLoops : int
 
-Extrapolation <ValueType>
-    method : enum { held, linear, sloped, loop }
-    slope : ValueType (when sloped)
-    loopMode : enum { repeat, reset, oscillate } (when looping)
-
-//
-// Subtypes for other value-type categories.
-//
-
-// Lerp series.  For linearly interpolatable vectors.
-LerpSeries <ValueType> : Series <ValueType>
-    knots : array <LerpSeriesKnot <ValueType> >
-LerpSeriesKnot <ValueType> : Knot <ValueType>
-
-// Quaternion series.  For quaternion types.
-QuatSeries <ValueType> : Series <ValueType>
-    knots : array <QuatSeriesKnot <ValueType> >
-QuatSeriesKnot <ValueType> : Knot <ValueType>
-
-// Held series.  For non-interpolatable types.
-HeldSeries <ValueType> : Series <ValueType>
-    knots : array <HeldSeriesKnot <ValueType> >
-HeldSeriesKnot <ValueType> : Knot <ValueType>
+Extrapolation
+    method : enum { held, linear, sloped, loopRepeat, loopReset, loopOscillate }
+    slope : double (when sloped)
 ```
 
 ## Value Type Categories
 
-All value types supported by USD attributes may have time-varying values.
-However, not all value types are suitable for continuous interpolation.
+Floating-point scalars - `double`, `float`, and `half` - are the attribute value
+types that USD splines will support.
 
-Floating-point scalars - `double`, `float`, and possibly `half` - are the
-expected typical case for spline interpolation.  The main USD Anim object model
-will be designed around these types.  Floating-point scalars are the primary
-_value type category_ in our object model.
+USD's existing time samples support time-varying values for all value types.
+That includes floating-point scalars, and it includes everything else.
 
-We propose the following additional value type categories:
+The "everything else" includes these value type categories:
 
 - **Floating-point vectors.** These can be linearly interpolated.  There are two
   cases: fixed tuples like `double3`, and arrays like `doubleArray`; these can
   also combine into arrays-of-tuples like `double3Array`.  While it would be
   possible to support Bezier splines of these values, and indeed Presto does, we
-  aren't aware of any need for this in USD.  See
-  [Question: splines of vectors](#splines-of-vectors).
+  aren't aware of any need for this in USD.
 
-- **Quaternions.** These typically encode 3D rotations.  They can be
-  interpolated, but in different ways than scalars.  Like floating-point vectors
-  (of which they are a sub-category), quaternions aren't typically authored with
-  user-controlled tangents.
+- **Quaternions.** These typically encode 3D rotations.  Like floating-point
+  vectors (of which they are a sub-category), quaternions aren't typically
+  authored with user-controlled tangents.  We believe the only broadly useful
+  interpolation behavior for quaternions is _slerp_, which time samples already
+  provide.
 
 - **All other types.** Cannot be interpolated.  These include discrete,
-  non-numeric types like `bool` and `string`, and vectors of them.  We also
+  non-numeric types like `bool` and `string`, and vectors of them.  They also
   include quantized numeric types like `int`, and vectors of them; quantized
   types could be interpolated with rounding, but we're not aware of any need.
   An important future case for the "all other types" category is _constraints_,
   which tie one geometric transform to another, and which will be
   `SdfPath`-valued.
 
-Here is a comparison of the features that we propose to implement for each value
-type category:
+Splines support several features that time samples do not.  These are the
+features that will therefore be missing for non-floating-point-scalar types:
 
-|                          | Floating-point scalars | Floating-point vectors | Quaternions | All other types |
-| :----------------------- | :--------------------: | :--------------------: | :---------: | :-------------: |
-| **Object model**         | Spline                 | LerpSeries             | QuatSeries  | HeldSeries      |
-| **Held segments**        | Yes                    | Yes                    | Yes         | Yes             |
-| **Linear segments**      | Yes                    | Yes                    | Yes         | No              |
-| **Bezier segments**      | Yes                    | No                     | Yes         | No              |
-| **Explicit tangents**    | Yes                    | No                     | No          | No              |
-| **Hermite segments**     | Yes                    | No                     | No          | No              |
-| **Held extrapolation**   | Yes                    | Yes                    | Yes         | Yes             |
-| **Linear extrapolation** | Yes                    | Yes                    | No          | No              |
-| **Sloped extrapolation** | Yes                    | No                     | No          | No              |
-| **Loops**                | Yes                    | Yes                    | Yes         | Yes             |
-| **Dual values**          | Yes                    | Yes                    | Yes         | Yes             |
+For interpolatable types:
 
-In this proposal, when we say _spline_, we specifically mean a spline of
-floating-point scalar values.  When we say _series_, we mean either a spline, or
-a time-varying value from one of the other categories above.
+- Curved interpolation.
+- Optional held interpolation.
+- Flexible extrapolation.
 
-We are proposing that the object model (the series subtype) used to represent an
-attribute is fixed, and determined strictly by the value type, with no concept
-of subclassing.  Floating-point scalar types, for example, would always be
-represented as splines, never as LerpSeries or HeldSeries, even though
-floating-point scalars also meet the requirements for those simpler object
-models.
+For all types:
 
-## Series Are Not Time Samples
+- Dual values.
+- Looping.
+- Per-knot custom data.
+- Authoring conveniences, e.g. compare, split, resample.
 
-Series and time samples are similar: both encode varying values over time.  Our
-LerpSeries and HeldSeries object models are particularly similar to time
-samples, with series having just a few additional features that time samples
-don't.  Despite the similarity, LerpSeries and HeldSeries are not time samples;
-we are proposing that they be stored and accessed differently.
-
-Here is a comparison of the features supported by series and time samples for
-the lerped and held value type categories:
-
-|                          | LerpSeries | Lerped time samples | HeldSeries | Held time samples |
-| :----------------------- | :--------: | :-----------------: | :--------: | :---------------: |
-| **Held segments**        | Yes        | No                  | Yes        | Yes               |
-| **Linear segments**      | Yes        | Yes                 | No         | No                |
-| **Held extrapolation**   | Yes        | No                  | Yes        | Yes               |
-| **Linear extrapolation** | Yes        | No                  | No         | No                |
-| **Sloped extrapolation** | Yes        | No                  | No         | No                |
-| **Loops**                | Yes        | No                  | Yes        | No                |
-| **Dual values**          | Yes        | No                  | Yes        | Yes (\*)          |
-
-(\*) Held time samples are inherently dual-valued; they change value
-instantaneously at each sample.
-
-## Time Samples Are Not Series (Yet)
-
-For now, we are proposing that there is no subtype of Series that represents
-actual time samples.  Instead, we propose that series and time samples be
-entirely distinct, except when it comes to attribute value resolution, at which
-time either source may be consulted.
-
-See [Question: unification of series and time samples](#unification-of-series-and-time-samples).
+The door is not closed to adding spline support for additional types in the
+future.  We are proposing omitting them because we have had very little need for
+them at Pixar, and we don't yet have any compelling use cases from outside
+Pixar.  For these types, time samples and splines would risk duplicating
+functionality and increasing complexity.  See
+[Question: splines of other value types](#splines-of-other-value-types).
 
 ## Value Types
 
-Each series holds values of a single type.
+Each spline holds values of a single type: `double`, `float`, and `half`.
 
-For scalar splines, this may be any interpolatable scalar type supported by USD
-attributes; currently the list is `double`, `float`, and `half`.
-
-For quaternion series, this may be any quaternion type supported by USD
-attributes; currently the list is `quatd`, `quatf`, and `quath`.  Note that the
-older `GfQuaternion` type is not a supported USD attribute value type, so it
-will not be supported by quaternion series either.
-
-Time, unlike series values, is always typed as `double`.  This is consistent
-with the rest of USD.
-
-The `half` type may require some special treatment in order to minimize rounding
-artifacts and inefficient hardware support.  It is possible, for example, that
-our in-memory representation of `half`-typed splines may use `float`s
-internally.  See [Question: half-valued splines](#half-valued-splines).
+Time, unlike values, is always typed as `double`.  This is consistent with the
+rest of USD.
 
 ## Knots and Segments
 
-A series is primarily defined by its knots.  Each knot specifies a (time, value)
-coordinate through which the series passes.
+A spline is primarily defined by its knots.  Each knot specifies a (time, value)
+coordinate through which the spline passes.
 
 The regions between knots are called _segments_.  There is one important field
 that applies to segments rather than knots: the interpolation method.  Rather
@@ -395,7 +295,7 @@ previous knot.
 
 ### Non-Meaningful Data
 
-The last knot in every series will specify a post-interpolation method that has
+The last knot in every spline will specify a post-interpolation method that has
 no effect, since there is no next segment (though there is extrapolation,
 covered below).
 
@@ -546,32 +446,24 @@ any magical tuning parameters in USD Anim.  Nevertheless:
 - We will publish an exact specification of the algorithm.
 - We believe the utility outweighs any concerns about hard-coded behavior.
 
-### Crossovers and Functional Forcing
+### Regressive Splines
 
 Splines encode functions: for any time, there should be exactly one value.  It
 is possible (using very long tangents) to construct a spline segment that, under
-the Bezier rules, would cross over itself and form a loop.  Both Presto and Maya
-consider this an unacceptable condition, and excise the loop from the spline, so
-that every spline is indeed a function.
+the Bezier rules, travels forward in time, then backward, then forward again.
+Most (all?) DCCs and evaluation engines consider this an unacceptable condition,
+and alter the spline in some way, so that every spline is indeed a function.
 
-Presto and Maya have different algorithms for this "functional forcing", and
-both have disadvantages.  Presto creates a vertical discontinuity at an
-arbitrary time.  Maya shortens tangents until the loop disappears, resulting in
-a smooth shape, but one that is very different than what is authored.
-
-We may wish to choose one of these algorithms, but a third would be more
-predictable: create a cusp (a sharp point) where the Bezier curve overlaps
-itself.
-
-It is also theoretically possible to forbid tangents that cause crossovers.  But
-this would likely be surprising, and would violate our "All Splines Valid"
-principle (described below under "Error Handling").
-
-![Crossovers](./crossovers.png)
+This surprisingly complex topic is covered in a separate
+[Regressive Splines](./regressive.md) document.  In summary, USD Anim proposes a
+flexible anti-regression system that focuses on authoring-time limiting.
+Clients will at least want to consider which of the various anti-regression
+strategies they wish to use, and interactive clients may want to take advantage
+of interactive limiting during edits.
 
 ## Dual-Valued Knots
 
-Value discontinuities may be introduced to a series by means of _dual-valued
+Value discontinuities may be introduced to splines by means of _dual-valued
 knots_.  A dual-valued knot has two values: an ordinary value, and a
 _pre-value_.  The value exactly at the knot time, and at any nonzero time delta
 after the knot, is the ordinary value.  The value at any nonzero time delta
@@ -587,27 +479,46 @@ the prior knot.
 
 ### Sided Queries
 
-The fundamental USD value resolution operation is `UsdAttribute::Get`.  Starting
-with USD Anim, clients may also call `GetPreValue`.  The two methods return the
-same value, unless the specified time is exactly at a dual-valued knot.
+The fundamental USD value resolution operation is `UsdAttribute::Get`.  This
+takes a `UsdTimeCode` parameter to specify the time at which to evaluate.  USD
+Anim will introduce a new "pre-time" flag to `UsdTimeCode`.  This will allow
+attribute values to be determined at ordinary times, and at _pre-times_, which
+mathematically are limits from the pre-side of the given time.
+
+Usually the value at a pre-time, which is a _pre-value_, is the same as the
+value at the corresponding ordinary time.  But there are some situations where
+the two values will differ, because there is a value discontinuity at that
+time.  These include:
+
+- At a dual-valued spline knot.
+- At a knot at the end of a held spline segment.
+- At a time sample with held interpolation (e.g. for a string-valued attribute).
+- At the boundary of spline loop iterations in "reset" mode.
+- At "jump discontinuities" in value clips.
+
+Pre-values and ordinary values are asymmetrical.  The pre-value is a limit value
+at an infinitesimal time before the time coordinate.  The ordinary value is the
+value exactly at the time coordinate, and also at an infinitesimal time after.
+The transition happens between the pre-limit and the exact time.  Note that
+these are true limits in the mathematical sense: the infinitesimal time delta is
+smaller than any possible actual time delta.
 
 Pre-values typically are not evaluated directly in order to render USD content.
 They exist as a mechanism for shaping curves.  Querying pre-values is often
 important for authoring systems, but usually not important for downstream
 evaluation.
 
-Sided queries will also affect other situations with value discontinuities:
+In addition to `UsdAttribute::Get`, sided queries may trickle through
+higher-level APIs, such as the many interfaces in `usdGeom` that accept
+`UsdTimeCode` parameters.
 
-- At a knot at the end of a held segment.
-- At a time sample with held interpolation (e.g. for a string-valued attribute).
-- At the boundary of loop iterations in "reset" mode.
-- At "jump discontinuities" in value clips.
-
-See [Question: schema-level methods](#schema-level-methods).
+For `UsdAttribute::Set`, which sets time-sample values, the pre-time flag in
+`UsdTimeCode` will have no effect.  We are not proposing to add explicit
+pre-values to time samples.
 
 ## Looping
 
-_Looping_ is the repeating of series regions.  Looping will be supported in two
+_Looping_ is the repeating of spline regions.  Looping will be supported in two
 forms:
 
 - _Inner loops_ come from Presto.  These specify a _prototype region_, which is
@@ -615,7 +526,7 @@ forms:
   The repeated portions are called the _echo region_.  Inner loops use a mode
   called _Continue_, described below.
 
-- _Extrapolating loops_ come from Maya.  These use the entire series (from first
+- _Extrapolating loops_ come from Maya.  These use the entire spline (from first
    to last knot) as the prototype region, and repeat it infinitely before and/or
    after the knots.  Extrapolating loops support modes called _Repeat_, _Reset_,
    and _Oscillate_, described below.
@@ -623,9 +534,9 @@ forms:
 ![Inner loops](./innerLoops.png)
 ![Extrapolating loops](./extrapLoops.png)
 
-It will be possible to use both systems in the same series.  In that case, inner
+It will be possible to use both systems in the same spline.  In that case, inner
 loops are resolved first, and then extrapolating loops take into account the
-entire series, from first to last knot, with the inner-loop repeats included.
+entire spline, from first to last knot, with the inner-loop repeats included.
 
 ### Looping Modes
 
@@ -685,13 +596,13 @@ When inner looping is in use, any knots that are authored in the echo region are
 _shadowed_: effectively overwritten by the echoed curve, and ignored for
 purposes of evaluation.
 
-Shadowed knots are still recorded in the series, and may still be accessed; see
+Shadowed knots are still recorded in the spline, and may still be accessed; see
 the Looping API details below.
 
 ### Looping API
 
 Looping works by creating echoed knots.  When clients ask for the set of knots
-from a series, they may request them in three different forms:
+from a spline, they may request them in three different forms:
 
 - Only the authored knots, without any looping applied.
 
@@ -716,13 +627,13 @@ control parameters.
 | Knots outside echo region | Yes                                 | Yes                              |
 
 For now, we propose that USD Anim support at most one inner-loop region per
-series; that inner loops support only Continue mode; and that extrapolating
+spline; that inner loops support only Continue mode; and that extrapolating
 loops support only Repeat, Reset, and Oscillate modes.
 See [Question: looping limitations](#looping-limitations).
 
 ## Extrapolation
 
-Extrapolation determines series values before the first knot and after the
+Extrapolation determines spline values before the first knot and after the
 last.  The available extrapolation methods are:
 
 - **None.** Outside of the authored knots, no values are returned.  It is as
@@ -743,81 +654,9 @@ last.  The available extrapolation methods are:
       has no effect (see "Non-Meaningful Data" above).
 
 - **Sloped.** Like Linear, but with a slope that is explicitly set as part of
-  the series data.
+  the spline data.
 
 - **Looping.** See the "Looping" section above.
-
-## Quaternion Series
-
-Quaternions represent rotations, encoding a 3D axis and an angle.
-
-Because quaternions are 4-dimensional vector quantities, it is difficult to
-author or visualize quaternion animation curves directly.  Instead, clients may
-simply establish (time, value) knots, and then opt for the following
-interpolation methods:
-
-- **Held**: the same meaning as elsewhere: a stair-step function that keeps each
-  knot's value until the time of the next knot.
-
-- **Linear**: spherical linear interpolation, or "slerp" for short.  Linearly
-  interpolates a great circle on a sphere.
-
-- **Eased**: the 5-dimensional spline is a smooth (G1) curve with automatically
-  determined tangents.  This is similar to the scalar-spline case of Bezier
-  curves with automatic tangents.  The resulting motion is not a great circle;
-  direction and speed change smoothly, with no discontinuities at the knots.
-  The easing algorithm comes from Maya, and is taken from a 1985 SIGGRAPH paper
-  by Ken Shoemake.
-
-Quaternion series will never have client-specified tangents.
-
-Quaternion series will only support held extrapolation.  This has the same
-meaning as elsewhere: the value outside all knots is identical to the value at
-the first or last knot.
-
-Quaternion series will support the following features identically to scalar
-splines:
-
-- Inner loops.
-- Dual values.
-
-### Quaternion Restrictions
-
-USD assumes that quaternions are used to encode rotations.  Quaternions are also
-mathematical primitives that can have other meanings, but USD enforces some
-invariants that specifically help with rotations.
-
-Quaternions are constrained to unit length; the QuatSeries implementation will
-normalize after interpolation.
-
-Quaternions representing orientation always have two possible values, facing in
-opposite directions.  When evaluating a quaternion spline, the implementation
-will select the direction that more closely aligns with that of the surrounding
-knots.  It is TBD whether we can ensure that there are no "sign jumps" when
-interpolating large angle changes; this could require stateful traversals of
-segments in small increments, which is costly.
-
-### Rotational Encoding
-
-Values that specify 3D rotations may be specified in a variety of ways.  Each
-will interpolate differently, depending on attribute value types.  Here are all
-the rotational encodings supported by `UsdGeomXformOp` (taking `double` as our
-precision, the other precisions being analogous):
-
-| Encoding                     | Value Type(s) | Object Model         | Interpolation                               |
-| :--------------------------- | :------------ | :------------------- | :------------------------------------------ |
-| Three scalar Euler angles    | 3 x `double`  | 3 scalar splines     | Each angle spline-interpolated separately   |
-| Vector of three Euler angles | `double3`     | Time samples         | Each angle linearly interpolated separately |
-| Quaternion                   | `quatd`       | Quaternion spline    | Compound interpolation                      |
-| Transform matrix             | `matrix4d`    | Time samples         | Per-element linear interpolation            |
-
-In particular, USD Anim will not jointly interpolate rotations that are
-expressed as multiple Euler angles.
-
-Euler angles are interpolated without restricting the value to lie between zero
-and a full circle; angles may "wind" beyond these limits.  This allows for
-smooth interpolation even with large rotations.  This behavior results from USD
-Anim not treating Euler angles any differently than any other scalar.
 
 ## Custom Data
 
@@ -825,24 +664,24 @@ It is important for clients to be able to store their own data alongside USD
 scene description.  USD prims and attributes have _custom data_: values meaningful
 only to clients, and stored blindly by USD.
 
-USD series will also support custom data on individual knots.  The supported
+USD splines will also support custom data on individual knots.  The supported
 types for custom data will be the same as those for prims and attributes,
 including hierarchical types like dictionaries and arrays.
 
 # INTEGRATION WITH USD
 
-Series will be integrated into USD in the following ways.
+Splines will be integrated into USD in the following ways.
 
 ## Attribute Value Resolution
 
-The most important function of series will be to provide attribute values.
+The most important function of splines will be to provide attribute values.
 When clients call `UsdAttribute::Get` (or `UsdAttributeQuery::Get`), the
-resulting value may come from a series.
+resulting value may come from a spline.
 
 USD will have the following list of value categories, in priority order:
 
 - Time samples
-- Series
+- Splines
 - Default values
 - Fallback values
 
@@ -850,35 +689,35 @@ When there are opinions about attribute values on multiple layers, USD will do
 what it has always done: find the strongest layer with any kind of opinion, then
 within that layer, take the opinion from the highest-priority value category
 from the list above.  Thus, for example, a default value on a stronger layer
-will override a series value on a weaker one.
+will override a spline value on a weaker one.
 
 The `UsdResolveInfo` class, accessed via `UsdAttribute::GetResolveInfo`, will be
-extended to include series as a possible value source.
+extended to include splines as a possible value source.
 
-## Series Access
+## Spline Access
 
-`UsdAttribute` will have new methods called `GetSeries`, `GetSeriesEditor`,
-`GetSpline`, and `SetSpline`.  These will provide whole-series level read/write
-access to series.  Finer-grained operations can be conducted by methods on the
-returned objects; the API is described below.
+`UsdAttribute` will have new methods called `GetSpline` and `SetSpline`.  These
+will provide whole-spline-level read/write access to splines.  Finer-grained
+operations can be conducted by methods on the returned objects; the API is
+described below.
 
 Note that this is different from the way time samples are integrated into
 `UsdAttribute`.  Time samples do not have their own class, and are directly
 accessed via `UsdAttribute` methods like `Set`, `ClearAtTime`, and `Block`.  We
-believe the higher complexity of series merits the different treatment.
+believe the higher complexity of splines merits the different treatment.
 
 We are also proposing that the time-sample-oriented methods of `UsdAttribute`
-continue to address only time samples, and not series.
+continue to address only time samples, and not splines.
 
-## Series Composition
+## Spline Composition
 
-The `pcp` library will need to be equipped to compose series.  The scope of this
-task is still TBD, but at a minimum, series will need to be retimed when
+The `pcp` library will need to be equipped to compose splines.  The scope of
+this task is still TBD, but at a minimum, splines will need to be retimed when
 crossing non-trivial layer scales and offsets, which affect the interpretation
 of time.
 
 For example, imagine layer A includes layer B as a sublayer with a layer offset,
-and layer B has the strongest opinion for a given attribute.  Layer B's series
+and layer B has the strongest opinion for a given attribute.  Layer B's spline
 opinion will be authored using layer B's timeline, but that timeline must be
 shifted in the context of layer A.  The same thing already happens for time
 samples.
@@ -888,24 +727,24 @@ samples.
 USD has a special value called `SdfValueBlock` that represents the absence of a
 value, causing `UsdAttribute::Get` to behave as though no value were authored,
 returning either a fallback value or no value.  Value blocks may be set on a
-time-varying basis, and this will be true of series as it is for time samples.
+time-varying basis, and this will be true of splines as it is for time samples.
 We will treat "block knots" as held: they will affect the time region from the
 knot's time until the next knot.
 
 Value blocks will affect extrapolation when they are present as the first or
-last knot in a series.  Evaluation in the extrapolated region of such a series
+last knot in a spline.  Evaluation in the extrapolated region of such a spline
 will return no value.  It will also be possible to disable _only_ extrapolation
 by using the "None" extrapolation mode.
 
-Series will introduce an additional pattern that can block weaker opinions: an
-empty series.  As always, the presence of any series opinions overrides weaker
-layers and default values.  A series with no knots is still a valid series, so
+Splines will introduce an additional pattern that can block weaker opinions: an
+empty spline.  As always, the presence of any spline opinions overrides weaker
+layers and default values.  A spline with no knots is still a valid spline, so
 it blocks weaker opinions, but it provides no values.  Like `SdfValueBlock`, an
-empty series will not block fallback values when `UsdAttribute::Get` is called.
+empty spline will not block fallback values when `UsdAttribute::Get` is called.
 
 ## Serialization
 
-Series will become part of the Sdf data model, and thus supported in the `usda`
+Splines will become part of the Sdf data model, and thus supported in the `usda`
 and `usdc` file formats.
 
 ## Scalar Transforms
@@ -920,17 +759,12 @@ single vector-valued XYZ translation.
 Transforms are one of the most common cases for spline-driven animation, so we
 want to make it convenient to drive transforms from scalar splines.
 
-## Series Utilities
+## Spline Utilities
 
-There are a few utilities for series introspection and manipulation that are
+There are a few utilities for spline introspection and manipulation that are
 sufficiently low-level and general to merit inclusion in USD Anim.
 
-For any series:
-
-- A **diff** utility that finds time regions that differ between two series.
-
-For splines only:
-
+- A **diff** utility that finds time regions that differ between two splines.
 - A **simplify** utility that eliminates knots that have little effect.
 - A **resample** utility that generates a simpler set of knots.
 
@@ -939,9 +773,9 @@ all-Bezier splines.  It is TBD whether this can be improved; for example, it
 seems desirable that an all-Hermite input spline should result in an all-Hermite
 output spline.
 
-## Series in usdview
+## Splines in usdview
 
-The `usdview` application will be updated to display series values, including a
+The `usdview` application will be updated to display spline values, including a
 basic visualization of curves over time.
 
 ## Motion Blur
@@ -966,19 +800,19 @@ It is possible that render hints, recorded via schemas, will play a role.
 
 ## Deferred Features
 
-When there are series opinions on multiple layers, only the series from the
+When there are spline opinions on multiple layers, only the spline from the
 strongest layer will be considered.  There has been some discussion of _sparse
-overrides_, where series knots could be integrated from multiple layers, but we
+overrides_, where spline knots could be integrated from multiple layers, but we
 consider this a future feature, and not a trivial one.
 
-We would eventually like it to be possible to include series in value clips.
+We would eventually like it to be possible to include splines in value clips.
 This too is deferred until future development.  For the first release of USD
-Anim, series in value clips will be silently ignored, much like default values
+Anim, splines in value clips will be silently ignored, much like default values
 in value clips.
 
 If clients want to use splines as retiming curves, it might be useful to have a
 `timecode`-valued spline.  These would differ from `double`-valued splines in
-just one way: in the presence of layer offsets (see "Series Composition" above),
+just one way: in the presence of layer offsets (see "Spline Composition" above),
 the spline's values would be transformed in addition to its knot times.  We
 believe we can defer this for now.
 
@@ -989,8 +823,8 @@ USD Anim will be implemented as follows.
 ## Libraries
 
 Most of USD Anim will reside in a library called `pxr/base/ts`, where `ts`
-stands for "time series".  This will implement the central `TsSeries` and
-`TsSpline` classes, and all of their supporting infrastructure.
+stands for "time spline".  This will implement the central `TsSpline` class, and
+all of its supporting infrastructure.
 
 Everything in the "integration" section above will require changes to existing
 libraries, especially `sdf`, `pcp`, and `usd`.
@@ -998,22 +832,22 @@ libraries, especially `sdf`, `pcp`, and `usd`.
 ## Optimizations
 
 `TsSpline` will be designed with speed in mind.  The in-memory representation
-will be optimized for floating-point scalar splines that contain only Bezier or
-Hermite segments.  Less-common features like dual-valued knots, per-knot custom
-data, and looping will likely be side-allocated.
+will be optimized for splines that contain only Bezier or Hermite segments.
+Less-common features like dual-valued knots, per-knot custom data, and looping
+will likely be side-allocated.
 
 A simple `TsEvalCache` class will be provided.  This will allow clients to
 perform repeated evaluation with cached results.
 
 The `usdc` "crate" format is optimized for "single-frame reads", where all
 time-varying data for a given time is packed together, improving locality of
-access.  For now, we are proposing **not** to include series in this system, but
-instead to store series monolithically, alongside non-time-varying data.  This
-is for two reasons.  First, series are sparse: there are typically fewer knots
-than expected evaluation times.  We could store, at each frame time, the two
-knots from each series that come before and after that time, but this would
+access.  For now, we are proposing **not** to include splines in this system,
+but instead to store splines monolithically, alongside non-time-varying data.
+This is for two reasons.  First, splines are sparse: there are typically fewer
+knots than expected evaluation times.  We could store, at each frame time, the
+two knots from each spline that come before and after that time, but this would
 cause extensive duplication that would undermine one of the advantages of
-series, which is that their data is small.  Second, we already have a great way
+splines, which is that their data is small.  Second, we already have a great way
 to store precomputed per-frame values, which is to use time samples.
 
 ## Threading Model
@@ -1030,19 +864,19 @@ locks.
 
 Two things are simultaneously true:
 
-- Different clients will want to support different sets of series features.
+- Different clients will want to support different sets of spline features.
   This is already true of Presto and Maya.  We also want to ensure that clients
-  can be written without supporting every series feature.
+  can be written without supporting every spline feature.
 
-- USD is used for interchange, and we want all series to be readable by all
+- USD is used for interchange, and we want all splines to be readable by all
   clients.
 
 Our proposed solution for this situation is _reduction_: an API that allows
-clients to replace unsupported series features with emulations.  Clients pass a
-set of input series (one, all in a layer, or all on a stage), a specification of
-features the client supports, and in some cases parameters for emulation.  The
-result is a set of output series that fall within the client's feature set, and
-evaluate identically to the input series, or nearly so.
+clients to replace unsupported spline features with emulations.  Clients pass a
+set of input splines (one, all in a layer, or all on a stage), a specification
+of features the client supports, and in some cases parameters for emulation.
+The result is a set of output splines that fall within the client's feature set,
+and evaluate identically to the input splines, or nearly so.
 
 At minimum, clients must support Bezier segments.  Most other features are
 optional.
@@ -1068,7 +902,7 @@ See [Question: reduction metadata](#reduction-metadata).
 
 ## Round-Trip Considerations
 
-It is desirable to allow USD series to be passed among multiple clients, with
+It is desirable to allow USD splines to be passed among multiple clients, with
 piecemeal edits made by each, without introducing unintended changes in the
 unmodified parts of the data.
 
@@ -1078,9 +912,9 @@ issues will crop up, how USD will behave, and what clients can do.
 
 ### Proprietary Custom Data
 
-Client A creates a USD file containing series with per-knot custom data that are
-meaningful only to Client A.  Client B modifies one of these series.  Client A
-reads the file again.  What should happen?
+Client A creates a USD file containing splines with per-knot custom data that
+are meaningful only to Client A.  Client B modifies one of these splines.
+Client A reads the file again.  What should happen?
 
 We foresee two flavors of per-knot custom data: some (like a tangent-computation
 algorithm) that may become invalid when a knot is edited, and some (like a
@@ -1097,63 +931,64 @@ See [Question: custom data edit policies](#custom-data-edit-policies).
 
 ### Local Translations
 
-When a client reads in a USD file, it may modify series for its own
+When a client reads in a USD file, it may modify splines for its own
 consumption.  Reasons may include:
 
 - Feature reduction, as described above.
 - Other local modifications, such as for proprietary editing features.
 
 Clients that do this should take care that these "read-time" modifications do
-not leak back into the USD file from which the series came.  Clients may need to
-cache the original series / layer / stage, and write modifications back to the
-original only for series that have been intentionally edited.
+not leak back into the USD file from which the splines came.  Clients may need
+to cache the original spline / layer / stage, and write modifications back to
+the original only for splines that have been intentionally edited.
 
 ## Test Framework
 
 USD Anim will include tests that verify:
 
-- The behavior and performance of `TsSeries` and `TsSpline`.
-- The compatibility of `TsSeries` and `TsSpline` with Maya.
-- The integration of `TsSeries` and `TsSpline` with USD.
+- The behavior and performance of `TsSpline`.
+- The compatibility of `TsSpline` with Maya.
+- The integration of `TsSpline` with USD.
 
 To support these goals, the test infrastructure will include optional components
 that will be available when the supporting packages are available.  These
 include:
 
-- A way to evaluate series in Maya, by invoking `mayapy`.
-- A way to draw visualizations of series, by invoking `matplotlib`.
+- A way to evaluate splines in Maya, by invoking `mayapy`.
+- A way to draw visualizations of splines, by invoking `matplotlib`.
 
-# SERIES API OVERVIEW
+# SPLINE API OVERVIEW
 
-This section proposes some details of how clients will interact with USD series.
+This section proposes some details of how clients will interact with USD splines.
 
 ## Evaluation-Only Clients
 
 For most software that only _evaluates_ USD data, `UsdAttribute` should provide
-sufficient handling of series.  The `UsdAttribute::Get` method automatically
-resolves attribute values from any source, including series.
+sufficient handling of splines.  The `UsdAttribute::Get` method automatically
+resolves attribute values from any source, including splines.
 
 For clients that perform _authoring_ of USD data, or require deeper
-introspection of existing data, the series API will be relevant.
+introspection of existing data, the spline API will be relevant.
 
 ## Time Orientation
 
-The X and Y axes of series may, in general, have various meanings.  In the first
-release of USD Anim, the X axis of a series will always be time.  But there are
-other possible uses of series.  For example, OpenExec may support the use of
-splines as dimensionless mapping curves: values in, values out.  The underlying
-math will not change at all, but the meanings will be different to clients.
+The X and Y axes of splines may, in general, have various meanings.  In the
+first release of USD Anim, the X axis of a spline will always be time.  But
+there are other possible uses of splines.  For example, OpenExec may support the
+use of splines as dimensionless mapping curves: values in, values out.  The
+underlying math will not change at all, but the meanings will be different to
+clients.
 
-There is thus a question of nomenclature: should the X axis of a series be
-called `time` in the series API, or should it be generically called `x`?
+There is thus a question of nomenclature: should the X axis of a spline be
+called `time` in the spline API, or should it be generically called `x`?
 
 We are proposing, for now, to keep the USD Anim API explicitly time-oriented.
-That is why we have chosen the name `ts` ("time series") for the series library.
-In our experience with Presto, we have used time-oriented series in the vast
+That is why we have chosen the name `ts` ("time spline") for the spline library.
+In our experience with Presto, we have used time-oriented splines in the vast
 majority of use cases, and we are also seeking to avoid introducing generality
 to USD that is not yet required.
 
-If non-time-oriented series usage does find its way into USD, we will have two
+If non-time-oriented spline usage does find its way into USD, we will have two
 options, both of which are probably acceptable:
 
 - **Generalize.** Make a copy of `ts`; rename classes, methods, and parameters
@@ -1167,31 +1002,26 @@ options, both of which are probably acceptable:
 
 See [Question: time-oriented API](#time-oriented-api).
 
-## TsSeries and TsSpline
+## TsSpline
 
 `TsSpline` will be the main class in the `ts` library.  It represents all the
 data for one spline.  It allows splines to be defined, transferred, evaluated,
 and edited.  It will be a low-level class, and will know nothing about USD.
 
-`TsSeries` will encapsulate series in a consistent way, holding either a spline
-or one of the other value-type categories.  In addition to allowing direct
-access to the specific series subtype, `TsSeries` will implement methods that
-are common to all subtypes.
+We propose that `TsSpline` have _value semantics_, internally carrying a copy of
+the data that it represents.  We propose that all spline objects be
+_copy-on-write_, so that making multiple copies of a spline is cheap as long as
+the copies are not modified.  It should be unnecessary to refer to spline
+objects by pointer.
 
-We propose that `TsSeries` and `TsSpline` have _value semantics_, internally
-carrying a copy of the data that they represent.  We propose that all series
-objects be _copy-on-write_, so that making multiple copies of a series is cheap
-as long as the copies are not modified.  It should be unnecessary to refer to
-series objects by pointer.
-
-Series can have different value types.  We propose that series classes be
+Splines can have different value types.  We propose that spline classes be
 non-templated, for simplicity, and to avoid the need for non-templated base
 classes.  We propose that typed access to values and slopes be accomplished by
 means of templated accessors and mutators, and that type-erased access be
 available by passing `VtValue` as an in or out parameter, instead of the value
 type.  We propose that typed read access be the moral equivalent of
 `VtValue::UncheckedGet`, with no guardrails for incorrect types.  Typed write
-access, on the other hand, will verify that all knots in a sequence use the same
+access, on the other hand, will verify that all knots in a spline use the same
 type.
 
 ## Error Handling
@@ -1199,27 +1029,27 @@ type.
 We recognize two classes of potentially problematic data:
 
 - **Immediately contradictory.** E.g. differently-typed knots in the same
-  series.  These situations will result in coding errors and no changes to the
-  series.
+  spline.  These situations will result in coding errors and no changes to the
+  spline.
 
 - **Eventually contradictory or non-standard.** Treatment of these situations
   varies, but they are allowed.  Interesting cases include:
 
 | Condition         | Example                             | Behavior           |
 | :---------------- | :---------------------------------- | :----------------- |
-| Empty series      | `TsSpline()`                        | No values provided |
+| Empty spline      | `TsSpline()`                        | No values provided |
 | Omitted data      | Missing tangents for curve segments | Assumed zero       |
 | Inapplicable data | Tangents for linear segments        | Ignored            |
 | Degenerate data   | Zero-size loop intervals            | Ignored            |
-| Non-functions     | Crossovers                          | Forced functions   |
+| Non-functions     | Regression                          | Forced functions   |
 
 Because situations from the first category are always prevented, and situations
 from the second category are always tolerated, there is no such thing as an
-invalid `TsSpline` or other series, and there are no methods for validation.
+invalid `TsSpline`, and there are no methods for validation.
 
 Also see "Non-Meaningful Data" above.
 
-# SERIES API PREVIEW
+# SPLINE API PREVIEW
 
 The full USD Anim interface is beyond the scope of this proposal, but some
 highlights follow.
@@ -1231,14 +1061,12 @@ Some things to note:
 - Some aspects of the API are simplified for clarity.  Types and parameter lists
   may change slightly.
 
-- This API has methods that would, if possible, be virtual template methods.
-  Those don't actually exist in C++.  For this proposal, we have adopted the
-  convention of documenting the methods in a base class as comments, saying "all
-  subclasses implement".  The final form of these methods is TBD.
+- The API for anti-regression is listed in the separate
+  [Regressive Splines](./regressive.md) document.
 
 ## Access From UsdAttribute
 
-Series are data attached to `UsdAttribute`s.
+Splines are data attached to `UsdAttribute`s.
 
 ```c++
 class UsdAttribute
@@ -1253,14 +1081,7 @@ class UsdAttribute
     UsdResolveInfo GetResolveInfo(UsdTimeCode time) const;
     bool ValueMightBeTimeVarying() const;
 
-    // Pre-side value queries.
-    template <typename T> bool GetPreValue(T *value) const;
-    bool GetPreValue(VtValue *value) const;
-
-    TsSeries GetSeries() const;
-    TsSeriesEditor GetSeriesEditor();
-
-    // Conveniences that bypass GetSeries[Editor].
+    // Spline data.
     TsSpline GetSpline() const;
     bool SetSpline(const TsSpline &spline);
 
@@ -1275,276 +1096,124 @@ class UsdAttribute
 };
 ```
 
-Access to series values is in bulk, not individually by knot.
+Access to spline values is in bulk, not individually by knot.
 
-- To read a series, clients call `GetSpline` or `GetSeries`.
-
+- To read a spline, clients call `GetSpline`.
 - To establish a spline, clients call `SetSpline`.
+- To modify a spline, clients read the spline, modify it, and write it back.
 
-- To establish a non-spline series, clients call `GetSeriesEditor`, then one of
-  `TsSeriesEditor`'s `Set` methods.
+## TsSpline
 
-- To modify a series, clients read the series, modify it, and write it back.
-
-See [Question: schema-level methods](#schema-level-methods).
-
-## Series Encapsulation
-
-![Series Classes](./TsSeriesClasses.png)
-
-`TsSeriesInterface` is a pure virtual interface class implemented by every kind
-of series: splines, lerp / quat / held series, and the `TsSeries` wrapper.  It
-declares (and in some cases implements) methods that are common to all series
-subtypes.
-
-Implementing `TsSeriesInterface` will not cause subclasses to require heap
-allocation.  Client code will not refer to `TsSeriesInterface` by pointer.
-Instead, clients will work directly with instances of concrete subclasses.  All
-virtual method calls should be resolvable at compile time.
-
-There are some methods that are common to all subtypes, but accept restricted
-sets of parameters for some subtypes.  For example, all subtypes support
-extrapolation, but LerpSeries doesn't support sloped extrapolation, and
-QuatSeries and HeldSeries support only held extrapolation.  Rather than declare
-these methods individually on subtypes, each with their own enum of supported
-modes, we have opted to have a single method on `TsSeriesInterface` that serves
-all subtypes.  Each subtype will have a protected virtual implementation that
-validates arguments and raises coding errors for unsupported parameter values.
+This is the workhorse of USD Anim, representing parameters, knots, evaluation,
+queries, and editing.
 
 ```c++
-class TsSeriesInterface
+class TsSpline
 {
-    TfType GetValueType() const;
+    // PARAMETERS
 
-    // Conveniences that return whether all knots pass the tests of the same
-    // names.
-    bool IsC0Continuous() const;
-    bool IsG1Continuous() const;
-    bool IsC1Continuous() const;
-
-    // Insert a knot at the specified time, exactly preserving the shape of the
-    // curve.  If there is already a knot at that time, do nothing.  Return
-    // whether a new knot was added.
-    bool Split(double time);
-
-    void RemoveKnot(double time);
-
-    bool AreInnerLoopsEnabled() const;
-    void SetInnerLoopParams(const TsInnerLoopParams &params);
-    TsInnerLoopParams GetInnerLoopParams() const;
-    void ClearInnerLoopParams();
-
-    // See subclasses for extrapolation methods that each supports.
-    void SetPreExtrap(TsExtrapMethod method);
-    TsExtrapMethod GetPreExtrap() const;
-    void SetPreExtrapLoopMode(TsLoopMode mode);
-    TsLoopMode GetPreExtrapLoopMode() const;
-    void SetPostExtrap(TsExtrapMethod method);
-    TsExtrapMethod GetPostExtrap() const;
-    void SetPostExtrapLoopMode(TsLoopMode mode);
-    TsLoopMode GetPostExtrapLoopMode() const;
-
-    // Baking creates new knots to render the effect of looping, then removes
-    // looping directives.  These methods modify the series.
-    void BakeInnerLoops();
-    void BakeAllLoops(const GfInterval &timeRange);
-
-    // These methods return a copy of the knots in baked form, without modifying
-    // the series.
-    TsKnotMap GetKnotsWithInnerLoopsBaked() const;
-    TsKnotMap GetKnotsWithAllLoopsBaked(const GfInterval &timeRange) const;
-
-    // All subclasses implement:
-    // template <typename T> bool Eval(double time, T *valueOut) const;
-    // template <typename T> bool EvalPreValue(double time, T *valueOut) const;
-
-    bool Eval(double time, VtValue *valueOut) const;
-    bool EvalPreValue(double time, VtValue *valueOut) const;
-
-    // All subclasses implement:
-    // template <typename T> bool SampleForDrawing(
-    //     const GfInterval &interval,
-    //     double tolerance,
-    //     TsDrawingSamples<T> *samplesOut) const;
-
-protected:
-    // Virtual dispatch for non-virtual interface.
-    // This is an implementation detail; these are possible examples.
-    virtual TfType _GetValueType() const = 0;
-    virtual bool _IsC0Continuous() const = 0;
-    virtual bool _IsG1Continuous() const = 0;
-    virtual bool _IsC1Continuous() const = 0;
-    virtual void _Split(double time) = 0;
-    virtual void _RemoveKnot(double time) = 0;
-    virtual void _SetPreExtrap(TsExtrapMethod method) = 0;
-    virtual void _SetPostExtrap(TsExtrapMethod method) = 0;
-    virtual bool _Eval(double time, VtValue *valueOut) const = 0;
-};
-
-class TsSeries :
-    public TsSeriesInterface
-{
-    // Construct (including implicitly) from any series subtype.
-    TsSeries(const TsHeldSeries &heldSeries);
-    TsSeries(const TsLerpSeries &lerpSeries);
-    TsSeries(const TsQuatSeries &quatSeries);
-    TsSeries(const TsSpline &spline);
-
-    bool IsSlopeCapable() const;
-
-    // Exactly one of the following TsSeriesInterface subclasses will always be
-    // available.  Which one is available depends strictly on the value type.
-    // Floating-point scalar types, for example, are always handled with
-    // Splines, never with LerpSeries or HeldSeries.
-
-    bool IsSpline() const;
-    TsSpline GetSpline() const;
-
-    bool IsLerpSeries() const;
-    TsLerpSeries GetLerpSeries() const;
-
-    bool IsHeldSeries() const;
-    TsHeldSeries GetHeldSeries() const;
-
-    bool IsQuatSeries() const;
-    TsQuatSeries GetQuatSeries() const;
-};
-
-// An object returned by UsdAttribute to facilitate editing of non-spline
-// series.  This allows us to elide a few very specific Set methods from
-// UsdAttribute itself.
-//
-class TsSeriesEditor :
-    public TsSeries
-{
-    TsSeriesEditor(std::function<bool(const TsHeldSeries&)> setter);
-    TsSeriesEditor(std::function<bool(const TsLerpSeries&)> setter);
-    TsSeriesEditor(std::function<bool(const TsQuatSeries&)> setter);
-    TsSeriesEditor(std::function<bool(const TsSpline&)> setter);
-
-    bool SetHeldSeries(const TsHeldSeries &heldSeries);
-    bool SetLerpSeries(const TsLerpSeries &lerpSeries);
-    bool SetQuatSeries(const TsQuatSeries &quatSeries);
-    bool SetSpline(const TsSpline &spline);
-};
-
-template <class T>
-class TsEvalCache
-{
-    TsEvalCache(const TsSeries &vs);
-    bool Eval(double time, T *valueOut) const;
-};
-```
-
-The `TsSeries(const TsSpline&)` constructor allows a `TsSpline` to be passed
-anywhere a `TsSeries` is accepted as a parameter.
-
-The `SampleForDrawing` method takes a time range and a tolerance parameter, and
-returns a set of samples sufficient to draw the series with the specified
-tolerance.  This is substantially faster than repeated evaluation, and proceeds
-adaptively, with a varying sample interval.  It repeatedly splits the series
-until the piecewise linear curve passing through the split points differs from
-the true curve by less than the specified tolerance.  The exact form of this
-interface is TBD.
-
-## Series Classes
-
-These are the workhorses of USD Anim, representing all the knots for one
-series.  Many of the method declarations come from `TsSeriesInterface`.
-
-```c++
-// This is a simplification; the actual type will likely have a similar
-// interface but a different implementation.  This type is denormalized, since
-// each entry in the map stores the time twice, one in the key and once in the
-// TsKnot value.  There will be analogous types for {Lerp,Quat,Held}Series.
-//
-using TsSplineKnotMap = std::map<double, TsSplineKnot>;
-
-class TsSlopedInterface
-{
-    // All subclasses implement:
-    // template <typename T> void SetPreExtrapSlope(const T &slope);
-    // template <typename T> bool GetPreExtrapSlope(T *slopeOut) const;
-    // template <typename T> void SetPostExtrapSlope(const T &slope);
-    // template <typename T> bool GetPostExtrapSlope(T *slopeOut) const;
-
-    void SetPreExtrapSlope(const VtValue &slope);
-    bool GetPreExtrapSlope(VtValue *slopeOut) const;
-    void SetPostExtrapSlope(const VtValue &slope);
-    bool GetPostExtrapSlope(VtValue *slopeOut) const;
-
-    // All subclasses implement:
-    // bool EvalDerivative(double time, T *valueOut) const;
-    // bool EvalPreDerivative(double time, T *valueOut) const;
-
-    bool EvalDerivative(double time, VtValue *valueOut) const;
-    bool EvalPreDerivative(double time, VtValue *valueOut) const;
-};
-
-class TsSpline :
-    public TsSeriesInterface,
-    public TsSlopedInterface
-{
     // Curve type: Bezier or Hermite.  All segments with type 'curve' use this
     // interpolation method.
     void SetCurveType(TsCurveType curveType);
     TsCurveType GetCurveType() const;
 
-    TsSplineKnotMap GetKnots() const;
-    void SwapKnots(std::vector<TsSplineKnot> *knots);
-    void SetKnot(const TsSplineKnot &knot);
+    void SetPreExtrapolation(const TsExtrapolation &extrap);
+    TsExtrapolation GetPreExtrapolation() const;
+    void SetPostExtrapolation(const TsExtrapolation &extrap);
+    TsExtrapolation GetPostExtrapolation() const;
 
-    // Set{Pre,Post}Extrap: supports all methods.
+    void SetInnerLoopParams(const TsInnerLoopParams &params);
+    TsInnerLoopParams GetInnerLoopParams() const;
+
+    // KNOTS
+
+    void SwapKnots(TsKnotMap *knots);
+    void SetKnot(const TsKnot &knot);
+    void RemoveKnot(double time);
+
+    const TsKnotMap& GetKnots() const;
+
+    // BAKING
+
+    // Baking creates new knots to render the effect of looping, then removes
+    // looping directives.  These methods modify the spline.
+    void BakeInnerLoops();
+    void BakeLoops(const GfInterval &timeSpan);
+
+    // These methods return a copy of the knots in baked form, without modifying
+    // the spline.
+    const TsKnotMap& GetKnotsWithInnerLoopsBaked() const;
+    const TsKnotMap& GetKnotsWithLoopsBaked(const GfInterval &timeSpan) const;
+
+    // EVALUATION
+
+    template <typename T> bool Eval(double time, T *valueOut) const;
+    bool Eval(double time, VtValue *valueOut) const;
+    template <typename T> bool EvalPreValue(double time, T *valueOut) const;
+    bool EvalPreValue(double time, VtValue *valueOut) const;
+
+    template <typename T> bool EvalDerivative(double time, T *valueOut) const;
+    bool EvalDerivative(double time, VtValue *valueOut) const;
+    template <typename T> bool EvalPreDerivative(double time, T *valueOut) const;
+    bool EvalPreDerivative(double time, VtValue *valueOut) const;
+
+    // Return a set of samples sufficient to draw the spline piecewise-linear
+    // with an error that does not exceed the specified tolerance.  This is
+    // faster than repeated evaluation.
+    template <typename T> bool SampleForDrawing(
+        const GfInterval &timeSpan,
+        double tolerance,
+        TsDrawingSamples<T> *samplesOut) const;
+
+    // QUERIES
+
+    TfType GetValueType() const;
 
     template <typename T> bool GetValueRange(
-        const GfInterval &timeRange,
+        const GfInterval &timeSpan,
         std::pair<T, T> *rangeOut) const;
     bool GetValueRange(
-        const GfInterval &timeRange,
+        const GfInterval &timeSpan,
         std::pair<VtValue, VtValue> *rangeOut) const;
+
+    bool IsC0Continuous() const;
+    bool IsG1Continuous() const;
+    bool IsC1Continuous() const;
+
+    // SPLITTING
+
+    // Insert a knot at the specified time, exactly preserving the shape of the
+    // curve.  If there is already a knot at that time, do nothing.  Return
+    // whether a new knot was added.
+    bool Split(double time);
 };
 
-class TsLerpSeries :
-    public TsSeriesInterface,
-    public TsSlopedInterface
+// A knot container.  Stored as a vector, but kept sorted, and has some map-like
+// methods that key on knot time.
+//
+class TsKnotMap
 {
-    // Set{Pre,Post}Extrap: supports all methods.
-
-    TsLerpSeriesKnotMap GetKnots() const;
-    void SwapKnots(std::vector<TsLerpSeriesKnot> *knots);
-    void SetKnot(const TsLerpSeriesKnot &knot);
+    // Generic methods: size, empty, erase, clear
+    // Vector iterators: begin, end, rbegin, rend
+    // Vector methods: reserve
+    // Map methods: find(time), insert(knot), lower_bound(time), upper_bound(time)
 };
 
-class TsQuatSeries :
-    public TsSeriesInterface
+template <typename T>
+class TsEvalCache
 {
-    // Set{Pre,Post}Extrap: supports Held, Linear, and Looped.
-
-    TsQuatSeriesKnotMap GetKnots() const;
-    void SwapKnots(std::vector<TsQuatSeriesKnot> *knots);
-    void SetKnot(const TsQuatSeriesKnot &knot);
-};
-
-class TsHeldSeries :
-    public TsSeriesInterface
-{
-    // Set{Pre,Post}Extrap: supports Held and Looped.
-
-    TsHeldSeriesKnotMap GetKnots() const;
-    void SwapKnots(std::vector<TsHeldSeriesKnot> *knots);
-    void SetKnot(const TsHeldSeriesKnot &knot);
+    TsEvalCache(const TsSpline &spline);
+    bool Eval(double time, T *valueOut) const;
 };
 ```
 
-## Knots
+## TsKnot
 
-![Knot Classes](./TsKnotClasses.png)
-
-Each knot object represents one knot from a series.  The knot classes are mostly
-simple data containers.
+This class encapsulates a single knot in a spline.  It is mostly a simple data
+container.
 
 ```c++
-class TsKnotInterface
+class TsKnot
 {
     void SetTime(double time);
     double GetTime() const;
@@ -1555,23 +1224,20 @@ class TsKnotInterface
 
     TfType GetValueType() const;
 
-    // All subclasses implement:
-    // template <typename T> void SetValue(const T &value);
-    // template <typename T> bool GetValue(T *valueOut) const;
-
+    template <typename T> void SetValue(const T &value);
     void SetValue(const VtValue &value);
+    template <typename T> bool GetValue(T *valueOut) const;
     bool GetValue(VtValue *valueOut) const;
 
     bool IsDualValued() const;
     template <typename T> void SetPreValue(const T &value);
-    template <typename T> bool GetPreValue(T *valueOut) const;
     void SetPreValue(const VtValue &value);
+    template <typename T> bool GetPreValue(T *valueOut) const;
     bool GetPreValue(VtValue *valueOut) const;
     void SetPreBlock(bool block);
     bool IsPreBlock() const;
     void ClearPreValueAndPreBlock();
 
-    // See subclasses for interpolation methods that each supports.
     bool SetPostInterp(TsInterpMethod method);
     TsInterpMethod GetPostInterp() const;
 
@@ -1584,88 +1250,65 @@ class TsKnotInterface
     void SetCustomDataByKey(const TfToken &keyPath, const VtValue &value);
     VtValue GetCustomDataByKey(const TfToken &keyPath) const;
 
-protected:
-    // Virtual dispatch for non-virtual interface.
-    // This is an implementation detail; these are possible examples.
-    virtual bool _SetPostInterp(TsInterpMethod method) = 0;
-    virtual bool _IsC0Continuous() const = 0;
-    virtual bool _IsG1Continuous() const = 0;
-    virtual bool _IsC1Continuous() const = 0;
-};
-
-class TsSplineKnot :
-    public TsKnotInterface
-{
-    // SetPostInterp: supports all methods.
-
-    void SetPreTanLen(double len);
-    double GetPreTanLen() const;
-
     // The many tangent methods cover:
     // - Setting and getting
     // - Pre-tangents and post-tangents
     // - Typed and VtValue
     // - Presto and Maya forms
+    // - Length and slope/height
     // - Auto-tangents
+    void SetPreTanLen(double len);
+    double GetPreTanLen() const;
     template <typename T> void SetPreTanSlope(const T &slope);
     template <typename T> bool GetPreTanSlope(T *slopeOut) const;
     void SetPreTanSlope(const VtValue &slope);
     bool GetPreTanSlope(VtValue *slopeOut) const;
-    template <typename T> void SetPreTanHeight(const T &height);
-    template <typename T> bool GetPreTanHeight(T *heightOut) const;
-    void SetPreTanHeight(const VtValue &height);
-    bool GetPreTanHeight(VtValue *heightOut) const;
+    void SetMayaPreTanLen(double len);
+    double GetMayaPreTanLen() const;
+    template <typename T> void SetMayaPreTanHeight(const T &height);
+    template <typename T> bool GetMayaPreTanHeight(T *heightOut) const;
+    void SetMayaPreTanHeight(const VtValue &height);
+    bool GetMayaPreTanHeight(VtValue *heightOut) const;
     void SetPreTanAuto(bool auto);
     bool IsPreTanAuto() const;
+    void SetPostTanLen(double len);
+    double GetPostTanLen() const;
     template <typename T> void SetPostTanSlope(const T &slope);
     template <typename T> bool GetPostTanSlope(T *slopeOut) const;
     void SetPostTanSlope(const VtValue &slope);
     bool GetPostTanSlope(VtValue *slopeOut) const;
-    template <typename T> void SetPostTanHeight(const T &height);
-    template <typename T> bool GetPostTanHeight(T *heightOut) const;
-    void SetPostTanHeight(const VtValue &height);
-    bool GetPostTanHeight(VtValue *heightOut) const;
+    void SetMayaPostTanLen(double len);
+    double GetMayaPostTanLen() const;
+    template <typename T> void SetMayaPostTanHeight(const T &height);
+    template <typename T> bool GetMayaPostTanHeight(T *heightOut) const;
+    void SetMayaPostTanHeight(const VtValue &height);
+    bool GetMayaPostTanHeight(VtValue *heightOut) const;
     void SetPostTanAuto(bool auto);
     bool IsPostTanAuto() const;
 };
-
-class TsLerpSeriesKnot :
-    public TsKnotInterface
-{
-    // SetPostInterp: supports Held and Linear.
-};
-
-class TsHeldSeriesKnot :
-    public TsKnotInterface
-{
-    // SetPostInterp: supports only Held.
-};
-
-class TsQuatSeriesKnot :
-    public TsKnotInterface
-{
-    // SetPostInterp: supports Held and Linear.
-};
 ```
 
-All knots must have the same value type.  Attempting to mix knot types in the
-same series is an error.  Attempting to use an unsupported value type (e.g. for
-`TsSpline`, something other than `double`, `float`, or `half`) is also an error.
+All knots in a spline must have the same value type.  Attempting to mix knot
+types in the same spline is an error.  Attempting to use an unsupported value
+type (something other than `double`, `float`, or `half`) is also an error.
 
-There may only be one knot at any given time.  Passing multiple knots with the
-same time to `SwapKnots` is an error.  Calling `SetKnot` with an existing knot
-time will silently overwrite the existing knot.
+There may only be one knot at any given time.  Calling `SetKnot` with an
+existing knot time will silently overwrite the existing knot.
 
 See [Question: time snapping](#time-snapping).
 
 ## Automatic Tangent Computation
 
-When splines contain automatic tangents, these are recomputed each time nearby
-knots change.
+Whenever knots change, two kinds of automatic tangent recomputation occur:
 
-During bulk editing operations, automatic tangent computation can be deferred in
-order to avoid redundant processing.  An RAII helper class called
-`TsAutomaticTangentBlock` will be provided for this purpose.
+- When splines contain automatic tangents, these are recomputed based on knot
+  values.
+
+- If anti-regression is not disabled, tangents are shortened if necessary.
+
+During bulk editing operations, tangent recomputation can be deferred in order
+to avoid redundant processing.  An RAII helper class called
+`TsRecomputationBlock` will be provided for this purpose.
 
 When knots with automatic tangents are serialized, the computed tangents will be
 stored with the knots.  This denormalization will avoid a speed hit when reading
@@ -1695,14 +1338,9 @@ enum TsExtrapMethod
     TsExtrapHeld,
     TsExtrapLinear,
     TsExtrapSloped,
-    TsExtrapLooped
-};
-
-enum TsLoopMode
-{
-    TsLoopRepeat,
-    TsLoopReset,
-    TsLoopOscillate
+    TsExtrapLoopRepeat,
+    TsExtrapLoopReset,
+    TsExtrapLoopOscillate
 };
 
 struct TsLoopParams
@@ -1716,13 +1354,19 @@ struct TsLoopParams
     unsigned int numPreLoops;
     unsigned int numPostLoops;
 };
+
+struct TsExtrapolation
+{
+    TsExtrapMethod method;
+    double slope;
+};
 ```
 
 ## Reduction
 
 See the "Feature Reduction" section above.
 
-The basic implementation will be for individual series:
+The basic implementation will be for individual splines:
 
 ```c++
 enum TsFeatureFlag
@@ -1745,12 +1389,9 @@ struct TsReductionParams
     GfInterval extrapolationTimeRange;
 };
 
-// Reduces the provided series, if necessary, to use only the specified
+// Reduces the provided spline, if necessary, to use only the specified
 // features.  Returns whether any changes were made.
 //
-bool TsReduceSeries(
-    TsSeries *series,
-    const TsReductionParams &params);
 bool TsReduceSpline(
     TsSpline *spline,
     const TsReductionParams &params);
@@ -1760,35 +1401,35 @@ We will likely also want conveniences for whole layers and stages.  These might
 go in `usdUtils`:
 
 ```c++
-bool UsdUtilsReduceSeriesInLayer(
+bool UsdUtilsReduceSplinesInLayer(
     const SdfLayerHandle &layer,
     const TsReductionParams &params);
 
-bool UsdUtilsReduceSeriesOnStage(
+bool UsdUtilsReduceSplinesOnStage(
     const UsdStagePtr &stage,
     const TsReductionParams &params,
     const UsdEditTarget &editTarget = UsdEditTarget());
 ```
 
-`ReduceSeriesOnStage` is potentially problematic, because it could lead to a
+`ReduceSplinesOnStage` is potentially problematic, because it could lead to a
 mixture of reduced and unreduced opinions in various layers.  But it certainly
 does seem convenient.  If clients use a topmost layer as an edit target, that
 should suffice for reading.
 
 ## Utilities
 
-The following general-purpose series and spline utilities will be available:
+The following general-purpose spline utilities will be available:
 
 ```c++
-// Returns the bounding interval of regions over which the specified series
+// Returns the bounding interval of regions over which the specified splines
 // will evaluate to different values.  The returned interval may be infinite on
 // either side when extrapolation differs.  The returned interval is a bound,
-// and it is possible that there are regions within that bound where the series
+// and it is possible that there are regions within that bound where the splines
 // do not differ.
 //
 GfInterval TsFindDifferingInterval(
-    const TsSeries &s1,
-    const TsSeries &s2);
+    const TsSpline &s1,
+    const TsSpline &s2);
 
 // Removes as many knots as possible from the specified intervals of a spline
 // without introducing error greater than maxErrorFraction * value range in
@@ -1821,74 +1462,22 @@ void TsResampleSpline(
 Feedback is welcome on the following questions (or any other aspect of this
 proposal).
 
-## Splines of vectors?
+## Splines of other value types?
 
 See [Value Type Categories](#value-type-categories).
 
-Should USD Anim support splines of floating-point vectors?  Any type that
-supports addition and scalar multiplication can be represented by a spline.
-Presto supports splines of floating-point vectors, but we have barely used them.
+Should USD Anim support splines for value types other than floating-point
+scalars?
 
 Among other things, values and tangents of vector-valued splines can't easily be
 visualized in a 2D interface, making them less useful for artists.  These kinds
 of splines, if they are useful at all, would presumably be used for programmatic
 interpolation.
 
-Our guess for now is **no**, we should not support splines of vectors in USD
-Anim.
+Pixar has not had much use for such splines; for nearly all of our time-varying
+usage of such types, time samples would be adequate.
 
-## Unification of series and time samples?
-
-See [Value Type Categories](#value-type-categories).
-
-It may sometimes be useful to write generic client code that can operate on
-time-varying values without regard to whether they are series or time samples.
-To support this pattern, we could represent time samples as a kind of series
-that has a knot for each sample.  However, we don't think we have enough
-information yet to determine whether this would be useful.
-
-The most important use case for this kind of generic handling is value
-resolution, and that will already happen identically for series and time
-samples; calling `UsdAttribute::Get` will consult time samples, then series,
-then defaults and fallbacks.
-
-Another important case is for rendering: deciding the times at which to sample
-an attribute.  Renderers often call methods like
-`UsdAttribute::GetBracketingTimeSamples` for this purpose.  So far, though,
-we're not sure there's an obvious analogue for splines.  We could return knot
-times, but often the coordinates of spline knots are arranged for artist
-convenience in achieving a shape, rather than to make runtime policy.
-
-The fact that splines are typically sparse, and time samples are typically
-dense, is enough of a difference that an API that treats them the same way might
-be doing us a disservice.  For example, generic code that handles series might
-slow down because it is asked to operate on every one of an attribute's time
-samples.
-
-One limiting factor for Pixar is that splines, for us, are only for source data,
-and time samples are only for rendering.  For game pipelines in particular,
-splines may be a runtime representation, not just a source form.  We may need
-more community input to understand how best to serve the needs of clients that
-use runtime splines.  The question of whether splines and time samples should be
-accessible via a common API is just one of the relevant issues.
-
-Our guess for now is **no**, we should not present time samples as series.
-
-## Half-valued splines?
-
-See [Value Types](#value-types).
-
-Should USD Anim support splines of `half`-valued attributes?
-
-On one hand, `half` is a scalar floating-point type just like `double` and
-`float`.
-
-On the other hand, `half` has low enough precision, and poor enough hardware
-support in some environments, that it may be a fair amount of work to make
-`half` splines work acceptably.  There is also rumor that `half` is not broadly
-used.
-
-For now we are **undecided** pending input and technical investigation.
+Our guess for now is **no**, we should not support splines of other value types.
 
 ## Looping limitations?
 
@@ -1897,7 +1486,7 @@ See [Looping](#looping).
 How should USD Anim handle the following?
 
 **Inner-loop regions.** Presto only supports one inner-loop prototype region per
-series.  An unlimited number of inner-loop regions could theoretically be
+spline.  An unlimited number of inner-loop regions could theoretically be
 supported if that is useful; rules would have to be designed that govern
 behavior where echo regions overlap.
 
@@ -1925,7 +1514,7 @@ Our guess for now is **no**, we should not include such metadata.
 
 See [Round-Trip Considerations](#round-trip-considerations).
 
-When series are edited, and per-knot custom data is found on existing knots,
+When splines are edited, and per-knot custom data is found on existing knots,
 what should happen?  Some kinds of custom data become invalid when their knots
 are edited, and others do not.
 
@@ -1944,23 +1533,11 @@ data editing.
 
 See [Time Orientation](#time-orientation).
 
-Most series usage is time-oriented, but more general uses of series are
+Most spline usage is time-oriented, but more general uses of splines are
 possible.  Should the initial version of USD Anim be implemented with generic
 vocabulary, referring to "x" instead of "time"?
 
 Our guess for now is **no**, we should not pursue a generic API yet.
-
-## Schema-level methods?
-
-See [Access From UsdAttribute](#access-from-usdattribute).
-
-We are proposing new methods on `UsdAttribute`, such as `GetPreValue` and
-`GetSeries`.  It is possible that we may want to replicate these methods on
-schemas like `UsdGeomXformable` and `UsdGeomPrimvar`, which already have methods
-similar to `UsdAttribute::GetTimeSamples`.  This is a question for further
-study.
-
-For now we are **undecided** as to whether this makes sense or not.
 
 ## Time snapping?
 
@@ -1977,4 +1554,4 @@ tolerance, we will need to decide epsilon values carefully, allow clients to
 configure them, and possibly scale them based on the time width of the segment
 under consideration.
 
-For now we are **undecided** as to whether this makes sense or not.
+Our guess for now is **no**, we should avoid snapping where possible.

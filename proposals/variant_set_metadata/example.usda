@@ -1,0 +1,62 @@
+#usda 1.0
+(
+    defaultPrim = "MilkCartonA"
+)
+
+def Xform "MilkCartonA" (
+    kind = "prop"
+    variants = {
+        string modelingVariant = "Carton_Opened"
+        string shadingComplexity = "full"
+        string shadingTest = "milkBrandA"
+    }
+    prepend variantSets = ["modelingVariant", "shadingComplexity", "shadingTest"]
+)
+{
+    variantSet "modelingVariant" (
+        doc = "Modeling variations for the asset"
+    ) = {
+        "ALL_VARIANTS" {
+            float3[] extentsHint = [(-6.27056, -6.53532, 0), (6.14027, 6.10374, 29.8274)]
+
+        }
+        "Carton_Opened" {
+           float3[] extentsHint = [(-6.27056, -6.53532, 0), (6.14027, 6.10374, 29.8274)]
+
+        }
+        "Carton_Sealed" {
+           float3[] extentsHint = [(-6.27056, -6.44992, 0), (6.14027, 6.10374, 29.2792)]
+
+        }
+    }
+    variantSet "shadingComplexity" = {
+        reorder variants = ["none", "display", "modeling", "full"]
+        "display" {
+
+        }
+        "full" {
+
+        }
+        "modeling" {
+
+        }
+        "none" {
+
+        }
+    }
+
+    variantSet "shadingTest" (
+        """Added UPC# for the display names"""
+        displayName = "Shading Test Variations"
+        doc = "Shading variations that are currently being explored for product placement"
+        variantDisplayNames = { "milkBrandA" : "Milk Brand A (UPC#: 123-ABC)", "milkBrandB" : "Milk Brand B (UPC#: 456-DEF)" }
+        hidden = True
+    ) = {
+        "milkBrandA" {
+
+        }
+        "milkBrandB" {
+
+        }
+    }
+}
