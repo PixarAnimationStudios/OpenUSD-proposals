@@ -42,7 +42,7 @@ USD lacks a standardized runtime LOD representation. Current workarounds (varian
 
 ### API Schemas
 
-- `LodAPI` (multi-apply): Top-level LOD configuration for a prim, supports multiple domains.
+- `LodConfigurationAPI` (multi-apply): Top-level LOD configuration for a prim, supports multiple domains.
 - `LodLevelAPI` (multi-apply): Defines individual LOD levels and associated members.
 - `LodHeuristicAPI` (single-apply): Defines domain-specific runtime selection logic.
 
@@ -81,7 +81,7 @@ USD lacks a standardized runtime LOD representation. Current workarounds (varian
   Heuristics or triggers affect only their own domain.
 
 * **P4 Parent Activation Propagation**
-  An LOD level $L_c$ in domain $D_i$ is considered *eligible* for activation only if its parent $L_p$ is active; ctivation propagates predictably within each domain, ensuring consistent runtime behavior:
+  An LOD level $L_c$ in domain $D_i$ is considered *eligible* for activation only if its parent $L_p$ is active; activation propagates predictably within each domain, ensuring consistent runtime behavior:
   
   $$
   L_c \text{ active} \implies L_p \text{ active}, \quad L_c, L_p \in D_i
@@ -111,10 +111,10 @@ Together, they ensure that hierarchical LOD evaluation is predictable, efficient
 #### LodAPI
 
 ```python
-class LodAPI "LodAPI"
+class LodConfigurationAPI "LodConfigurationAPI"
 (
     inherits = </APISchemaBase>
-    doc = """API for describing Level of Detail (LOD) facilities on a prim.
+    doc = """API for configuring Level of Detail (LOD) facilities on a prim.
     
     This API schema provides the a way to define multiple LOD levels for a prim
     and rules for transition between them during rendering. It is expected to be 
@@ -133,14 +133,10 @@ class LodAPI "LodAPI"
 
     customData = {
         string apiSchemaType = "multipleApply"
-        token propertyNamespacePrefix = "lod"
+        token propertyNamespacePrefix = "lodConfiguration"
     }
 )
 {
-    uniform token version = "1.0" (
-        doc = """Schema version for future extensions and compatibility"""
-    )
-    
     uniform token levelType = "none" (
         doc = """Names the system that consumes this LOD application.
         
@@ -191,31 +187,31 @@ class LodLevelAPI "LodLevelAPI"
         the geometry, room, or other prims participating in this LOD level.
         Empty collections are ignored."""
     )
-    
-    uniform int index = 0 (
-        doc = """The LOD level index; used to match thresholds in heuristics."""
-    )
 }
 
 
-class GeometryLodLevelAPI "GeometryLodLevelAPI"
+class GeometryLodLevelAPI "GeometryLodConfigurationAPI"
 (
-    inherits = </LodLevelAPI>
-    doc = """API that defines a single LOD level within an LOD group.
+    inherits = </APISchemaBase>
+    doc = """API that configures a single LOD level within an LOD group.
     
     This multi-apply API schema allows defining multiple LOD levels for a prim."""
 
     customData = {
         string apiSchemaType = "multipleApply"
-        token propertyNamespacePrefix = "geometryLodLevel"
+        token propertyNamespacePrefix = "geometryLodConfiguration"
     }
 )
 {    
     point3f center = (0.0, 0.0, 0.0) (
         doc = """The center point of this LOD level, used for distance calculations.
         
-        This value is used by distance-based heuristics to calculate the
+        This value may be used by distance-based heuristics to calculate the
         distance from the camera or other reference point."""
+    )
+    
+    bool isCollisionGeometry = false (
+        doc = "Indicate whether the geometry is meant as collision geometry"
     )
     
     rel boundingVolume (
@@ -236,23 +232,6 @@ class GeometryLodLevelAPI "GeometryLodLevelAPI"
 }
 
 
-class CollisionLodLevelAPI "CollisionLodLevelAPI"
-(
-    inherits = </GeometryLodLevelAPI>
-    doc = """API that defines a single LOD level within an LOD group.
-    
-    This multi-apply API schema allows defining multiple LOD levels for a prim. It
-    is distinguished from a Geometry LOD object by type only."""
-
-    customData = {
-        string apiSchemaType = "multipleApply"
-        token propertyNamespacePrefix = "collisionLodLevelAPI"
-    }
-)
-{
-}
-
-
 ```
 
 #### LodHeuristicAPI
@@ -265,7 +244,16 @@ class LodHeuristicAPI "LodHeuristicAPI"
     
     This API schema defines how LOD levels should be selected during
     rendering or interaction. It supports various transition modes and
-    can be extended for specific heuristic types."""
+    can be extended for specific heuristic types.
+    
+    The LodHeuristic structure is meant to be advisory, signalling authoring
+    intent, but not an absolute interchange contract. Different engines and
+    rendering systems may have different needs, and absolute translation
+    between them is unreasonable and mostly ill-posed. Nonetheless it is
+    valuable to have consistent places to store consistent data, and that
+    is the purpose of this API. It is advisory to interoperability but
+    nonetheless facilitates the storage of data within a single system.    
+    """
 
     customData = {
         string apiSchemaType = "singleApply"
@@ -273,33 +261,53 @@ class LodHeuristicAPI "LodHeuristicAPI"
     }
 )
 {
+    uniform string systemDomain = "custom" (
+        doc = """This advisory field is meant to indicate the system
+              within which the data can be literally consumed. Outside
+              of that system domain, interoperability is undefined and
+              subject to application choices.
+              """
+    )
+    
     uniform token type = "distance" (
         allowedTokens = ["manual", "distance", "screenSize", "framerate", "memory", "custom"]
-        doc = """The type of heuristic to use for LOD selection.
+        doc = """Advisory field: The type of heuristic to use for LOD selection.
         
         - manual: Explicitly set by the application
         - distance: Based on distance from camera or reference point
         - screenSize: Based on projected screen size
         - framerate: Based on target framerate (performance)
         - memory: Based on memory constraints
-        - custom: Custom application-defined heuristic"""
+        - custom: Custom application-defined heuristic
+
+        Other choices are possible, these are common and should be used if
+        applicable in preference to non-standard names for the same concepts.
+        """
     )
     
     uniform token transition = "discrete" (
         allowedTokens = ["discrete", "crossFade", "morphGeometry", "dithered"]
-        doc = """How to transition between LOD levels.
+        doc = """Advisory field: How to transition between LOD levels.
         
         - discrete: Switch immediately between levels
         - crossFade: Blend between levels using opacity
         - morphGeometry: Interpolate geometry between levels
-        - dithered: Use screen-space dithering pattern"""
+        - dithered: Use screen-space dithering pattern
+
+        Other choices are possible, these are common and should be used if
+        applicable in preference to non-standard names for the same concepts.
+        """
     )
     
     uniform float transitionRange = 0.0 (
         doc = """Width of the transition region, in the units relevant to the
         heuristic type. For distance-based heuristics, this is in distance units.
         
-        A value of 0 means immediate switching with no transition region."""
+        A value of 0 means immediate switching with no transition region.
+        
+        This field is advisory and does not have strong interoperability
+        meaning.
+        """
     )
     
     uniform int manualLodIndex = -1 (
@@ -317,7 +325,10 @@ class LodHeuristicAPI "LodHeuristicAPI"
         - Use LOD 0 when distance < 10.0
         - Use LOD 1 when 10.0 <= distance < 50.0
         - Use LOD 2 when 50.0 <= distance < 100.0
-        - Use LOD 3 when distance >= 100.0"""
+        - Use LOD 3 when distance >= 100.0
+
+        This field is advisory and not strongly interoperable.
+        """
     )
     
     rel referencePoint (
@@ -333,7 +344,10 @@ class LodHeuristicAPI "LodHeuristicAPI"
         
         - projectedArea: Use projected area in pixels
         - boundingSphereSize: Use projected bounding sphere diameter
-        - custom: Use application-defined metric"""
+        - custom: Use application-defined metric
+
+        This field is advisory and not strongly interoperable.
+        """
     )
     
     uniform float[] screenSizeThresholds = [] (
@@ -344,13 +358,24 @@ class LodHeuristicAPI "LodHeuristicAPI"
         - Use LOD 0 when screen size >= 1000.0
         - Use LOD 1 when 400.0 <= screen size < 1000.0
         - Use LOD 2 when 100.0 <= screen size < 400.0
-        - Use LOD 3 when screen size < 100.0"""
+        - Use LOD 3 when screen size < 100.0
+
+        This field is advisory and not strongly interoperable.
+        """
     )
 }
 
+```
+
+The `PhysicsEntityLodHeuristicAPI` that follows is meant to be suggestive.
+Heuristics will be highly specific to particular system domains, and 
+application developers may create their own heuristic apis to signal heuristics.
+
+```python
+
 class PhysicsEntityLodHeuristicAPI "PhysicsEntityLodHeuristicAPI"
 (
-    inherits = </LodHeuristicAPI>
+    inherits = </APISchemaBase>
     doc = """Custom heuristic for physics LOD selection.
     
     Selects LOD based on whether an active entity is present in the prim or collection.
@@ -381,7 +406,9 @@ class PhysicsEntityLodHeuristicAPI "PhysicsEntityLodHeuristicAPI"
 
 ### Heuristic Extensions
 
-The base `LodHeuristicAPI` can be extended with more specialized heuristics as needed. For example:
+The base `LodHeuristicAPI` can be extended with more specialized heuristics as needed.
+As an example of a custom extension that could be created:
+
 
 ```python
 class FramerateLodHeuristicAPI "FramerateLodHeuristicAPI"
@@ -462,7 +489,6 @@ def Xform "City" (
         prepend apiSchemas = ["LodLevelAPI:high"]
     )
     {
-        uniform int lodLevel:high:index = 0
         rel members = </City/HighDetailCollection>
     }
     
@@ -471,7 +497,6 @@ def Xform "City" (
         prepend apiSchemas = ["LodLevelAPI:low"]
     )
     {
-        uniform int lodLevel:low:index = 1
         rel members = </City/LowDetailCollection>
     }
     
@@ -501,7 +526,6 @@ def Xform "City" (
         prepend apiSchemas = ["LodLevelAPI:full"]
     )
     {
-        uniform int lodLevel:full:index = 0
         rel members = </City/Buildings>
     }
     
@@ -509,7 +533,6 @@ def Xform "City" (
         prepend apiSchemas = ["LodLevelAPI:simple"]
     )
     {
-        uniform int lodLevel:simple:index = 1
         rel members = </City/Buildings>
     }
     
@@ -596,7 +619,6 @@ def Xform "City" (
         prepend apiSchemas = ["LodLevelAPI:high"]
     )
     {
-        uniform int lodLevel:high:index = 0
         rel members = </City/HighDetailCollection>
     }
     
@@ -604,7 +626,6 @@ def Xform "City" (
         prepend apiSchemas = ["LodLevelAPI:low"]
     )
     {
-        uniform int lodLevel:low:index = 1
         rel members = </City/LowDetailCollection>
     }
     
@@ -638,7 +659,6 @@ def Xform "City" (
         prepend apiSchemas = ["LodLevelAPI:full"]
     )
     {
-        uniform int lodLevel:full:index = 0
         rel members = </City/Buildings>
     }
     
@@ -646,7 +666,6 @@ def Xform "City" (
         prepend apiSchemas = ["LodLevelAPI:simple"]
     )
     {
-        uniform int lodLevel:simple:index = 1
         rel members = </City/Buildings>
     }
     
@@ -681,7 +700,6 @@ def Xform "City" (
         prepend apiSchemas = ["LodLevelAPI:highQuality"]
     )
     {
-        uniform int lodLevel:highQuality:index = 0
         rel members = </City/HighMaterialCollection>
     }
     
@@ -689,7 +707,6 @@ def Xform "City" (
         prepend apiSchemas = ["LodLevelAPI:mediumQuality"]
     )
     {
-        uniform int lodLevel:mediumQuality:index = 1
         rel members = </City/MediumMaterialCollection>
     }
     
@@ -697,7 +714,6 @@ def Xform "City" (
         prepend apiSchemas = ["LodLevelAPI:lowQuality"]
     )
     {
-        uniform int lodLevel:lowQuality:index = 2
         rel members = </City/LowMaterialCollection>
     }
     
@@ -855,6 +871,8 @@ graph TD
 
 ### Implementation Considerations
 
+These considerations are advisory to application developers. LOD selection is not performed by USD itself. If Storm implements LOD heuristics they will be specific to Storm.
+
 1. **Performance**: LOD switching should be frame-deterministic and not require access to previous frame states.
 
 2. **Integration with Game Engines**: The API is designed to be used as a data interchange format, with the execution logic handled by the renderer or engine.
@@ -862,14 +880,6 @@ graph TD
 3. **Edge Cases:** Empty parent LODs are evaluated normally; children render nothing if their collection is empty.
 
 4. **Instance Handling**: For point instancing, each instance can use its own LOD switching based on its position relative to the reference point.
-
-## Risks
-
-1. **Performance Overhead**: Implementation must be careful to avoid excessive overhead during LOD selection, especially for scenes with many LOD-enabled assets.
-
-2. **Compatibility**: Existing tools that use custom LOD solutions may need adapters to work with this standard.
-
-3. **Complexity**: The API needs to balance flexibility with usability to ensure adoption.
 
 ## Alternative Solutions Considered
 
@@ -883,6 +893,6 @@ graph TD
 
 1. **Automatic LOD Generation**: This proposal does not address the generation of LOD levels from high-resolution models, which is considered a separate tool specific concern.
 
-2. **Specialized Material Features**: Specialized material LOD features like mip-map generation are considered tool or runtime specific concerns.
+2. **Specialized Material Features**: Specialized material LOD features like on demand mip-map generation are considered tool or runtime specific concerns.
 
 3. **Pipeline Integration**: Specific workflows for authoring and managing LODs in content creation tools are outside the scope of this proposal.
