@@ -18,7 +18,8 @@ The following metadata items are added.
 - **subdomain** replaces "category"
 - **function** replaces "role"
 
-In the following diagram, each hierarchy level's text boxes indicate the common values that are tokenized for easy reference in Sdr – with the exception of subdomain=rmanPlugs and context=displayDriver, which are included for illustrative purposes. Sdr plugin authors should use these common values where they can, but create their own buckets when more specialization is necessary.
+In the following diagram, each hierarchy level's text boxes indicate the common values that are tokenized for easy reference in Sdr – with the exception of subdomain=rmanPlugs and context=displayDriver, which are included for illustrative purposes.
+Sdr plugin authors should use these common values where they can, but create their own buckets when more specialization is necessary.
 
 ![Hierarchy overview](./hierarchy.png)
 
@@ -39,7 +40,8 @@ At the bottom of the hierarchy are family, name, and identifier, which currently
 - **name** is an **identifier** stripped of versioning information.
 - **identifier** has a concise brief for what the node does, type specialization, and versioning information. See the above chart for examples.
 
-Note that an SdrShaderNode is uniquely identified with an **identifier** and **sourceType**. Convenience API on the SdrRegistry allows retrieval of individual SdrShaderNodes with:
+Note that an SdrShaderNode is uniquely identified with an **identifier** and **sourceType**.
+Convenience API on the SdrRegistry allows retrieval of individual SdrShaderNodes with:
 - **name** and optional specification of **sourceType** and **version**
 - **identifier** and optional specification of **sourceType**
 
@@ -63,7 +65,8 @@ As an illustrative example for adopting this categorization scheme, our Sdr pars
 
 Various deprecations to the SdrShaderNode constructor, methods, and metadata enums will be necessary.
 
-SdrShaderNode methods referring to replaced metadata items will be removed and methods to get new metadata items will be added. Some partial deprecations will also be made.
+SdrShaderNode methods referring to replaced metadata items will be removed and methods to get new metadata items will be added.
+Some partial deprecations will also be made.
 
 ```C++
 class SdrShaderNode {
