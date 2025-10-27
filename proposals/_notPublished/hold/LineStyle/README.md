@@ -171,7 +171,7 @@ In this example, the two DashDotLines primitive are similar as the above example
 
 The image for the 2 DashDotLines primitives.
 
-![image of Dashdotlines primitives](twoPolylinesSimple.png)
+![image of Dashdotlines primitives](twoPolylinesNoCapJoint.png)
 
 ### A polyline with no pattern
 ```
