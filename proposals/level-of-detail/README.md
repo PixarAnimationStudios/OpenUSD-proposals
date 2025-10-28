@@ -252,39 +252,25 @@ class LodHeuristicAPI "LodHeuristicAPI"
     between them is unreasonable and mostly ill-posed. Nonetheless it is
     valuable to have consistent places to store consistent data, and that
     is the purpose of this API. It is advisory to interoperability but
-    nonetheless facilitates the storage of data within a single system.    
+    nonetheless facilitates the storage of data within a single system. 
+    
+    The name of the prim the heuristic applied to should indicate the system 
+    domain.   
     """
 
     customData = {
-        string apiSchemaType = "singleApply"
+        string apiSchemaType = "multipleApply"
         token propertyNamespacePrefix = "lodHeuristic"
     }
 )
 {
-    uniform string systemDomain = "custom" (
-        doc = """This advisory field is meant to indicate the system
-              within which the data can be literally consumed. Outside
-              of that system domain, interoperability is undefined and
-              subject to application choices.
-              """
-    )
-    
-    uniform token type = "distance" (
-        allowedTokens = ["manual", "distance", "screenSize", "framerate", "memory", "custom"]
-        doc = """Advisory field: The type of heuristic to use for LOD selection.
+    uniform int manualLodIndex = -1 (
+        doc = """When type is 'manual', this specifies the LOD index to use.
         
-        - manual: Explicitly set by the application
-        - distance: Based on distance from camera or reference point
-        - screenSize: Based on projected screen size
-        - framerate: Based on target framerate (performance)
-        - memory: Based on memory constraints
-        - custom: Custom application-defined heuristic
-
-        Other choices are possible, these are common and should be used if
-        applicable in preference to non-standard names for the same concepts.
-        """
+        This property can be time-sampled to animate LOD transitions.
+        A value of -1 means use automatic selection."""
     )
-    
+
     uniform token transition = "discrete" (
         allowedTokens = ["discrete", "crossFade", "morphGeometry", "dithered"]
         doc = """Advisory field: How to transition between LOD levels.
@@ -299,27 +285,44 @@ class LodHeuristicAPI "LodHeuristicAPI"
         """
     )
     
-    uniform float transitionRange = 0.0 (
-        doc = """Width of the transition region, in the units relevant to the
-        heuristic type. For distance-based heuristics, this is in distance units.
+    rel localCoordinateSystem (
+        doc = """The reference origin that may be used by heuristic calculations.
         
-        A value of 0 means immediate switching with no transition region.
-        
-        This field is advisory and does not have strong interoperability
-        meaning.
-        """
+        Typically targets a camera or other reference object.
+        If unspecified, the world origin is assumed."""
     )
+}
+
+class DistanceLodHeuristicAPI "DistanceLodHeuristicAPI"
+{
+    inherits = </APISchemaBase>
+    prepend apiSchemas = ["LodHeuristicAPI"]
+
+    doc = """API that defines the Distance based LOD selection heuristic.
     
-    uniform int manualLodIndex = -1 (
-        doc = """When type is 'manual', this specifies the LOD index to use.
-        
-        This property can be time-sampled to animate LOD transitions.
-        A value of -1 means use automatic selection."""
-    )
+    This API schema defines how LOD levels should be selected during
+    rendering or interaction on the basis of distance from the camera.
     
-    uniform float[] distanceThresholds = [] (
-        doc = """When type is 'distance', this defines the distance thresholds
-        for LOD transitions in ascending order.
+    The distance thresholds are grouped via minimum and maximum threshold.
+    By separating these two, threshold hysteresis may be adjusted; in other
+    words, the problem of flickering between two LODs is avoided by creating
+    a bistable threshold to allow for slight frame-to-frame variance.
+    
+    The name of the prim the heuristic applied to should indicate the system 
+    domain.   
+    """
+
+    customData = {
+        string apiSchemaType = "multipleApply"
+        token propertyNamespacePrefix = "distanceLodHeuristic"
+    }
+    
+)
+{
+    uniform float[] distanceMinThresholds = [] (
+        doc = """This defines the distance thresholds
+        for LOD transitions in ascending order. The min treshold is consulted
+        to transition from a higher LOD to a lower one.
         
         For example, [10.0, 50.0, 100.0] means:
         - Use LOD 0 when distance < 10.0
@@ -330,14 +333,46 @@ class LodHeuristicAPI "LodHeuristicAPI"
         This field is advisory and not strongly interoperable.
         """
     )
-    
-    rel referencePoint (
-        doc = """The reference point for distance calculations.
+    uniform float[] distanceMaxThresholds = [] (
+        doc = """This defines the distance thresholds
+        for LOD transitions in ascending order. The max treshold is consulted
+        to transition from a lower LOD to a higher one.
         
-        Typically targets a camera or other reference object.
-        If unspecified, the active camera is used."""
+        See distanceMinThresholds for complementary information.
+
+        This field is advisory and not strongly interoperable.
+        """
     )
+}
+
+
+class ScreenSizeLodHeuristicAPI "ScreenSizeLodHeuristicAPI"
+{
+    inherits = </APISchemaBase>
+    prepend apiSchemas = ["LodHeuristicAPI"]
+
+    doc = """API that defines the Screen Size based LOD selection heuristic.
     
+    This API schema defines how LOD levels should be selected during
+    rendering or interaction on the basis of the visible extent of an object
+    from the perspective of the rendering camera.
+    
+    The distance thresholds are grouped via minimum and maximum threshold.
+    By separating these two, threshold hysteresis may be adjusted; in other
+    words, the problem of flickering between two LODs is avoided by creating
+    a bistable threshold to allow for slight frame-to-frame variance.
+    
+    The name of the prim the heuristic applied to should indicate the system 
+    domain.   
+    """
+
+    customData = {
+        string apiSchemaType = "multipleApply"
+        token propertyNamespacePrefix = "distanceLodHeuristic"
+    }
+    
+)
+{
     uniform token screenSizeMetric = "projectedArea" (
         allowedTokens = ["projectedArea", "boundingSphereSize", "custom"]
         doc = """When type is 'screenSize', this defines how screen size is calculated.
@@ -350,9 +385,10 @@ class LodHeuristicAPI "LodHeuristicAPI"
         """
     )
     
-    uniform float[] screenSizeThresholds = [] (
-        doc = """When type is 'screenSize', this defines the screen size thresholds
-        for LOD transitions in descending order.
+    uniform float[] screenSizeMinThresholds = [] (
+        doc = """This defines the screen size thresholds
+        for LOD transitions in descending order and is consulted when transitioning
+        from a higher LOD to a lower one.
         
         For example, [1000.0, 400.0, 100.0] means:
         - Use LOD 0 when screen size >= 1000.0
@@ -363,8 +399,22 @@ class LodHeuristicAPI "LodHeuristicAPI"
         This field is advisory and not strongly interoperable.
         """
     )
-}
+    
+        uniform float[] screenSizeMaxThresholds = [] (
+        doc = """This defines the screen size thresholds
+        for LOD transitions in descending order and is consulted when transitioning
+        from a lower LOD to a higher one.
+        
+        For example, [1000.0, 400.0, 100.0] means:
+        - Use LOD 0 when screen size >= 1000.0
+        - Use LOD 1 when 400.0 <= screen size < 1000.0
+        - Use LOD 2 when 100.0 <= screen size < 400.0
+        - Use LOD 3 when screen size < 100.0
 
+        This field is advisory and not strongly interoperable.
+        """
+    )
+}   
 ```
 
 The `PhysicsEntityLodHeuristicAPI` that follows is meant to be suggestive.
@@ -376,6 +426,8 @@ application developers may create their own heuristic apis to signal heuristics.
 class PhysicsEntityLodHeuristicAPI "PhysicsEntityLodHeuristicAPI"
 (
     inherits = </APISchemaBase>
+    prepend apiSchemas = ["LodHeuristicAPI"]
+
     doc = """Custom heuristic for physics LOD selection.
     
     Selects LOD based on whether an active entity is present in the prim or collection.
@@ -414,6 +466,8 @@ As an example of a custom extension that could be created:
 class FramerateLodHeuristicAPI "FramerateLodHeuristicAPI"
 (
     inherits = </APISchemaBase>
+    prepend apiSchemas = ["LodHeuristicAPI"]
+
     doc = """Extension of LodHeuristicAPI for framerate-based LOD selection.
     
     This API provides additional properties for controlling LOD based on
@@ -453,19 +507,8 @@ This example demonstrates two LOD domains:
 - **Geometry**: standard camera distance heuristic, smooth cross-fade.
 - **Physics**: entity-based heuristic, LOD depends on which rooms have players/NPCs.
 
-Collections used for LOD membership:
-- `GeometryLOD0` → detailed rooms
-- `GeometryLOD1` → coarser building-level LOD
-
-Hierarchical LOD:
-- City → Buildings → Rooms.
-
-Each level can have its own LOD in multiple domains.
-
-Heuristic decoupling:
-- Each LOD domain has its own heuristic rel.
-- Allows runtime selection independently per domain.
-
+Each uses its own LodConfigurationAPI:<domain> instance applied to the same prim.
+Levels are defined as separate prims with LodLevelAPI:<name> applied, and each references a collection.
 
 ```python
 #usda 1.0
@@ -474,262 +517,106 @@ Heuristic decoupling:
 )
 
 def Xform "City" (
-    prepend apiSchemas = ["LodAPI"]
+    prepend apiSchemas = ["LodConfigurationAPI:geometry", "LodConfigurationAPI:physics"]
 )
 {
-    uniform token lod:levelType = "geometry"
-    rel lod:lodLevels = [
+    #-----------------------------------------
+    # GEOMETRY DOMAIN
+    #-----------------------------------------
+    uniform token lodConfiguration:geometry:levelType = "geometry"
+    rel lodConfiguration:geometry:lodLevels = [
         </City/GeometryLOD0>,
         </City/GeometryLOD1>
     ]
-    rel lod:heuristic = </City/CameraDistanceHeuristic>
+    rel lodConfiguration:geometry:heuristic = </City/GeometryDistanceHeuristic>
 
-    # Geometry LOD0: high detail
     def Scope "GeometryLOD0" (
         prepend apiSchemas = ["LodLevelAPI:high"]
     )
     {
-        rel members = </City/HighDetailCollection>
+        rel lodLevel:high:members = </City/HighDetailCollection>
     }
-    
-    # Geometry LOD1: low detail
+
     def Scope "GeometryLOD1" (
         prepend apiSchemas = ["LodLevelAPI:low"]
     )
     {
-        rel members = </City/LowDetailCollection>
+        rel lodLevel:low:members = </City/LowDetailCollection>
     }
-    
-    # Heuristic for geometry LODs
-    def Scope "CameraDistanceHeuristic" (
-        prepend apiSchemas = ["LodHeuristicAPI"]
+
+    def Scope "GeometryDistanceHeuristic" (
+        prepend apiSchemas = ["DistanceLodHeuristicAPI:geometry"]
     )
     {
-        uniform token lodHeuristic:type = "distance"
-        uniform token lodHeuristic:transition = "crossFade"
-        uniform float lodHeuristic:transitionRange = 10.0
-        uniform float[] lodHeuristic:distanceThresholds = [50.0, 200.0]
-        rel referencePoint = </Camera>
+        uniform float[] distanceLodHeuristic:geometry:distanceMinThresholds = [50.0, 200.0]
+        uniform float[] distanceLodHeuristic:geometry:distanceMaxThresholds = [60.0, 220.0]
+        uniform token lodHeuristic:geometry:transition = "crossFade"
+        rel lodHeuristic:geometry:localCoordinateSystem = </Camera>
     }
-    
-    # Physics domain: separate LOD API
-    prepend apiSchemas = ["LodAPI"]
-    uniform token lod:levelType = "physics"
-    rel lod:lodLevels = [
+
+    #-----------------------------------------
+    # PHYSICS DOMAIN
+    #-----------------------------------------
+    uniform token lodConfiguration:physics:levelType = "physics"
+    rel lodConfiguration:physics:lodLevels = [
         </City/PhysicsLOD0>,
         </City/PhysicsLOD1>
     ]
-    rel lod:heuristic = </City/PhysicsHeuristic>
-    
-    # Physics LODs
+    rel lodConfiguration:physics:heuristic = </City/PhysicsEntityHeuristic>
+
     def Scope "PhysicsLOD0" (
         prepend apiSchemas = ["LodLevelAPI:full"]
     )
     {
-        rel members = </City/Buildings>
+        rel lodLevel:full:members = </City/Buildings>
     }
-    
+
     def Scope "PhysicsLOD1" (
         prepend apiSchemas = ["LodLevelAPI:simple"]
     )
     {
-        rel members = </City/Buildings>
+        rel lodLevel:simple:members = </City/Buildings>
     }
-    
-    # Physics heuristic: entity-based
-    def Scope "PhysicsHeuristic" (
+
+    def Scope "PhysicsEntityHeuristic" (
         prepend apiSchemas = ["PhysicsEntityLodHeuristicAPI"]
     )
     {
-        rel activeEntities = [
+        rel physicsEntityLodHeuristic:activeEntities = [
             </Player>,
             </NPCs>
         ]
-        uniform token selectionMode = "any"
-    }
-    
-    # Building hierarchy
-    def Xform "Buildings" {
-        def Xform "BuildingA" {
-            def Xform "Rooms" {
-                def Xform "Room1" {}
-                def Xform "Room2" {}
-            }
-        }
-        def Xform "BuildingB" {}
-    }
-    
-    # Collections for geometry LODs
-    def Scope "HighDetailCollection" (
-        prepend apiSchemas = ["CollectionAPI"]
-    )
-    {
-        rel collection:content:includes = [
-            </Buildings/BuildingA/Rooms/Room1>,
-            </Buildings/BuildingA/Rooms/Room2>,
-            </Buildings/BuildingB>
-        ]
-    }
-    
-    def Scope "LowDetailCollection" (
-        prepend apiSchemas = ["CollectionAPI"]
-    )
-    {
-        rel collection:content:includes = [
-            </Buildings/BuildingA>,
-            </Buildings/BuildingB>
-        ]
+        uniform token physicsEntityLodHeuristic:selectionMode = "any"
     }
 }
-```
 
-#### Example 2: Three LOD domains: geometry, physics, material.
-
-Hybrid membership model:
-
-- `lod:lodLevels[]` → ordered LOD levels
-- Each level → members → USD collections
-
-Hierarchical LOD:
-- **Geometry**: cross-fade LODs for rooms/buildings depending on camera
-- **Physics**: entity presence in rooms triggers high LOD
-- **Material**: screen-size-based switching (e.g., high-res textures for close objects)
-- **Extensible**: More heuristics, LODs, or nested hierarchies can be added.
-
-```
-#usda 1.0
-(
-    defaultPrim = "City"
-)
-
-# Top-level City prim
-def Xform "City" (
-    prepend apiSchemas = ["LodAPI"]  # Geometry domain
+#-----------------------------------------
+# Geometry collections
+#-----------------------------------------
+def Scope "HighDetailCollection" (
+    prepend apiSchemas = ["CollectionAPI"]
 )
 {
-    uniform token lod:levelType = "geometry"
-    rel lod:lodLevels = [
-        </City/GeometryLOD0>,
-        </City/GeometryLOD1>
+    rel collection:includes = [
+        </City/Buildings/BuildingA/Rooms/Room1>,
+        </City/Buildings/BuildingA/Rooms/Room2>,
+        </City/Buildings/BuildingB>
     ]
-    rel lod:heuristic = </City/CameraDistanceHeuristic>
-    
-    # Geometry LODs
-    def Scope "GeometryLOD0" (
-        prepend apiSchemas = ["LodLevelAPI:high"]
-    )
-    {
-        rel members = </City/HighDetailCollection>
-    }
-    
-    def Scope "GeometryLOD1" (
-        prepend apiSchemas = ["LodLevelAPI:low"]
-    )
-    {
-        rel members = </City/LowDetailCollection>
-    }
-    
-    # Camera-distance heuristic
-    def Scope "CameraDistanceHeuristic" (
-        prepend apiSchemas = ["LodHeuristicAPI"]
-    )
-    {
-        uniform token lodHeuristic:type = "distance"
-        uniform token lodHeuristic:transition = "crossFade"
-        uniform float lodHeuristic:transitionRange = 10.0
-        uniform float[] lodHeuristic:distanceThresholds = [50.0, 200.0]
-        rel referencePoint = </Camera>
-    }
 }
 
-# Physics domain LOD on City
-def Xform "City" (
-    prepend apiSchemas = ["LodAPI"]
+def Scope "LowDetailCollection" (
+    prepend apiSchemas = ["CollectionAPI"]
 )
 {
-    uniform token lod:levelType = "physics"
-    rel lod:lodLevels = [
-        </City/PhysicsLOD0>,
-        </City/PhysicsLOD1>
+    rel collection:includes = [
+        </City/Buildings/BuildingA>,
+        </City/Buildings/BuildingB>
     ]
-    rel lod:heuristic = </City/PhysicsHeuristic>
-    
-    # Physics LODs
-    def Scope "PhysicsLOD0" (
-        prepend apiSchemas = ["LodLevelAPI:full"]
-    )
-    {
-        rel members = </City/Buildings>
-    }
-    
-    def Scope "PhysicsLOD1" (
-        prepend apiSchemas = ["LodLevelAPI:simple"]
-    )
-    {
-        rel members = </City/Buildings>
-    }
-    
-    # Entity-based heuristic
-    def Scope "PhysicsHeuristic" (
-        prepend apiSchemas = ["PhysicsEntityLodHeuristicAPI"]
-    )
-    {
-        rel activeEntities = [
-            </Player>,
-            </NPCs>
-        ]
-        uniform token selectionMode = "any"
-    }
 }
 
-# Material domain LOD
-def Xform "City" (
-    prepend apiSchemas = ["LodAPI"]
-)
-{
-    uniform token lod:levelType = "material"
-    rel lod:lodLevels = [
-        </City/MaterialLOD0>,
-        </City/MaterialLOD1>,
-        </City/MaterialLOD2>
-    ]
-    rel lod:heuristic = </City/ScreenSizeHeuristic>
-    
-    # Material LODs
-    def Scope "MaterialLOD0" (
-        prepend apiSchemas = ["LodLevelAPI:highQuality"]
-    )
-    {
-        rel members = </City/HighMaterialCollection>
-    }
-    
-    def Scope "MaterialLOD1" (
-        prepend apiSchemas = ["LodLevelAPI:mediumQuality"]
-    )
-    {
-        rel members = </City/MediumMaterialCollection>
-    }
-    
-    def Scope "MaterialLOD2" (
-        prepend apiSchemas = ["LodLevelAPI:lowQuality"]
-    )
-    {
-        rel members = </City/LowMaterialCollection>
-    }
-    
-    # Screen-size heuristic
-    def Scope "ScreenSizeHeuristic" (
-        prepend apiSchemas = ["LodHeuristicAPI"]
-    )
-    {
-        uniform token lodHeuristic:type = "screenSize"
-        uniform token lodHeuristic:screenSizeMetric = "projectedArea"
-        uniform float[] lodHeuristic:screenSizeThresholds = [10000.0, 2500.0, 500.0]
-        rel referencePoint = </Camera>
-    }
-}
-
-# Hierarchy: City -> Buildings -> Rooms
+#-----------------------------------------
+# City hierarchy
+#-----------------------------------------
 def Xform "Buildings" {
     def Xform "BuildingA" {
         def Xform "Rooms" {
@@ -739,135 +626,153 @@ def Xform "Buildings" {
     }
     def Xform "BuildingB" {}
 }
+```
 
-# Collections for geometry LOD
-def Scope "HighDetailCollection" (
-    prepend apiSchemas = ["CollectionAPI"]
+#### Example 2: Three LOD domains: geometry, physics, material.
+
+This demonstrates how three independent LOD domains coexist peacefully on the same prim.
+Each domain uses its own multi-applied LodConfigurationAPI:<domain> with different heuristics.
+
+```python
+#usda 1.0
+(
+    defaultPrim = "Vehicle"
+)
+
+def Xform "Vehicle" (
+    prepend apiSchemas = [
+        "LodConfigurationAPI:geometry",
+        "LodConfigurationAPI:material",
+        "LodConfigurationAPI:physics"
+    ]
 )
 {
-    rel collection:content:includes = [
-        </Buildings/BuildingA/Rooms/Room1>,
-        </Buildings/BuildingA/Rooms/Room2>,
-        </Buildings/BuildingB>
+    #-----------------------------------------
+    # GEOMETRY DOMAIN
+    #-----------------------------------------
+    uniform token lodConfiguration:geometry:levelType = "geometry"
+    rel lodConfiguration:geometry:lodLevels = [
+        </Vehicle/GeoLOD0>,
+        </Vehicle/GeoLOD1>,
+        </Vehicle/GeoLOD2>
     ]
+    rel lodConfiguration:geometry:heuristic = </Vehicle/DistanceHeuristic>
+
+    def Scope "GeoLOD0" (prepend apiSchemas = ["LodLevelAPI:high"])
+    {
+        rel lodLevel:high:members = </Vehicle/HighMeshCollection>
+    }
+
+    def Scope "GeoLOD1" (prepend apiSchemas = ["LodLevelAPI:medium"])
+    {
+        rel lodLevel:medium:members = </Vehicle/MediumMeshCollection>
+    }
+
+    def Scope "GeoLOD2" (prepend apiSchemas = ["LodLevelAPI:low"])
+    {
+        rel lodLevel:low:members = </Vehicle/LowMeshCollection>
+    }
+
+    def Scope "DistanceHeuristic" (
+        prepend apiSchemas = ["DistanceLodHeuristicAPI:geometry"]
+    )
+    {
+        uniform float[] distanceLodHeuristic:geometry:distanceMinThresholds = [10.0, 30.0, 80.0]
+        uniform float[] distanceLodHeuristic:geometry:distanceMaxThresholds = [12.0, 35.0, 90.0]
+        uniform token lodHeuristic:geometry:transition = "crossFade"
+        rel lodHeuristic:geometry:localCoordinateSystem = </RenderCamera>
+    }
+
+    #-----------------------------------------
+    # MATERIAL DOMAIN
+    #-----------------------------------------
+    uniform token lodConfiguration:material:levelType = "material"
+    rel lodConfiguration:material:lodLevels = [
+        </Vehicle/MatLOD0>,
+        </Vehicle/MatLOD1>
+    ]
+    rel lodConfiguration:material:heuristic = </Vehicle/ScreenSizeHeuristic>
+
+    def Scope "MatLOD0" (prepend apiSchemas = ["LodLevelAPI:high"])
+    {
+        rel lodLevel:high:members = </Vehicle/HighResMaterials>
+    }
+
+    def Scope "MatLOD1" (prepend apiSchemas = ["LodLevelAPI:low"])
+    {
+        rel lodLevel:low:members = </Vehicle/LowResMaterials>
+    }
+
+    def Scope "ScreenSizeHeuristic" (
+        prepend apiSchemas = ["ScreenSizeLodHeuristicAPI:material"]
+    )
+    {
+        uniform float[] screenSizeLodHeuristic:material:screenSizeMinThresholds = [1200.0, 400.0]
+        uniform float[] screenSizeLodHeuristic:material:screenSizeMaxThresholds = [1300.0, 500.0]
+        uniform token lodHeuristic:material:transition = "dithered"
+        uniform token screenSizeLodHeuristic:material:screenSizeMetric = "projectedArea"
+        rel lodHeuristic:material:localCoordinateSystem = </RenderCamera>
+    }
+
+    #-----------------------------------------
+    # PHYSICS DOMAIN
+    #-----------------------------------------
+    uniform token lodConfiguration:physics:levelType = "physics"
+    rel lodConfiguration:physics:lodLevels = [
+        </Vehicle/PhysLOD0>,
+        </Vehicle/PhysLOD1>
+    ]
+    rel lodConfiguration:physics:heuristic = </Vehicle/PhysicsEntityHeuristic>
+
+    def Scope "PhysLOD0" (prepend apiSchemas = ["LodLevelAPI:full"])
+    {
+        rel lodLevel:full:members = </Vehicle/CollisionMeshDetailed>
+    }
+
+    def Scope "PhysLOD1" (prepend apiSchemas = ["LodLevelAPI:simple"])
+    {
+        rel lodLevel:simple:members = </Vehicle/CollisionMeshSimplified>
+    }
+
+    def Scope "PhysicsEntityHeuristic" (
+        prepend apiSchemas = ["PhysicsEntityLodHeuristicAPI"]
+    )
+    {
+        rel physicsEntityLodHeuristic:activeEntities = [</Driver>, </NPC>]
+        uniform token physicsEntityLodHeuristic:selectionMode = "any"
+    }
 }
 
-def Scope "LowDetailCollection" (
-    prepend apiSchemas = ["CollectionAPI"]
-)
+#-----------------------------------------
+# Collections for geometry/material membership
+#-----------------------------------------
+def Scope "HighMeshCollection" (prepend apiSchemas = ["CollectionAPI"])
 {
-    rel collection:content:includes = [
-        </Buildings/BuildingA>,
-        </Buildings/BuildingB>
-    ]
+    rel collection:includes = [</Vehicle/Body/HighDetailMesh>]
 }
 
-# Collections for material LOD
-def Scope "HighMaterialCollection" (
-    prepend apiSchemas = ["CollectionAPI"]
-)
+def Scope "MediumMeshCollection" (prepend apiSchemas = ["CollectionAPI"])
 {
-    rel collection:content:includes = [
-        </Buildings/BuildingA/Rooms/Room1/Materials/HighQuality>,
-        </Buildings/BuildingB/Materials/HighQuality>
-    ]
+    rel collection:includes = [</Vehicle/Body/MediumDetailMesh>]
 }
 
-def Scope "MediumMaterialCollection" (
-    prepend apiSchemas = ["CollectionAPI"]
-)
+def Scope "LowMeshCollection" (prepend apiSchemas = ["CollectionAPI"])
 {
-    rel collection:content:includes = [
-        </Buildings/BuildingA/Rooms/Room1/Materials/MediumQuality>,
-        </Buildings/BuildingB/Materials/MediumQuality>
-    ]
+    rel collection:includes = [</Vehicle/Body/LowDetailMesh>]
 }
 
-def Scope "LowMaterialCollection" (
-    prepend apiSchemas = ["CollectionAPI"]
-)
+def Scope "HighResMaterials" (prepend apiSchemas = ["CollectionAPI"])
 {
-    rel collection:content:includes = [
-        </Buildings/BuildingA/Rooms/Room1/Materials/LowQuality>,
-        </Buildings/BuildingB/Materials/LowQuality>
-    ]
+    rel collection:includes = [</Vehicle/Materials/HighRes>]
 }
 
-# Entities for physics
-def Xform "Player" {}
-def Xform "NPCs" {}
+def Scope "LowResMaterials" (prepend apiSchemas = ["CollectionAPI"])
+{
+    rel collection:includes = [</Vehicle/Materials/LowRes>]
+}
 ```
 
 
-```mermaid
-
-graph TD
-    subgraph City
-        direction TB
-
-        %% Buildings
-        subgraph BuildingA
-            direction TB
-            Room1["Room1"]
-            Room2["Room2"]
-            
-            %% Geometry LODs for Room1
-            subgraph GeoLOD_Room1 ["Geometry LOD"]
-                Room1 --> GeoLOD_Room1_H["High"]
-                Room1 --> GeoLOD_Room1_L["Low"]
-            end
-            
-            %% Physics LODs for Room1
-            subgraph PhysLOD_Room1 ["Physics LOD"]
-                Room1 --> PhysLOD_Room1_F["Full"]
-                Room1 --> PhysLOD_Room1_S["Simple"]
-            end
-            
-            %% Material LODs for Room1
-            subgraph MatLOD_Room1 ["Material LOD"]
-                Room1 --> MatLOD_Room1_H["High"]
-                Room1 --> MatLOD_Room1_M["Medium"]
-                Room1 --> MatLOD_Room1_L["Low"]
-            end
-            
-            %% Repeat for Room2 (simplified)
-            subgraph GeoLOD_Room2 ["Geometry LOD"]
-                Room2 --> GeoLOD_Room2_H["High"]
-                Room2 --> GeoLOD_Room2_L["Low"]
-            end
-            subgraph PhysLOD_Room2 ["Physics LOD"]
-                Room2 --> PhysLOD_Room2_F["Full"]
-                Room2 --> PhysLOD_Room2_S["Simple"]
-            end
-            subgraph MatLOD_Room2 ["Material LOD"]
-                Room2 --> MatLOD_Room2_H["High"]
-                Room2 --> MatLOD_Room2_M["Medium"]
-                Room2 --> MatLOD_Room2_L["Low"]
-            end
-        end
-        
-        subgraph BuildingB
-            direction TB
-            RoomB["SingleRoom"]
-            
-            subgraph GeoLOD_B ["Geometry LOD"]
-                RoomB --> GeoLOD_B_H["High"]
-                RoomB --> GeoLOD_B_L["Low"]
-            end
-            subgraph PhysLOD_B ["Physics LOD"]
-                RoomB --> PhysLOD_B_F["Full"]
-                RoomB --> PhysLOD_B_S["Simple"]
-            end
-            subgraph MatLOD_B ["Material LOD"]
-                RoomB --> MatLOD_B_H["High"]
-                RoomB --> MatLOD_B_M["Medium"]
-                RoomB --> MatLOD_B_L["Low"]
-            end
-        end
-    end
-```
-
----
 
 ### Implementation Considerations
 
@@ -879,7 +784,7 @@ These considerations are advisory to application developers. LOD selection is no
 
 3. **Edge Cases:** Empty parent LODs are evaluated normally; children render nothing if their collection is empty.
 
-4. **Instance Handling**: For point instancing, each instance can use its own LOD switching based on its position relative to the reference point.
+4. **Instance Handling**: For point instancing, each instance can use its own LOD switching based on its position relative to its reference point.
 
 ## Alternative Solutions Considered
 
@@ -893,6 +798,6 @@ These considerations are advisory to application developers. LOD selection is no
 
 1. **Automatic LOD Generation**: This proposal does not address the generation of LOD levels from high-resolution models, which is considered a separate tool specific concern.
 
-2. **Specialized Material Features**: Specialized material LOD features like on demand mip-map generation are considered tool or runtime specific concerns.
+2. **Specialized Material Features**: Specialized material LOD features like on demandyes mip-map generation are considered tool or runtime specific concerns.
 
 3. **Pipeline Integration**: Specific workflows for authoring and managing LODs in content creation tools are outside the scope of this proposal.
