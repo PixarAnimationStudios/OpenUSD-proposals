@@ -111,7 +111,26 @@ Together, they ensure that hierarchical LOD evaluation is predictable, efficient
 #### LodAPI
 
 ```python
-class LodConfigurationAPI "LodConfigurationAPI"
+#usda 1.0
+(
+    "This file describes the USD Lod API schema."
+    subLayers = [
+        @usd/schema.usda@
+    ]
+)
+
+over "GLOBAL" (
+    customData = {
+        string libraryName      = "UsdLod"
+        string libraryPath      = "pxr/usd/UsdLod"
+        #string libraryPrefix    = "UsdLod"
+        #string tokensPrefix     = "UsdLod"
+    }
+)
+{
+}
+
+class "ConfigurationAPI"
 (
     inherits = </APISchemaBase>
     doc = """API for configuring Level of Detail (LOD) facilities on a prim.
@@ -133,7 +152,7 @@ class LodConfigurationAPI "LodConfigurationAPI"
 
     customData = {
         string apiSchemaType = "multipleApply"
-        token propertyNamespacePrefix = "lodConfiguration"
+        token propertyNamespacePrefix = "Configuration"
     }
 )
 {
@@ -145,7 +164,7 @@ class LodConfigurationAPI "LodConfigurationAPI"
         "geometry", "material", "lighting", "collision", "volume", and "physics"."""
     )
     
-    rel lodLevels[] (
+    rel lodLevels (
         doc = """Relationship to the LOD levels defined for this prim.
         
         This relationship targets prims with the LodLevelAPI applied.
@@ -161,12 +180,8 @@ class LodConfigurationAPI "LodConfigurationAPI"
         If no heuristic is specified, no automatic LOD switching will occur."""
     )
 }
-```
 
-#### LodLevelAPI
-
-```python
-class LodLevelAPI "LodLevelAPI"
+class "LevelAPI"
 (
     inherits = </APISchemaBase>
     doc = """Defines a single LOD level for a prim, owning a collection of member prims.
@@ -176,7 +191,7 @@ class LodLevelAPI "LodLevelAPI"
     
     customData = {
         string apiSchemaType = "multipleApply"
-        token propertyNamespacePrefix = "lodLevel"
+        token propertyNamespacePrefix = "Level"
     }
 )
 {
@@ -190,7 +205,7 @@ class LodLevelAPI "LodLevelAPI"
 }
 
 
-class GeometryLodLevelAPI "GeometryLodConfigurationAPI"
+class "GeometryConfigurationAPI"
 (
     inherits = </APISchemaBase>
     doc = """API that configures a single LOD level within an LOD group.
@@ -199,7 +214,7 @@ class GeometryLodLevelAPI "GeometryLodConfigurationAPI"
 
     customData = {
         string apiSchemaType = "multipleApply"
-        token propertyNamespacePrefix = "geometryLodConfiguration"
+        token propertyNamespacePrefix = "geometryConfiguration"
     }
 )
 {    
@@ -232,12 +247,7 @@ class GeometryLodLevelAPI "GeometryLodConfigurationAPI"
 }
 
 
-```
-
-#### LodHeuristicAPI
-
-```python
-class LodHeuristicAPI "LodHeuristicAPI"
+class "HeuristicAPI"
 (
     inherits = </APISchemaBase>
     doc = """API that defines the heuristic for LOD selection.
@@ -260,7 +270,7 @@ class LodHeuristicAPI "LodHeuristicAPI"
 
     customData = {
         string apiSchemaType = "multipleApply"
-        token propertyNamespacePrefix = "lodHeuristic"
+        token propertyNamespacePrefix = "Heuristic"
     }
 )
 {
@@ -293,10 +303,10 @@ class LodHeuristicAPI "LodHeuristicAPI"
     )
 }
 
-class DistanceLodHeuristicAPI "DistanceLodHeuristicAPI"
-{
+class "DistanceHeuristicAPI"
+(
     inherits = </APISchemaBase>
-    prepend apiSchemas = ["LodHeuristicAPI"]
+    prepend apiSchemas = ["HeuristicAPI"]
 
     doc = """API that defines the Distance based LOD selection heuristic.
     
@@ -314,9 +324,8 @@ class DistanceLodHeuristicAPI "DistanceLodHeuristicAPI"
 
     customData = {
         string apiSchemaType = "multipleApply"
-        token propertyNamespacePrefix = "distanceLodHeuristic"
+        token propertyNamespacePrefix = "distanceHeuristic"
     }
-    
 )
 {
     uniform float[] distanceMinThresholds = [] (
@@ -346,10 +355,10 @@ class DistanceLodHeuristicAPI "DistanceLodHeuristicAPI"
 }
 
 
-class ScreenSizeLodHeuristicAPI "ScreenSizeLodHeuristicAPI"
-{
+class "ScreenSizeHeuristicAPI"
+(
     inherits = </APISchemaBase>
-    prepend apiSchemas = ["LodHeuristicAPI"]
+    prepend apiSchemas = ["HeuristicAPI"]
 
     doc = """API that defines the Screen Size based LOD selection heuristic.
     
@@ -415,28 +424,26 @@ class ScreenSizeLodHeuristicAPI "ScreenSizeLodHeuristicAPI"
         """
     )
 }   
-```
 
-The `PhysicsEntityLodHeuristicAPI` that follows is meant to be suggestive.
-Heuristics will be highly specific to particular system domains, and 
-application developers may create their own heuristic apis to signal heuristics.
-
-```python
-
-class PhysicsEntityLodHeuristicAPI "PhysicsEntityLodHeuristicAPI"
+class "PhysicsEntityHeuristicAPI"
 (
     inherits = </APISchemaBase>
-    prepend apiSchemas = ["LodHeuristicAPI"]
+    prepend apiSchemas = ["HeuristicAPI"]
 
     doc = """Custom heuristic for physics LOD selection.
     
+    This class is meant to be illustrative to show a general pattern. 
+    Heuristics will be highly specific to particular system domains, 
+    and application developers may create their own heuristic apis to 
+    signal heuristics.
+
     Selects LOD based on whether an active entity is present in the prim or collection.
     For example, a room can switch to full physics LOD only when a player or other
     dynamic entity is inside."""
     
     customData = {
-        string apiSchemaType = "singleApply"
-        token propertyNamespacePrefix = "physicsEntityLodHeuristic"
+        string apiSchemaType = "multipleApply"
+        token propertyNamespacePrefix = "physicsEntityHeuristic"
     }
 )
 {
@@ -454,28 +461,23 @@ class PhysicsEntityLodHeuristicAPI "PhysicsEntityLodHeuristicAPI"
     )
 }
 
-```
-
-### Heuristic Extensions
-
-The base `LodHeuristicAPI` can be extended with more specialized heuristics as needed.
-As an example of a custom extension that could be created:
-
-
-```python
-class FramerateLodHeuristicAPI "FramerateLodHeuristicAPI"
+class "FramerateHeuristicAPI"
 (
     inherits = </APISchemaBase>
-    prepend apiSchemas = ["LodHeuristicAPI"]
+    prepend apiSchemas = ["HeuristicAPI"]
 
-    doc = """Extension of LodHeuristicAPI for framerate-based LOD selection.
+    doc = """Extension of HeuristicAPI for framerate-based LOD selection.
     
+    This is another example to show how specific heuristics may be defined
+    for particular systems. Application developers may create their own
+    heuristic apis to signal heuristics specific to their needs.
+
     This API provides additional properties for controlling LOD based on
     renderer performance."""
 
     customData = {
-        string apiSchemaType = "singleApply"
-        token propertyNamespacePrefix = "framerateLodHeuristic"
+        string apiSchemaType = "multipleApply"
+        token propertyNamespacePrefix = "framerateHeuristic"
     }
 )
 {
@@ -496,6 +498,7 @@ class FramerateLodHeuristicAPI "FramerateLodHeuristicAPI"
         single update."""
     )
 }
+
 ```
 
 ### Usage Examples
