@@ -1,0 +1,329 @@
+#usda 1.0
+(
+    """ This file describes schema for Level of Detail (LOD) API for USD.
+        Generated schema should use the usdGenSchema tool.
+    """
+    subLayers = [
+        @usd/schema.usda@
+    ]
+)
+
+over "GLOBAL" (
+    customData = {
+        string libraryName = "LodSchemas"
+        string libraryPath = "pxr/usd/lod"
+        string libraryPrefix = "Lod"
+        dictionary libraryTokens = {
+            dictionary lod = {
+                string doc = """
+                Token namespace for the LodAPI.
+                """
+            }
+            dictionary lodLevel = {
+                string doc = """
+                Token namespace for the LodLevelAPI.
+                """
+            }
+            dictionary lodHeuristic = {
+                string doc = """
+                Token namespace for the LodHeuristicAPI.
+                """
+            }
+        }
+    }
+)
+{
+}
+
+class LodAPI "LodAPI"
+(
+    inherits = </APISchemaBase>
+    doc = """API for managing Level of Detail (LOD) on a prim.
+    
+    This API schema provides a way to define multiple LOD levels for a prim
+    and specify how to transition between them during rendering. It is
+    expected to be applied to a prim that serves as the root for LOD management.
+    
+    This schema leverages collections to define sets of geometry for different
+    detail levels, and provides properties to control LOD selection via 
+    specified heuristics."""
+
+    customData = {
+        string apiSchemaType = "singleApply"
+        token propertyNamespacePrefix = "lod"
+    }
+)
+{
+    uniform token version = "1.0" (
+        customData = {
+            string apiName = "version"
+        }
+        doc = """Schema version for future extensions and compatibility"""
+    )
+    
+    uniform token definitionOrder = "highestFirst" (
+        allowedTokens = ["highestFirst", "lowestFirst"]
+        customData = {
+            string apiName = "definitionOrder"
+        }
+        doc = """Defines the order of LOD levels in the lodLevels relationship.
+        
+        - highestFirst: lod:lodLevels[0] has the highest definition (default)
+        - lowestFirst: lod:lodLevels[0] has the lowest definition"""
+    )
+    
+    uniform token levelType = "geometry" (
+        allowedTokens = ["geometry", "material", "combined", "procedural"]
+        customData = {
+            string apiName = "levelType"
+        }
+        doc = """Specifies what type of data is managed by this LOD setup.
+        
+        - geometry: LOD affects mesh complexity
+        - material: LOD affects material/shader complexity
+        - combined: LOD affects both geometry and materials
+        - procedural: LOD affects procedurally generated data"""
+    )
+    
+    rel lodLevels (
+        customData = {
+            string apiName = "lodLevels"
+        }
+        doc = """Relationship to the LOD levels defined for this prim.
+        
+        This relationship targets prims with the LodLevelAPI applied.
+        The order of the targets should match the definitionOrder."""
+    )
+    
+    rel heuristic (
+        customData = {
+            string apiName = "heuristic"
+        }
+        doc = """Relationship to the heuristic used for LOD selection.
+        
+        This relationship targets a prim with the LodHeuristicAPI applied.
+        If no heuristic is specified, no automatic LOD switching will occur."""
+    )
+}
+
+class LodLevelAPI "LodLevelAPI"
+(
+    inherits = </APISchemaBase>
+    doc = """API that defines a single LOD level within an LOD group.
+    
+    This multi-apply API schema allows defining multiple LOD levels for a prim.
+    Each level provides a collection of geometry and properties specific to that
+    detail level. The collection can include or exclude specific prims to fine-tune
+    which parts of the model belong to a particular LOD level."""
+
+    customData = {
+        string apiSchemaType = "multipleApply"
+        token propertyNamespacePrefix = "lodLevel"
+        string extraIncludes = """
+#include "pxr/usd/usd/collectionAPI.h" """
+    }
+)
+{
+    prepend apiSchemas = ["CollectionAPI:content"]
+    
+    uniform token index (
+        customData = {
+            string apiName = "index"
+        }
+        doc = """The index of this LOD level. Lower indices typically represent
+        higher detail levels, but this depends on the LodAPI's definitionOrder."""
+    )
+    
+    point3f center = (0.0, 0.0, 0.0) (
+        customData = {
+            string apiName = "center"
+        }
+        doc = """The center point of this LOD level, used for distance calculations.
+        
+        This value is used by distance-based heuristics to calculate the
+        distance from the camera or other reference point."""
+    )
+    
+    rel boundingVolume (
+        customData = {
+            string apiName = "boundingVolume"
+        }
+        doc = """Optional relationship to a prim that defines the bounding volume
+        for this LOD level, used for distance or screen-size calculations."""
+    )
+    
+    token computeDistanceTo = "center" (
+        allowedTokens = ["center", "boundingVolume", "boundingBox"]
+        customData = {
+            string apiName = "computeDistanceTo"
+        }
+        doc = """Method used to compute distance from a reference point to this LOD.
+        
+        - center: Use the lodLevel:center property
+        - boundingVolume: Use the lodLevel:boundingVolume prim
+        - boundingBox: Use the computed bounding box of the collection content"""
+    )
+    
+    rel collisionProxy (
+        customData = {
+            string apiName = "collisionProxy"
+        }
+        doc = """Optional relationship to a prim that provides simplified collision
+        geometry for this LOD level, typically used in physics simulations."""
+    )
+}
+
+class LodHeuristicAPI "LodHeuristicAPI"
+(
+    inherits = </APISchemaBase>
+    doc = """API that defines the heuristic for LOD selection.
+    
+    This API schema defines how LOD levels should be selected during
+    rendering or interaction. It supports various transition modes and
+    can be extended for specific heuristic types."""
+
+    customData = {
+        string apiSchemaType = "singleApply"
+        token propertyNamespacePrefix = "lodHeuristic"
+    }
+)
+{
+    uniform token type = "distance" (
+        allowedTokens = ["manual", "distance", "screenSize", "framerate", "memory", "custom"]
+        customData = {
+            string apiName = "type"
+        }
+        doc = """The type of heuristic to use for LOD selection.
+        
+        - manual: Explicitly set by the application
+        - distance: Based on distance from camera or reference point
+        - screenSize: Based on projected screen size
+        - framerate: Based on target framerate (performance)
+        - memory: Based on memory constraints
+        - custom: Custom application-defined heuristic"""
+    )
+    
+    uniform token transition = "discrete" (
+        allowedTokens = ["discrete", "crossFade", "morphGeometry", "dithered"]
+        customData = {
+            string apiName = "transition"
+        }
+        doc = """How to transition between LOD levels.
+        
+        - discrete: Switch immediately between levels
+        - crossFade: Blend between levels using opacity
+        - morphGeometry: Interpolate geometry between levels
+        - dithered: Use screen-space dithering pattern"""
+    )
+    
+    uniform float transitionRange = 0.0 (
+        customData = {
+            string apiName = "transitionRange"
+        }
+        doc = """Width of the transition region, in the units relevant to the
+        heuristic type. For distance-based heuristics, this is in distance units.
+        
+        A value of 0 means immediate switching with no transition region."""
+    )
+    
+    uniform int manualLodIndex = -1 (
+        customData = {
+            string apiName = "manualLodIndex"
+        }
+        doc = """When type is 'manual', this specifies the LOD index to use.
+        
+        This property can be time-sampled to animate LOD transitions.
+        A value of -1 means use automatic selection."""
+    )
+    
+    uniform float[] distanceThresholds = [] (
+        customData = {
+            string apiName = "distanceThresholds"
+        }
+        doc = """When type is 'distance', this defines the distance thresholds
+        for LOD transitions in ascending order.
+        
+        For example, [10.0, 50.0, 100.0] means:
+        - Use LOD 0 when distance < 10.0
+        - Use LOD 1 when 10.0 <= distance < 50.0
+        - Use LOD 2 when 50.0 <= distance < 100.0
+        - Use LOD 3 when distance >= 100.0"""
+    )
+    
+    rel referencePoint (
+        customData = {
+            string apiName = "referencePoint"
+        }
+        doc = """The reference point for distance calculations.
+        
+        Typically targets a camera or other reference object.
+        If unspecified, the active camera is used."""
+    )
+    
+    uniform token screenSizeMetric = "projectedArea" (
+        allowedTokens = ["projectedArea", "boundingSphereSize", "custom"]
+        customData = {
+            string apiName = "screenSizeMetric"
+        }
+        doc = """When type is 'screenSize', this defines how screen size is calculated.
+        
+        - projectedArea: Use projected area in pixels
+        - boundingSphereSize: Use projected bounding sphere diameter
+        - custom: Use application-defined metric"""
+    )
+    
+    uniform float[] screenSizeThresholds = [] (
+        customData = {
+            string apiName = "screenSizeThresholds"
+        }
+        doc = """When type is 'screenSize', this defines the screen size thresholds
+        for LOD transitions in descending order.
+        
+        For example, [10000.0, 2500.0, 500.0] means:
+        - Use LOD 0 when screen size >= 10000.0
+        - Use LOD 1 when 2500.0 <= screen size < 10000.0
+        - Use LOD 2 when 500.0 <= screen size < 2500.0
+        - Use LOD 3 when screen size < 500.0"""
+    )
+}
+
+class FramerateLodHeuristicAPI "FramerateLodHeuristicAPI"
+(
+    inherits = </APISchemaBase>
+    doc = """Extension of LodHeuristicAPI for framerate-based LOD selection.
+    
+    This API provides additional properties for controlling LOD based on
+    renderer performance."""
+
+    customData = {
+        string apiSchemaType = "singleApply"
+        token propertyNamespacePrefix = "framerateLodHeuristic"
+    }
+)
+{
+    uniform float targetFramerate = 60.0 (
+        customData = {
+            string apiName = "targetFramerate"
+        }
+        doc = """Target framerate to maintain in frames per second."""
+    )
+    
+    uniform float hysteresis = 0.2 (
+        customData = {
+            string apiName = "hysteresis"
+        }
+        doc = """How much the framerate can fluctuate before triggering an LOD change.
+        
+        Expressed as a fraction of targetFramerate. For example, with a target of
+        60fps and hysteresis of 0.2, LOD changes will occur when framerate falls
+        below 48fps or rises above 72fps."""
+    )
+    
+    uniform int maxLodIncrease = 1 (
+        customData = {
+            string apiName = "maxLodIncrease"
+        }
+        doc = """Maximum number of LOD levels to increase (reduce detail) in a
+        single update."""
+    )
+}
