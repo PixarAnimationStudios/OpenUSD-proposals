@@ -9,14 +9,18 @@ We propose adding the following structure to SdrShaderNode metadata and fields t
 
 We propose two additional metadata that don't currently exist on SdrShaderNode.
 
-- **target** provides a renderer-first approach to identifying applicable nodes. Example values may include "renderman", or "arnold". An empty value indicates no guarantees on whether a renderer will work with the corresponding specific node.  
-- **collections** allows parser plugin authors to group nodes in ways that cross-cut existing categorization groupings.
+- **targetRenderer**, if defined, describes that a node was designed for, but not necessarily limited to, a specific renderer.
+- **collections** allows parser plugin authors to group nodes in ways that cross-cut existing categorization groupings. This is specified as a vector of string.
 
 We propose adding an implicit hierarchy that's easier to reason about than our current "bucket of fields" approach.
 The following metadata items are added.
 - **domain** continues enablement of Sdr's extensibility beyond our own domain knowledge following the removal of Ndr.
-- **subdomain** replaces "category"
-- **function** replaces "role"
+- **subdomain** breaks "domain" into smaller (but still large) conceptual buckets.
+
+We propose migration of the following metadata and fields:
+- **function** replaces "family" to better describe the "fundamental behavior of the node". This is a function in the same sense that a function in code can have overloads with different types.
+- **shadingSystem** replaces "sourceType". "shadingSystem" more accurately identifies a system that usually has its own standard and shading language. Specification of "source container type" (e.g. "usda") is better suited to "discoveryType".
+- **category** is removed.
 
 In the following diagram, each hierarchy level's text boxes indicate the common values that are tokenized for easy reference in Sdr – with the exception of subdomain=rmanPlugs and context=displayDriver, which are included for illustrative purposes.
 Sdr plugin authors should use these common values where they can, but create their own buckets when more specialization is necessary.
@@ -28,22 +32,22 @@ Here's some sample node data following the proposed hierarchy.
 | field | example 1 | example 2 | example 3 |
 | :---- | :---- | :---- | :---- |
 | **domain** | rendering | general | rendering |
-| **subdomain** | filtering |  | shading |
+| **subdomain** | filtering | math | shading |
 | **context** | sampleFilter |  | pattern |
-| **function** |  | math | geometric |
-| **family** |  | add | position |
+| **role** |  | | geometric |
+| **function** |  | add | position |
 | **name** |  | add\_Float |  |
 | **identifier** | BackgroundSampleFilter | add\_Float\_3 | ND\_position\_vector3 |
 
-At the bottom of the hierarchy are family, name, and identifier, which currently exist on SdrShaderNode:
-- **family** is a **name** stripped of type specialization information.
+At the bottom of the hierarchy are function, name, and identifier:
+- **function** is a **name** stripped of type specialization information.
 - **name** is an **identifier** stripped of versioning information.
 - **identifier** has a concise brief for what the node does, type specialization, and versioning information. See the above chart for examples.
 
-Note that an SdrShaderNode is uniquely identified with an **identifier** and **sourceType**.
+Note that an SdrShaderNode is uniquely identified with an **identifier** and **shadingSystem**.
 Convenience API on the SdrRegistry allows retrieval of individual SdrShaderNodes with:
-- **name** and optional specification of **sourceType** and **version**
-- **identifier** and optional specification of **sourceType**
+- **name** and optional specification of **shadingSystem** and **version**
+- **identifier** and optional specification of **shadingSystem**
 
 See the SdrRegistry API for more information on the above behavior, and other convenience functions.
 
@@ -53,28 +57,30 @@ As an illustrative example for adopting this categorization scheme, our Sdr pars
 
 - **domain** should be "rendering" by default  
 - **subdomain** has no analogues in MaterialX and will remain empty unless additional annotation of data at Sdr parse time is reasonable, or additional metadata is added to MaterialX nodes themselves.  
-- **context** maps cleanly to MaterialX's "**context**"  
-  - *mtlx stdlib examples: \[pattern, surface, volume, light, displacement\]*  
-- **function** maps roughly to MaterialX's "**nodegroup**"  
-  - *mtlx stdlib examples: \[convolution2d, material, channel, pbr, compositing\]*  
-- **family** maps roughly to MaterialX's "**nodecategory**"  
+- **context** maps cleanly to MaterialX's "**context**"
+  - *mtlx stdlib examples: \[pattern, surface, volume, light, displacement\]*
+- **role** maps roughly to MaterialX's "**nodegroup**"
+  - *mtlx stdlib examples: \[convolution2d, material, channel, pbr, compositing\]*
+- **function** maps roughly to MaterialX's "**nodecategory**"
   - *mtlx stdlib examples: \[convert, subtract, tiledhexagons, dot\]*
-- **target** for MaterialX nodes will be "MaterialX" or similar.
+- **targetRenderer** for MaterialX nodes will be empty, unless a shader author writes .mtlx specialized to a specific renderer.
 
 ### Additions and deprecations
 
 Various deprecations to the SdrShaderNode constructor, methods, and metadata enums will be necessary.
 
 SdrShaderNode methods referring to replaced metadata items will be removed and methods to get new metadata items will be added.
-Some partial deprecations will also be made.
+Some partial deprecations will also be made (renaming arguments).
 
 ```C++
 class SdrShaderNode {
     // Deprecate
-    std::string GetRole();
     TfToken GetCategory();
+    TfToken GetSourceType();
+    TfToken GetFamily();
 
     // Add
+    TfToken GetShadingSystem();
     TfToken GetDomain();
     TfToken GetSubdomain();
     TfToken GetFunction();
@@ -84,9 +90,9 @@ class SdrShaderNode {
       const SdrIdentifier& identifier,
       const SdrVersion& version,
       const std::string& name,
-      const TfToken& family,
+      const TfToken& function,         // renamed from "family"
       const TfToken& context,          // REMOVE context
-      const TfToken& sourceType,
+      const TfToken& shadingSystem,    // renamed from "sourceType"
       const std::string& definitionURI,
       const std::string& implementationURI,
       SdrShaderPropertyUniquePtrVec&& properties,
@@ -94,32 +100,74 @@ class SdrShaderNode {
       const std::string &sourceCode = std::string());
 ...
 };
+
+class SdrShaderNodeMetadata {
+    // Deprecate API for the following
+    Category
+
+    // Add API for the following:
+    Domain -> TfToken
+    Subdomain -> TfToken
+    Collections -> TfToken
+    TargetRenderer -> TfToken
+};
 ```
 
-In the registry:
+In the registry and parser plugins:
 
 ```C++
 class SdrRegistry {
 
 // Deprecate
+SdrShaderNodeConstPtr GetShaderNodeByIdentifierAndType(
+        const SdrIdentifier& identifier,
+        const TfToken& nodeType);
+// Add
+SdrShaderNodeConstPtr GetShaderNodeByIdentifierAndSystem(
+        const SdrIdentifier& identifier,
+        const TfToken& shadingSystem);
+
+// Deprecate
+SdrShaderNodeConstPtr GetShaderNodeByNameAndType(
+    const std::string& name,
+    const TfToken& nodeType,
+    SdrVersionFilter filter = SdrVersionFilterDefaultOnly);
+// Add
+SdrShaderNodeConstPtr GetShaderNodeByNameAndSystem(
+    const std::string& name,
+    const TfToken& shadingSystem,
+    SdrVersionFilter filter = SdrVersionFilterDefaultOnly);
+
+// Deprecate
+SdrShaderNodeConstPtr GetShaderNodeByIdentifierAndType(
+    const SdrIdentifier& identifier,
+    const TfToken& nodeType);
+// Add
+SdrShaderNodeConstPtr GetShaderNodeByIdentifierAndSystem(
+    const SdrIdentifier& identifier,
+    const TfToken& shadingSystem);
+
+// Deprecate
 SdrShaderNodePtrVec GetShaderNodesByFamily(
     const TfToken& family = TfToken(),
-    SdrVersionFilter filter = SdrVersionFilterDefaultOnly
-);
+    SdrVersionFilter filter = SdrVersionFilterDefaultOnly);
+// Add
+SdrShaderNodePtrVec GetShaderNodesByFunction(
+    const TfToken& function,
+    SdrVersionFilter filter = SdrVersionFilterDefaultOnly);
 
 // Add
 void ParseAll();
 SdrShaderNodePtrVec ParseAndGetAll();
+```
 
-// Partially deprecate
-SdrIdentifierVec GetShaderNodeIdentifiers(
-    const TfToken& family = TfToken(),   // REMOVE: default TfToken(), family is required
-    SdrVersionFilter filter = SdrVersionFilterDefaultOnly
-);
-SdrStringVec GetShaderNodeNames(
-    const TfToken& family = TfToken()    // REMOVE: default TfToken(), family is required
-};
+Beyond Sdr:
+```C++
+UsdShadeNodeDefAPI::GetShaderNodeForSourceType // deprecated
+UsdShadeNodeDefAPI::GetShaderNodeForShadingSystem // added
 
+HdRenderDelegate::GetShaderSourceTypes // deprecated
+HdRenderDelegate::GetShadingSystems    // added
 ```
 
 Additional documentation around the semantics of shader node categorization will also be written.
