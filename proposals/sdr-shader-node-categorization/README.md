@@ -3,7 +3,7 @@
 Sdr currently does not provide clear guidance on proper, consistent use of the handful of categorization fields it provides.
 Additionally, as adoption of USD grows beyond computer graphics, we want to find a way to represent nodes in Sdr as our single registry solution from non-rendering domains.
 
-We propose adding the following structure to SdrShaderNode metadata and fields to add this clarity and flexibility to Sdr.
+We propose adding the following structure to SdrShaderNode metadata and fields to add this clarity and flexibility to Sdr. Unshaded items are optional. Shaded items are required and are discussed below.
 
 ![Meaningful SdrShaderNode Categorization Fields and Metadata](./all_categorizations.png)
 
@@ -36,8 +36,8 @@ Here's some sample node data following the proposed hierarchy.
 | **context** | sampleFilter |  | pattern |
 | **role** |  | | geometric |
 | **function** |  | add | position |
-| **name** |  | add\_Float |  |
-| **identifier** | BackgroundSampleFilter | add\_Float\_3 | ND\_position\_vector3 |
+| **name** |  | add\_float |  |
+| **identifier** | BackgroundSampleFilter | add\_float\_3 | ND\_position\_vector3 |
 
 At the bottom of the hierarchy are function, name, and identifier:
 - **function** is a **name** stripped of type specialization information.
@@ -57,11 +57,11 @@ As an illustrative example for adopting this categorization scheme, our Sdr pars
 
 - **domain** should be "rendering" by default  
 - **subdomain** has no analogues in MaterialX and will remain empty unless additional annotation of data at Sdr parse time is reasonable, or additional metadata is added to MaterialX nodes themselves.  
-- **context** maps cleanly to MaterialX's "**context**"
+- **context** maps cleanly from MaterialX's "**context**"
   - *mtlx stdlib examples: \[pattern, surface, volume, light, displacement\]*
-- **role** maps roughly to MaterialX's "**nodegroup**"
+- **role** maps exactly from MaterialX's "**nodegroup**", with the exception of nodegroups "texture2d" and "texture3d" getting mapped to role "texture".
   - *mtlx stdlib examples: \[convolution2d, material, channel, pbr, compositing\]*
-- **function** maps roughly to MaterialX's "**nodecategory**"
+- **function** maps exactly from MaterialX's "**nodecategory**"
   - *mtlx stdlib examples: \[convert, subtract, tiledhexagons, dot\]*
 - **targetRenderer** for MaterialX nodes will be empty, unless a shader author writes .mtlx specialized to a specific renderer.
 
