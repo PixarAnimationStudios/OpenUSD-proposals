@@ -23,7 +23,9 @@ The majority of work in VFX is centered around augmenting existing footage, so i
 - Rotoscoping: masking/matting parts of live action footage for further editing such as drawing over it.
 - Perspective correction aka de-keystoning: fixing distortions caused by the camera's relative position or angle to the subject.
 
-![](keystoning.png)
+<p align="center">
+  <img width="650" height="550" src="keystoning.png">
+</p>
 
 _Fig 1. When the camera is not perpendicular to the subject it can cause a perspective distortion (left) where parallel lines appear to converge._ 
 
@@ -61,7 +63,7 @@ This proposal aims to add native support for back plates to USD and will outline
 Back plates are placed at the focus distance by default, and scaled to fit the camera frustum such that the plate is always in focus. If the focus distance changes, then the back plate will also shift along the optical axis to remain at focus distance and scale accordingly. This auto-focus setup is tailored for match moving and assumes that whatever photos were captured are intended to be shown as is without any additional blurring. However let's say that the artist took the shot with everything in focus, and wanted to blur it virtually; this is also possible. We provide another set of controls (translate, rotate, scale) that allow us to tweak the plate to further adjust the image **after** it has been set to the focus distance. This means if we have a shot in full focus, we can simply tweak the plate to a position with the "right" amount of blurriness. Note that because these controls do not affect the focus distance of the camera, shifting the plate back could also further blur the footage. For background plate workflows, this may pose problems if the background was shot off-focus, and the plate needs to be moved away from the focus distance in order to avoid occluding objects in the scene. For a never-occluding background that is captured with some depth of field or blur, we advocate using an image plane instead of a back plate. If the background should block some elements, then in order to cheat the plate's position while also maintaining focus, one may consider increasing the depth of field.
 
 <p align="center">
-  <img width="550" height="400" src="bPwithT.png">
+  <img width="700" height="550" src="bPwithT.png">
 </p>
 
 _Fig 3. back plate model depicting the effects of tweak:translate. Back plate is placed at the focus distance and the translation is applied to the back plate's center at that point. Note that the size of the back plate does not change as it is translated._
@@ -129,6 +131,7 @@ Other considerations that will not be included:
 - GetImagePlaneWidth()
 - SetImagePlane([])
 - GetImagePlane()
+
 
 - CreateBackPlate(backPlateName)
 - SetBackPlate*Attr(backPlateName, value)
