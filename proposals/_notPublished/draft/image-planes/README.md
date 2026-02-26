@@ -17,15 +17,14 @@
 
 The majority of work in VFX is centered around augmenting existing footage, so it is important to view animation in the context of that footage (it doesn't matter if the animation looks good if it doesn't look integrated). A part of this augmentation process includes challenges such as:
 
-- Stretching anamorphic shots: undistorting shots taken with a wider lens
-- Match move solving to replicate the camera's movement in the virtual environment
-- Adjusting the focus of a virtual camera to match that of the footage
-- Rotoscoping: masking/matting parts of live action footage for further editing such as drawing over it
-- Photogrammetry: recreating a 3D model from stitching together various overlapping photos and scene information
-- Perspective correction aka de-keystoning: fixing distortions caused by the camera's relative position or angle to the subject
+- Stretching anamorphic shots: undistorting shots taken with a wider lens.
+- Match move solving to replicate the camera's movement in the virtual environment.
+- Adjusting the focus of a virtual camera to match that of the footage.
+- Rotoscoping: masking/matting parts of live action footage for further editing such as drawing over it.
+- Perspective correction aka de-keystoning: fixing distortions caused by the camera's relative position or angle to the subject.
 
-(Figure illustrating how the positioning of the camera can affect the its perspective of the subject \(a rectangle\) with the tilted camera seeing a trapezoid shape \(left\) and the perpendicular camera viewing a rectangle \(right\))
 ![](keystoning.png)
+
 Fig 1. When the camera is not perpendicular to the subject it can cause a perspective distortion (left) where parallel lines appear to converge. 
 
 Other workflows include:
@@ -33,6 +32,7 @@ Other workflows include:
 - Portals: A surface in one scene where, another scene is also being displayed. For mirrors, this is often the same scene.
 - Background plates: Displaying a background that could contain depth information on a card/image plane to reduce the complexity of the scene.
 - Photogrammetry: recreating a 3D model from stitching together various overlapping photos and scene information.
+
 For these examples, media is often times displayed on a 2D card, which we're referring to as a back plate, that is rendered like any other object in the scene. One possible photogrammetry workflow as an example: you can load a mesh of the subject and array of cameras (provided by a company like Lidar Lounge) into Maya from which the mesh can then be simplified and exported as USD. Then you can import it all into Mari, so the cameras become projectors; with each having the path to a back plate's image, that can then be projected onto the mesh. Without back plates, the utility of tools like usdview in matchmove, virtual production, photogrammetry, and other workflows is quite restricted and requires compositing before work can be evaluated in context.
 
 Another feature we hope to introduce in order to support VFX/animation pipeline is image planes. As mentioned above, VFX artists will need to match the virtual camera to the movements and focus of the physical camera that was used to more seamlessly blend the live action footage into a virtual environment. In practice, this is commonly done via modifying the film back/sensor distance to the lens. The image plane is a construct that will allow us to translate the sensor along the optical axis (thus changing the depth of field) as well as project an image directly onto the sensor. These images will always be at an infinite distance in the scene and always in focus irrespective of whether the camera itself is focused at infinity. In a potential scene, the image plane would be the far-away castle that rests atop a hill as a backdrop and back plates would hold the vines and branches to "shoot" through.
@@ -41,8 +41,10 @@ Another feature we hope to introduce in order to support VFX/animation pipeline 
 By adding support for this feature we expand the use of USD when interchanging with other software like [Maya](https://help.autodesk.com/view/MAYAUL/2025/ENU/?guid=GUID-E2490B87-087E-476A-9C1D-A917D009001A), [Blender](https://docs.blender.org/manual/en/latest/modeling/meshes/import_images_as_planes.html), [Renderman](https://rmanwiki-26.pixar.com/space/REN26/19661891/PxrImageDisplayFilter), and [Nuke](https://www.nukepedia.com/tools/gizmos/3d/imageplane3d/) ([another impl](https://www.nukepedia.com/tools/gizmos/3d/imageplane/)). In particular we are aware of interest in using USD with [Composure](https://dev.epicgames.com/documentation/en-us/unreal-engine/composure#plate) (Unreal Engine's compositing plugin) that would require back plate support to do so. Our proposal will cover what capabilities these DCC's back plate equivalents provide and outline the differences compared with our back plates.
 
 ### Optical System
-Our current UsdGeomCamera uses a pinhole model, where everything is in focus and blur is shader applied; however we are presenting a new thin lens model that will be used with image planes and back plates in order to provide more realistic camera controls. Note that by introducing this new model we're not removing any features of the pinhole model, but instead providing an alternate way to control depth of field that is more intuitive for VFX purposes. (Side by side comparision of our thin lens optical system versus the pinhole model our system currently uses)
+Our current UsdGeomCamera uses a pinhole model, where everything is in focus and blur is shader applied; however we are presenting a new thin lens model that will be used with image planes and back plates in order to provide more realistic camera controls. Note that by introducing this new model we're not removing any features of the pinhole model, but instead providing an alternate way to control depth of field that is more intuitive for VFX purposes. 
+
 ![](camModel.png)
+
 Fig 2. back plate/image plane API camera model (left); our system's camera model (right)
 
 Let us begin by defining a few terms:
@@ -54,9 +56,15 @@ Let us begin by defining a few terms:
 - **Focal length**: The distance from the principal plane H to the focal point when the lens is focused at infinity.
 
 ## Proposal
-This proposal aims to add native support for back plates to USD and will outline the framework for image planes though we will leave the latter for when there is better infrastructure to implement image planes in Hydra. Back plates are placed at the focus distance by default, and scaled to fit the camera frustum such that the plate is always in focus. If the focus distance changes, then the back plate will also shift along the optical axis to remain at focus distance and scale accordingly. This auto-focus setup is tailored for match moving and assumes that whatever photos were captured are intended to be shown as is without any additional blurring. However let's say that the artist took the shot with everything in focus, and wanted to blur it virtually; this is also possible. We provide another set of controls (translate, rotate, scale) that allow us to tweak the plate to further adjust the image **after** it has been set to the focus distance. This means if we have a shot in full focus, we can simply tweak the plate to a position with the "right" amount of blurriness. Note that because these controls do not affect the focus distance of the camera, shifting the plate back could also further blur the footage. For background plate workflows, this may pose problems if the background was shot off-focus, and the plate needs to be moved away from the focus distance in order to avoid occluding objects in the scene. For a never-occluding background that is captured with some depth of field or blur, we advocate using an image plane instead of a back plate. If the background should block some elements, then in order to cheat the plate's position while also maintaining focus, one may consider increasing the depth of field. Other image adjustments provided by our tweak controls include perspective corrections or de-squeezing if the image was shot through an anamorphic lens. Geometrically, this set up is like the inverse of a film projector, with the image plane being analogous to a movie screen in extrinsic space. Unlike a film projector though, the transformations applied through the schema, i.e. scale, rotation, and translation, are applied on the back plate itself. We can think of it like tilting the screen to correct for key-stoning as opposed to adjusting the lens in the projector. 
+This proposal aims to add native support for back plates to USD and will outline the framework for image planes though we will leave the latter for when there is better infrastructure to implement image planes in Hydra.
+
+Back plates are placed at the focus distance by default, and scaled to fit the camera frustum such that the plate is always in focus. If the focus distance changes, then the back plate will also shift along the optical axis to remain at focus distance and scale accordingly. This auto-focus setup is tailored for match moving and assumes that whatever photos were captured are intended to be shown as is without any additional blurring. However let's say that the artist took the shot with everything in focus, and wanted to blur it virtually; this is also possible. We provide another set of controls (translate, rotate, scale) that allow us to tweak the plate to further adjust the image **after** it has been set to the focus distance. This means if we have a shot in full focus, we can simply tweak the plate to a position with the "right" amount of blurriness. Note that because these controls do not affect the focus distance of the camera, shifting the plate back could also further blur the footage. For background plate workflows, this may pose problems if the background was shot off-focus, and the plate needs to be moved away from the focus distance in order to avoid occluding objects in the scene. For a never-occluding background that is captured with some depth of field or blur, we advocate using an image plane instead of a back plate. If the background should block some elements, then in order to cheat the plate's position while also maintaining focus, one may consider increasing the depth of field.
+
 ![](bPwithT.png)
+
 Fig 3. back plate model depicting the effects of tweak:translate. Back plate is placed at the focus distance and the translation is applied to the back plate's center at that point. Note that the size of the back plate does not change as it is translated.
+
+Other image adjustments provided by our tweak controls include perspective corrections or de-squeezing if the image was shot through an anamorphic lens. Geometrically, this set up is like the inverse of a film projector, with the image plane being analogous to a movie screen in extrinsic space. Unlike a film projector though, the transformations applied through the schema, i.e. scale, rotation, and translation, are applied on the back plate itself. We can think of it like tilting the screen to correct for key-stoning as opposed to adjusting the lens in the projector. 
 
 An image plane on the other hand refers to the camera sensor, such that images constrained to the sensor are always in focus and it can be used to shift the sensor along the optical axis to adjust the focus. For example shifting the image plane back can shorten the focus distance. We discussed fixing the image plane at the focal length; however, it does not make sense to restrict the sensor because that would imply that our lens that is always focused at infinity, yet also needs to somehow exhibit aperture blur which creates a contradictory model. Furthermore by explicitly providing a parameter to adjust the sensor distance; we enable camera blur to be interchangeable with other software it is not shader applied.
 
@@ -81,38 +89,48 @@ These alternative solutions were primarily to reduce the redundancy among the tw
 ### Properties
 | **Property** | **Back Plate Description** | **Image Plane Description** |
 | -------- | ---------------------- | ----------------------- |
-| **float2 scale:tweak<sup>1</sup>**   | Scales the XY dimensions of the plate in scene units.<sup>2</sup> The back plate's default scale will be determined by it's focus distance and the size of the camera frustum.  | Scales the image plane onto the sensor.<sup>2</sup>  | 
+| **float2 scale:tweak<sup>1</sup>**   | Scales the XY dimensions of the plate.<sup>2</sup> The back plate's default scale will be determined by it's focus distance and the size of the camera frustum.  | Scales the image plane onto the sensor.<sup>2</sup>  | 
 | **XXX rotate:tweak<sup>1</sup>**  | **(float3f)** 3D rotation around the center of the plate in degrees.<sup>2</sup> | **(float)** Rotation in degrees of the image plane on the sensor around the z-axis.<sup>2</sup> | 
 | **XXX translate:tweak<sup>1</sup>**  | **(float3f)** 3D translation in scene units of the center of the plate.<sup>2</sup> | **(float2)** XY translation of the image plane on the sensor measured in 1/10s of a scene unit.<sup>2</sup> | 
 | **float sensorDistance**  | N/A | Translates the sensor along the optical axis where 0.0 indicates that the sensor sits at the lens' focal length and positive values indicate that the sensor is moving further from H. Note that by default this value will be set to 0.0 and changing this value affects the focus distance but not the focal length. Measured in 1/10s of a scene unit. | 
 | **asset image**  | Asset path to the file containing a texture or sequence of textures. Hydra nor Usd textures support extracting images from media; though this is currently a project on the road map. When it is available we will revisit this schema and add media support for image planes as well. The images by default will be centered on the back plate.  | Same as back plate.  | 
 | **asset alpha:image**  | Asset path to channel representing the opacity of the back plate. If a single-channel texture is fed into this property, the alpha values will be set to that channel. If a two-channel texture is fed into this property, the alpha values will be set to the second channel. If a four-channel texture is fed into this property then the fourth channel will be considered the alpha channel. If any other n-channel texture is fed into image then they will be ignored and the alpha will be set to 1.0 as a default.  | N/A  | 
-| **asset depth:image**  | File path to a **single**-channel texture that describes the depth associated with the image if one exists. If not then the back plate will have uniform depth. The depth channel is a linear, floating point distance value computed as computedDepth = ((textureValue - minOffset) * normalizingFactor) + worldSpaceOffset, where the offsets can be trivially set by the user.  The depth channel is not a hardware generated z buffer as these have unknown format and are not generally readable outside of the GPU. | N/A | 
+| **asset depth:image**  | File path to a **single**-channel texture that describes the depth associated with the image if one exists. If not then the back plate will have uniform depth. The depth channel is a linear, floating point distance value computed as `computedDepth = ((textureValue - minOffset) * normalizingFactor) + worldSpaceOffset`, where the offsets can be trivially set by the user.  The depth channel is not a hardware generated z buffer as these have unknown format and are not generally readable outside of the GPU. | N/A | 
 | **float minOffset**  | Value to shift the depth values if minimum value of current range is not set at 0 if needed.<sup>3</sup> | N/A | 
 | **float normalizingFactor**  | Value to scale the texture depth value if needed.<sup>3</sup> | N/A | 
 | **float worldSpaceOffset**  | Offset to shift the depth into world space if needed.<sup>3</sup>  | N/A  | 
 | **float3f gain**  | Scales the per-channel upper bound of the normalized signal before gamma, analogous to per-channel exposure or slope. Must be >= 0.<sup>4</sup>  | Same as back plate.  | 
 | **float3f lift**  | Raises or lowers the signal floor (black level) of the normalized value prior to the gain and gamma stages. Ranges from 0-1.<sup>4</sup>   | Same as back plate. | 
-| **float3 gamma**  | Per-channel power applied to the normalized RGB signal after lift and gain.Must be greater than some epsilon value.<sup>4</sup>   | Same as back plate.  | 
+| **float3 gamma**  | Per-channel power applied to the normalized RGB signal after lift and gain. Must be greater than some epsilon value.<sup>4</sup>   | Same as back plate.  | 
 | **token visibility ["all","solo","mute"]**  | Toggles the visibility of the back plate to all cameras, only the associated camera, or no cameras, with "solo" being the fallback. Note that in use cases such as in photogrammetry, where you may have many plates in the scene, it can be useful to disable certain back plates to reduce clutter in your workflow.  | N/A  | 
 | **bool mute**  | N/A  | Toggles the visibility of the image plane. The fallback value is true.  | 
 
-1. These will be grouped using an uiHints:displayGroup called "Plate Fine Adjustments". Note "cheat" was an alternate choice for the namespace suffix.
-2. Transformation matrices will be applied in the order of translate•rotate•scale•v,where v is the center/origin of the back plate.
-3. computedDepth = ((textureValue - minOffset) * normalizingFactor) + worldSpaceOffset.
-4. Lift, gain, and gamma are applied in the order of (x*(gain-lift)+lift)^(1/gamma).  
+1. These will be grouped using an `uiHints:displayGroup` called "Plate Fine Adjustments". Note "cheat" was an alternate choice for the namespace suffix.
+2. Transformation matrices will be applied in the order of `translate•rotate•scale•v`,where v is the center/origin of the back plate.
+3. `computedDepth = ((textureValue - minOffset) * normalizingFactor) + worldSpaceOffset`.
+4. Lift, gain, and gamma are applied in the order of `(x*(gain-lift)+lift)^(1/gamma)`.  
 
 Other considerations that will not be included:
 
 - **Width/Height**: We felt that these values are repetitive given that we have scale for image planes and back plates' size are determined by the focus distance and camera frustums; however we will provide APIs to retrieve the dimensions of plate and planes. 
-- **Fit**: Describes how the image should be adjusted to fit within the dimensions of the card. The same effects can be achieved by modifying the properties of the frustum and transformation of the back plate; however a fit token would be contrary to our model since it describes how an image would be pasted onto a texture card. It does not encapsulate the semantics of a projection that are often needed for digital processing of VFX footage (de-keystoning, anamorphic images etc).
+- **Fit**: Describes how the image should be adjusted to fit within the dimensions of the card. The same effects can be achieved by modifying the properties of the frustum and transformation of the back plate; furthermore a fit token would be contrary to our model since it describes how an image would be pasted onto a texture card. It does not encapsulate the semantics of a projection that are often needed for digital processing of VFX footage (de-keystoning, anamorphic images etc).
 - **Channel Names**: Since Usd and Storm do not currently support channel naming, we felt that it would be better to provide separate inputs for alpha and depth similar to USdPreviewSurface. If support for channel naming is added in the future then we may revisit this proposal and add channel name properties.
 - **Relation to UsdRenderPass**: While we currently will not be interacting with additional render passes, having individual bools to toggle whether or not image planes are visible and back plates are visible, can be useful for render pass workflows. For instance, a background render pass would want the image plane visible but not the back plates; whereas other render passes may want differently.
 
 #### API Methods
+- CreateImagePlane(imagePlaneName)
+- SetImagePlane*Attr(imagePlaneName, value)
+- GetImagePlane*Attr(imagePlaneName, attribute)
+- GetImagePlaneHeight()
+- GetImagePlaneWidth()
+- SetImagePlane([])
+- GetImagePlane()
+
 - CreateBackPlate(backPlateName)
 - SetBackPlate*Attr(backPlateName, value)
 - GetBackPlate*Attr(backPlateName, attribute)
+- GetBackPlateHeight()
+- GetBackPlateWidth()
 - SetBackPlates([])
 - GetBackPlates()
 
