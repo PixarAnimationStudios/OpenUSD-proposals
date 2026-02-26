@@ -25,7 +25,7 @@ The majority of work in VFX is centered around augmenting existing footage, so i
 
 ![](keystoning.png)
 
-Fig 1. When the camera is not perpendicular to the subject it can cause a perspective distortion (left) where parallel lines appear to converge. 
+_Fig 1. When the camera is not perpendicular to the subject it can cause a perspective distortion (left) where parallel lines appear to converge._ 
 
 Other workflows include:
 - Multi-plane camera: foreground, mid ground, background elements are all displayed on different planes facing the camera to create the illusion of depth in the scene. Essentially a virtual version of Disney's multi-plane camera.
@@ -45,7 +45,7 @@ Our current UsdGeomCamera uses a pinhole model, where everything is in focus and
 
 ![](camModel.png)
 
-Fig 2. back plate/image plane API camera model (left); our system's camera model (right)
+_Fig 2. back plate/image plane API camera model (left); our system's camera model (right)_
 
 Let us begin by defining a few terms:
 
@@ -63,7 +63,8 @@ Back plates are placed at the focus distance by default, and scaled to fit the c
 <p align="center">
   <img width="550" height="400" src="bPwithT.png">
 </p>
-Fig 3. back plate model depicting the effects of tweak:translate. Back plate is placed at the focus distance and the translation is applied to the back plate's center at that point. Note that the size of the back plate does not change as it is translated.
+_Fig 3. back plate model depicting the effects of tweak:translate. Back plate is placed at the focus distance and the translation is applied to the back plate's center at that point. Note that the size of the back plate does not change as it is translated._
+
 
 Other image adjustments provided by our tweak controls include perspective corrections or de-squeezing if the image was shot through an anamorphic lens. Geometrically, this set up is like the inverse of a film projector, with the image plane being analogous to a movie screen in extrinsic space. Unlike a film projector though, the transformations applied through the schema, i.e. scale, rotation, and translation, are applied on the back plate itself. We can think of it like tilting the screen to correct for key-stoning as opposed to adjusting the lens in the projector. 
 
