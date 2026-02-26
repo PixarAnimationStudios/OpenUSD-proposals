@@ -63,6 +63,7 @@ Back plates are placed at the focus distance by default, and scaled to fit the c
 <p align="center">
   <img width="550" height="400" src="bPwithT.png">
 </p>
+
 _Fig 3. back plate model depicting the effects of tweak:translate. Back plate is placed at the focus distance and the translation is applied to the back plate's center at that point. Note that the size of the back plate does not change as it is translated._
 
 
@@ -88,29 +89,30 @@ Other considerations we had:
 
 These alternative solutions were primarily to reduce the redundancy among the two; however the namespacing of the properties for the former solution would look something like `backPlate:imageFitBase:_instance_name_:propertyName` for back plates and similarly for image planes, which is not as user friendly. Furthermore we would also need to implement extra logic to ensure that there can only be one image plane authored to each camera. In order to draw a clear distinction between the two concepts as well as simplifying the property namespacing we've opted for two separate schemas.
 
+
 ### Properties
 | **Property** | **Back Plate Description** | **Image Plane Description** |
 | -------- | ---------------------- | ----------------------- |
-| **float2 scale:tweak<sup>1</sup>**   | Scales the XY dimensions of the plate.<sup>2</sup> The back plate's default scale will be determined by it's focus distance and the size of the camera frustum.  | Scales the image plane onto the sensor.<sup>2</sup>  | 
-| **XXX rotate:tweak<sup>1</sup>**  | **(float3f)** 3D rotation around the center of the plate in degrees.<sup>2</sup> | **(float)** Rotation in degrees of the image plane on the sensor around the z-axis.<sup>2</sup> | 
-| **XXX translate:tweak<sup>1</sup>**  | **(float3f)** 3D translation in scene units of the center of the plate.<sup>2</sup> | **(float2)** XY translation of the image plane on the sensor measured in 1/10s of a scene unit.<sup>2</sup> | 
+| **float2 scale:tweak[^1]**   | Scales the XY dimensions of the plate.[^2] The back plate's default scale will be determined by it's focus distance and the size of the camera frustum.  | Scales the image plane onto the sensor.[^2]  | 
+| **XXX rotate:tweak[^1]**  | **(float3f)** 3D rotation around the center of the plate in degrees.[^2] | **(float)** Rotation in degrees of the image plane on the sensor around the z-axis.[^2] | 
+| **XXX translate:tweak[^1]**  | **(float3f)** 3D translation in scene units of the center of the plate.[^2] | **(float2)** XY translation of the image plane on the sensor measured in 1/10s of a scene unit.[^2] | 
 | **float sensorDistance**  | N/A | Translates the sensor along the optical axis where 0.0 indicates that the sensor sits at the lens' focal length and positive values indicate that the sensor is moving further from H. Note that by default this value will be set to 0.0 and changing this value affects the focus distance but not the focal length. Measured in 1/10s of a scene unit. | 
 | **asset image**  | Asset path to the file containing a texture or sequence of textures. Hydra nor Usd textures support extracting images from media; though this is currently a project on the road map. When it is available we will revisit this schema and add media support for image planes as well. The images by default will be centered on the back plate.  | Same as back plate.  | 
 | **asset alpha:image**  | Asset path to channel representing the opacity of the back plate. If a single-channel texture is fed into this property, the alpha values will be set to that channel. If a two-channel texture is fed into this property, the alpha values will be set to the second channel. If a four-channel texture is fed into this property then the fourth channel will be considered the alpha channel. If any other n-channel texture is fed into image then they will be ignored and the alpha will be set to 1.0 as a default.  | N/A  | 
 | **asset depth:image**  | File path to a **single**-channel texture that describes the depth associated with the image if one exists. If not then the back plate will have uniform depth. The depth channel is a linear, floating point distance value computed as `computedDepth = ((textureValue - minOffset) * normalizingFactor) + worldSpaceOffset`, where the offsets can be trivially set by the user.  The depth channel is not a hardware generated z buffer as these have unknown format and are not generally readable outside of the GPU. | N/A | 
-| **float minOffset**  | Value to shift the depth values if minimum value of current range is not set at 0 if needed.<sup>3</sup> | N/A | 
-| **float normalizingFactor**  | Value to scale the texture depth value if needed.<sup>3</sup> | N/A | 
-| **float worldSpaceOffset**  | Offset to shift the depth into world space if needed.<sup>3</sup>  | N/A  | 
-| **float3f gain**  | Scales the per-channel upper bound of the normalized signal before gamma, analogous to per-channel exposure or slope. Must be >= 0.<sup>4</sup>  | Same as back plate.  | 
-| **float3f lift**  | Raises or lowers the signal floor (black level) of the normalized value prior to the gain and gamma stages. Ranges from 0-1.<sup>4</sup>   | Same as back plate. | 
-| **float3 gamma**  | Per-channel power applied to the normalized RGB signal after lift and gain. Must be greater than some epsilon value.<sup>4</sup>   | Same as back plate.  | 
+| **float minOffset**  | Value to shift the depth values if minimum value of current range is not set at 0 if needed.[^3] | N/A | 
+| **float normalizingFactor**  | Value to scale the texture depth value if needed.[^3] | N/A | 
+| **float worldSpaceOffset**  | Offset to shift the depth into world space if needed.[^3]  | N/A  | 
+| **float3f gain**  | Scales the per-channel upper bound of the normalized signal before gamma, analogous to per-channel exposure or slope. Must be >= 0.[^4]  | Same as back plate.  | 
+| **float3f lift**  | Raises or lowers the signal floor (black level) of the normalized value prior to the gain and gamma stages. Ranges from 0-1.[^4] | Same as back plate. | 
+| **float3 gamma**  | Per-channel power applied to the normalized RGB signal after lift and gain. Must be greater than some epsilon value.[^4] | Same as back plate.  | 
 | **token visibility ["all","solo","mute"]**  | Toggles the visibility of the back plate to all cameras, only the associated camera, or no cameras, with "solo" being the fallback. Note that in use cases such as in photogrammetry, where you may have many plates in the scene, it can be useful to disable certain back plates to reduce clutter in your workflow.  | N/A  | 
 | **bool mute**  | N/A  | Toggles the visibility of the image plane. The fallback value is true.  | 
 
-1. These will be grouped using an `uiHints:displayGroup` called "Plate Fine Adjustments". Note "cheat" was an alternate choice for the namespace suffix.
-2. Transformation matrices will be applied in the order of `translate•rotate•scale•v`,where v is the center/origin of the back plate.
-3. `computedDepth = ((textureValue - minOffset) * normalizingFactor) + worldSpaceOffset`.
-4. Lift, gain, and gamma are applied in the order of `(x*(gain-lift)+lift)^(1/gamma)`.  
+[^1]: These will be grouped using an `uiHints:displayGroup` called "Plate Fine Adjustments". Note "cheat" was an alternate choice for the namespace suffix.
+[^2]: Transformation matrices will be applied in the order of `translate•rotate•scale•v`,where v is the center/origin of the back plate.
+[^3]: `computedDepth = ((textureValue - minOffset) * normalizingFactor) + worldSpaceOffset`.
+[^4]: Lift, gain, and gamma are applied in the order of `(x*(gain-lift)+lift)^(1/gamma)`. 
 
 Other considerations that will not be included:
 
