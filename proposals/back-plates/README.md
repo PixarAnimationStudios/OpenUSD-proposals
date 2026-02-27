@@ -1,5 +1,5 @@
 ![Status:Draft](https://img.shields.io/badge/Draft-blue)
-## Image Plane Support for USD
+## Back Plate and Image Plane Support for USD
 
 ## Contents
 - [Background](#background)
