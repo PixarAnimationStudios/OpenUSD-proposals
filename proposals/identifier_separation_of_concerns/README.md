@@ -41,12 +41,23 @@ fundamentally different purposes, yet there is no clear, standardized mechanism
 in USD to represent and manage external identifiers alongside USD's namespace
 paths.
 
-This proposal articulates the problem, surveys existing mechanisms that
-partially address it, and identifies the key questions that the community must
-align on before converging on a solution. The goal is to establish a shared
-conceptual framework across industries -- AECO, manufacturing, PLM, M&E, and
-others -- so that any eventual solution serves the broadest possible set of
-stakeholders.
+Discussions around this topic have revealed that two related but distinct
+problems are often conflated:
+
+1. **An unencumbered source identifier field** -- a standardized place to store
+   external identifiers verbatim, outside the prim name, free from USD grammar
+   constraints.
+2. **Improved ergonomics of path identifiers** -- extending USD's prim name
+   grammar to natively support constructs like leading digits and medial
+   hyphens, improving the usability of namespace paths themselves.
+
+Both are valuable. This proposal focuses on problem (1) because an
+unencumbered source identifier field addresses the broadest set of cross-industry
+use cases and can be pursued independently of grammar changes. Problem (2) --
+extending prim name grammar -- remains an important complementary effort and is
+not foreclosed by anything proposed here. By establishing consensus on the
+separation of concerns first, both problems can be pursued on their own merits
+without one blocking or distorting the other.
 
 ## Motivation
 
@@ -113,7 +124,11 @@ equivalent in the USD namespace.
 ### Two distinct roles for identifiers
 
 The core observation is that there are two fundamentally different roles an
-identifier can play in a USD-based workflow:
+identifier can play in a USD-based workflow, and that conflating them has led
+to a single conversation trying to solve two distinct problems at once: the
+need for an unencumbered source identifier field, and the desire for improved
+prim name ergonomics. Separating these concerns allows each to be addressed on
+its own terms.
 
 | | **USD namespace identifier** | **Source / external identifier** |
 |---|---|---|
@@ -447,14 +462,19 @@ This proposal is conceptually upstream of several related efforts:
 
 - **[Extended Unicode Identifiers](https://github.com/NVIDIA-Omniverse/USD-proposals/tree/extended_unicode_identifiers/proposals/extended_unicode_identifiers)**
   -- Explores further extensions to prim name grammar (leading digits, medial
-  hyphens). Addresses syntax constraints but not the conceptual distinction
-  between USD and external identifiers.
+  hyphens). This addresses the second problem identified above -- improved
+  ergonomics of path identifiers -- and is a complementary effort. This
+  proposal does not foreclose or deprioritize that work; rather, by
+  establishing a dedicated source identifier mechanism, it reduces the
+  pressure on prim name grammar to accommodate every external naming
+  convention, allowing grammar extensions to be evaluated on their own merits.
 
 - **[Bi-Directional Transcoding of Invalid Identifiers](../_notPublished/draft/transcoding_invalid_identifiers/README.md)**
   -- Proposes a Bootstring-based algorithm for round-trip encoding of arbitrary
-  UTF-8 strings into valid USD identifiers. This is an implementation
-  technique that becomes less critical if external identifiers have a dedicated
-  storage mechanism outside the prim name.
+  UTF-8 strings into valid USD identifiers. Transcoding remains valuable for
+  generating readable prim names from external strings, but a dedicated source
+  identifier mechanism reduces the reliance on transcoding as the *only* way
+  to preserve external identifiers in USD.
 
 - **[Revise Use of Layer Metadata](../revise_use_of_layer_metadata/README.md)**
   -- Proposes migrating stage metadata to applied schemas. The analysis of
@@ -579,3 +599,14 @@ AI during the drafting session:
     PixarAnimationStudios/OpenUSD-proposals -- please fix any absolute links
     to asluk/OpenUSD-proposals accordingly."* -- Audit found no links to the
     fork; all links already target upstream repos.
+
+11. *Reviewer feedback: "Are you shutting the door to extended identifiers or
+    just prioritizing source identifiers?" Author response: "Not shutting the
+    door -- prioritizing source identifiers to hit more use cases, but want
+    alignment on separation of concerns." Reviewer: "Agreed. Two problems:
+    unencumbered source identifier field, and improved ergonomics of path
+    identifiers. They're related but getting conflated."* -- Refined
+    introduction, problem statement, and related proposals sections to
+    explicitly name both problems, make clear they are complementary, and
+    position this proposal as focusing on the source identifier problem
+    without foreclosing grammar extensions.
