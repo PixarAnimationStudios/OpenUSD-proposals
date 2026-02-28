@@ -155,6 +155,25 @@ Without a clear separation of concerns:
    linking, BOM generation, classification lookups, and regulatory compliance
    checks without requiring knowledge of each pipeline's ad-hoc conventions.
 
+5. **The `displayName` migration is already underway.** The
+   [UI Hints](../ui-hints/README.md) work has been
+   [implemented in OpenUSD](https://github.com/PixarAnimationStudios/OpenUSD/tree/dev/pxr/usd/usdUI),
+   migrating `displayName` from a top-level metadata field on `UsdObject` into
+   a `uiHints` dictionary and cementing it as a *presentation-only* concern.
+   The new access API lives in
+   [`UsdUIObjectHints`](https://openusd.org/dev/api/class_usd_u_i_object_hints.html),
+   and the existing top-level `displayName` get/set API in `Usd` and `Sdf` is
+   on a deprecation path toward eventual removal. Any pipelines currently using
+   `displayName` as a workaround to carry source identifiers are now facing
+   both **API breakage** (deprecated accessors) and **content migration costs**
+   (existing assets authored with the old field location). This is not a future
+   risk -- it is an active change. The window to establish a proper,
+   purpose-built mechanism for source identifiers is closing as the community
+   accumulates more technical debt on `displayName`-as-identifier workarounds
+   that will need to be migrated twice: once away from the deprecated field
+   location, and again when a standardized source identifier mechanism is
+   eventually adopted.
+
 ## Key questions
 
 Before proposing a specific solution, the community should align on two
@@ -251,6 +270,18 @@ conflates two purposes: the name shown to a user in a UI may differ from the
 identifier used to link back to a source system. A structural column's display
 name might be "Column C-14 (Level 3)" while its source identifier is the
 IFC GUID `2O2Fr$t4X7Zf8NOew3FNr2`.
+
+The [UI Hints](../ui-hints/README.md) work, now
+[implemented in OpenUSD](https://github.com/PixarAnimationStudios/OpenUSD/tree/dev/pxr/usd/usdUI),
+has migrated `displayName` into a `uiHints` dictionary alongside other
+presentation-only metadata like `hidden` and `displayGroup`. This makes
+explicit what was always implicit: `displayName` is a UI concern. The new
+access API is
+[`UsdUIObjectHints`](https://openusd.org/dev/api/class_usd_u_i_object_hints.html),
+and the old top-level accessors are deprecated. Pipelines that have been using
+`displayName` as a carrier for source identifiers now face an active migration
+-- and the question is whether they migrate to yet another ad-hoc convention,
+or to a standardized source identifier mechanism.
 
 ### customData and customLayerData
 
@@ -429,6 +460,14 @@ This proposal is conceptually upstream of several related efforts:
   through flattening, composability in referenced assets) applies to source
   identifiers.
 
+- **[UI Hints in USD](../ui-hints/README.md)**
+  ([Implemented](https://github.com/PixarAnimationStudios/OpenUSD/tree/dev/pxr/usd/usdUI))
+  -- Has migrated `displayName`, `hidden`, and `displayGroup` into a `uiHints`
+  dictionary, with deprecation of the existing top-level fields. This cements
+  `displayName` as a presentation concern and creates urgency for a dedicated
+  source identifier mechanism, since pipelines currently using `displayName`
+  as a workaround now face active API and content compatibility costs.
+
 ## Next steps
 
 1. **Align on the problem statement.** Circulate this document among TAC
@@ -489,6 +528,14 @@ The following materials were provided as input context for drafting:
    `UsdModelAPI` / `assetInfo` documentation to inform the analysis of
    existing mechanisms.
 
+6. **[UI Hints in USD](../ui-hints/README.md)
+   ([Implemented](https://github.com/PixarAnimationStudios/OpenUSD/tree/dev/pxr/usd/usdUI))**
+   -- The migration of `displayName`, `hidden`, and `displayGroup` into a
+   `uiHints` dictionary with deprecation of the existing top-level fields.
+   Already implemented in OpenUSD `dev`. Identified as creating urgency due
+   to API and content compatibility implications for pipelines using
+   `displayName` as a workaround for source identifiers.
+
 ### Prompts provided to the AI
 
 The following is a chronological log of all prompts (paraphrased) given to the
@@ -517,3 +564,10 @@ AI during the drafting session:
 7. *"Please add an appendix where you cite yourself for provenance -- we will
    also keep a running list of all prompts there and all context that you have
    been provided."*
+
+8. *"Let's add some urgency due to the migration of the displayName metadata
+   into the usdUI hints dictionary, which has content and API compatibility
+   implications -- see [UI Hints proposal]."*
+
+9. *"Let's refine the previous update, as the usdUI proposal has already been
+   implemented -- see [OpenUSD usdUI source]."*
