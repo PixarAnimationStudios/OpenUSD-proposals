@@ -208,12 +208,17 @@ including identifiers from multiple systems simultaneously.
 
 For example, a single structural column in a building might carry:
 
-| System | Identifier type | Value |
-|---|---|---|
-| IFC | GlobalId | `2O2Fr$t4X7Zf8NOew3FNr2` |
-| Revit | ElementId | `847562` |
-| Uniclass 2015 | Classification | `Ss_25_10_30` |
-| Project | Mark | `C-14` |
+| System         | Identifier type | Value               |
+|----------------|----------------|---------------------|
+| IFC            | GlobalId       | `2O2Fr$t4X7Zf8NOew3FNr2` |
+| Revit          | ElementId      | `847562`            |
+| Uniclass 2015  | Classification | `Ss_25_10_30`       |
+| Revit          | Mark           | `C-14`              |
+
+<!-- 
+  - For Uniclass 2015 codes, see: [Uniclass 2015 - Table Ss: Structure](https://www.thenbs.com/our-tools/uniclass/ss_25_10_30) for example codes.
+  - The "Project"/"Mark" example was originally included to demonstrate a project-specific identifier. In AECO (Architecture, Engineering, Construction, and Operations) workflows, "Mark" is a commonly used parameter (e.g., in Autodesk Revit) for an instance or tag number. "Project" is not a standardized system like IFC or Revit, so "Revit / Mark" better reflects actual usage, where the "Mark" parameter is an identifier for individual elements.
+-->
 
 **Question:** Should the mechanism be a single identifier string, a typed
 identifier with a system qualifier, or a dictionary that can hold multiple
@@ -318,9 +323,7 @@ frequently conflict with USD's prim name grammar:
   the ability to derive revision information from the identifier is a
   requirement, not a convenience.
 
-The AOUSD AECO Interest Group has documented these requirements in detail (see
-[AOUSD Prim Name Grammar Use Case](https://github.com/AcademySoftwareFoundation/OpenUSD-proposals/discussions),
-DRAFT v0.0). A key insight from that work is the distinction between the prim
+The AOUSD AECO Interest Group has documented these requirements in detail. A key insight from that work is the distinction between the prim
 name (which may be a transcoded or generated valid identifier) and the
 **source name** from the originating system, which must be preserved exactly
 for round-trip fidelity.
@@ -501,7 +504,7 @@ author.
 
 The following materials were provided as input context for drafting:
 
-1. **Meeting discussion notes** -- Summary of a TAC-adjacent meeting covering
+1. **Meeting discussion notes** -- Summary of an AOUSD TAC from 2026-02-20 covering
    the core problem statement (separating USD identifiers from external
    identifiers), key questions (instance vs. source, single value vs. package),
    existing USD concepts (`assetInfo`), the desired approach (conceptual
@@ -517,7 +520,7 @@ The following materials were provided as input context for drafting:
    strings into valid USD identifiers. Referenced as a related implementation
    technique.
 
-4. **[AOUSD AECO Interest Group Prim Name Grammar Use Case](https://github.com/AcademySoftwareFoundation/OpenUSD-proposals/discussions)**
+4. **AOUSD AECO Interest Group Prim Name Grammar Use Case**
    (DRAFT v0.0, dated 2025-04-05) -- AECO domain requirements including
    leading digits, medial hyphens, slashes, GUIDs, regional characters,
    bi-directional transcoding, and semantically meaningful naming conventions.
@@ -571,3 +574,8 @@ AI during the drafting session:
 
 9. *"Let's refine the previous update, as the usdUI proposal has already been
    implemented -- see [OpenUSD usdUI source]."*
+
+10. *"Keep in mind that this is going to be submitted as a pull request to
+    PixarAnimationStudios/OpenUSD-proposals -- please fix any absolute links
+    to asluk/OpenUSD-proposals accordingly."* -- Audit found no links to the
+    fork; all links already target upstream repos.
