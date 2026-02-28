@@ -77,20 +77,22 @@ USD's namespace paths are:
   constraints (currently the XID specification as of OpenUSD 24.03).
 - **The primary key** for binding opinions across layers.
 
-USD intentionally avoids GUIDs as primary identifiers. As stated in the
-[OpenUSD introduction](https://openusd.org/release/intro.html#no-guids):
+A recurring community question is
+[why USD does not use GUIDs](https://openusd.org/release/intro.html#no-guids)
+as primary identifiers. While GUIDs would make rename and refactor workflows
+more ergonomic, they cannot replace namespace paths: composition depends on
+paths as **sort keys** for deterministic ordering of opinions across layers,
+and opaque GUIDs would destroy that ordering. USD addresses the rename
+problem through
+[relocates](https://openusd.org/release/glossary.html#usdglossary-relocates)
+instead.
 
-> USD uses a textual, hierarchical namespace to identify its data, which means
-> it is "namespace paths" by which overrides bind to their defining
-> prims/properties. [...] We have decided that for us, the cost of occasional
-> "namespace fix-up" operations run over a collection of assets is worth paying
-> for the ease of asset construction and aggregation, and readable text asset
-> representations that we get from [namespace paths].
-
-This is a deliberate and well-reasoned design choice. The question this
-proposal raises is not whether USD should change this design, but rather how
-USD should accommodate the *additional* identifiers that external systems need
-to carry alongside the namespace path.
+The GUID debate is itself an example of the conflation this proposal seeks
+to resolve. Much of the pressure for GUIDs-as-primary-identifiers comes not
+from a desire to replace namespace paths, but from the absence of any
+standardized place to carry stable external identifiers *alongside* them.
+A dedicated source identifier field would address that underlying need
+without disturbing the composition model.
 
 ### The expanding ecosystem
 
@@ -610,3 +612,84 @@ AI during the drafting session:
     explicitly name both problems, make clear they are complementary, and
     position this proposal as focusing on the source identifier problem
     without foreclosing grammar extensions.
+
+12. *Second reviewer feedback (four notes): (1) The Pixar "No GUIDs" quote is
+    in the "realm of feelings" -- the stronger argument is that namespace paths
+    are the sort key for deterministic total ordering of the composition graph,
+    GUIDs would destroy that invariant, and relocates solve the rename problem
+    without breaking it. PCP prim index nodes effectively embody a
+    process-local unique identity but this is derived from, not replaceable
+    by, the namespace path. (2) UsdMediaAssetPreviewsAPI and UsdModelAPI
+    should be contrasted as either part of the solution or prototypes for one.
+    (3) Instance vs. source identity answer is tied to notes 1 and 2.
+    (4) The rest of the article looks ready for publication.* -- Note 1
+    addressed: augmented the "No GUIDs" quote (retained as official
+    documentation) with the technical argument about lexicographic ordering,
+    composition determinism, prim indices, and relocates. **Notes 2 and 3
+    reviewed but not yet addressed** -- the UsdModelAPI / UsdMediaAssetPreviewsAPI
+    contrast and the instance-vs-source-identity connection to the composition
+    model are deferred pending further review. Note 4 required no changes.
+
+13. *"Let's back up and focus on the 'feelings' argument -- since that comes
+    from official OpenUSD documentation, let's not jettison entirely, but
+    rather augment it. The more complete reasoning will most likely be
+    submitted as a PR to OpenUSD docs/intro.rst."* -- Restored the official
+    Pixar quote, restructured to lead with it, then augment with the deeper
+    technical reasoning as additional context.
+
+14. *"Let's focus on just the intro for now -- reviewed the model API and
+    usdmedia pieces for now, but remember the context and record that we
+    have not addressed those notes."* -- Reverted the assetInfo section to
+    its simpler form. Notes 2 and 3 from reviewer feedback (item 12) are
+    recorded as pending: UsdModelAPI / UsdMediaAssetPreviewsAPI contrast,
+    and the connection between instance-vs-source identity and the
+    composition model.
+
+15. *"The intro is diving too technically deep -- PCP is an implementation
+    detail. Explain in simple conceptual terms that GUIDs make some workflows
+    more elegant but break the composition model, without requiring the reader
+    to understand composition engine internals."* -- Rewrote the augmented
+    section: removed PCP/prim-index internals, explained GUIDs' appeal
+    (rename/refactor ergonomics), then explained why they can't replace
+    namespace paths (sort keys for deterministic opinion ordering), and
+    noted relocates as USD's alternative. Kept the official Pixar quote.
+
+16. *"Does the whole GUIDs discussion flow well with preceding and succeeding
+    sections? GUIDs are a common point of contention, and another example of
+    where poor separation of concerns derails progress."* -- Reframed the
+    GUIDs section to build the proposal's argument rather than read as a
+    defensive digression. Added closing paragraph positioning the GUID debate
+    itself as a symptom of the missing separation of concerns: pressure for
+    GUIDs-as-primary-identifiers comes from the absence of a dedicated source
+    identifier mechanism, not from a desire to replace namespace paths.
+
+17. *"I'm concerned with how much real estate the GUIDs discussion takes up --
+    do we risk readers focusing too much on it?"* -- Compressed the GUIDs
+    section from ~37 lines to ~16 lines. Removed the block quote of official
+    Pixar text (linked instead), tightened the technical argument to
+    essentials, preserved the reframe payoff. All four beats retained:
+    community asks, sort-key reasoning, relocates alternative, debate-as-
+    symptom.
+
+18. *"We've now taken a pass at addressing the second reviewer's first note.
+    Record that we have not yet addressed the other notes -- we will do so in
+    subsequent working sessions."*
+
+### Outstanding items for subsequent sessions
+
+The following items from reviewer feedback have been reviewed but **not yet
+addressed** in the document text:
+
+- **Second reviewer, note 2:** `UsdModelAPI` and `UsdMediaAssetPreviewsAPI`
+  should be contrasted in the existing mechanisms section as either part of
+  the solution or prototypes for one. Key observations: `assetInfo` can
+  technically live on any prim (the model-root restriction is in the
+  convenience API, not the mechanism); `UsdMediaAssetPreviewsAPI`
+  demonstrates schema-backed typed access to `assetInfo` sub-dictionaries,
+  a pattern that could be generalized for source identifiers.
+
+- **Second reviewer, note 3:** The instance-vs-source identity question is
+  tied to the composition model argument (note 1) and to the assetInfo /
+  ModelAPI analysis (note 2). The reviewer left this open for debate but
+  suggested the answer may follow naturally once the other notes are
+  addressed.
