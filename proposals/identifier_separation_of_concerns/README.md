@@ -198,23 +198,20 @@ foundational questions.
 
 ### Instance identity vs. source identity
 
-A USD prim's namespace path uniquely identifies one *instance* -- a specific
-occurrence of something in the scene. But many workflows also need to express
-which *source asset or entity* that instance represents.
+Namespace paths already serve as instance identifiers -- they uniquely
+address a specific prim in a specific composition. The gap is in *source*
+identity: which external asset, component, or entity does this instance
+represent?
 
-Consider a building model where the same door type is placed in 30 locations.
-Each placement is a distinct prim with a unique namespace path, but they all
-share a common source identity: the door type's catalog number, IFC GUID, or
-PLM part number.
+Consider a building where the same door type is placed in 30 locations.
+Each placement has a unique namespace path, but they all share a source
+identity: the door type's catalog number, IFC GUID, or PLM part number.
+That source identity is independent of the namespace -- it should survive
+renames and be shared across instances.
 
-**Question:** Should the proposed mechanism primarily support source identity
-(shared across instances), instance identity in external systems (unique per
-placement), or both?
-
-The answer likely varies by domain. In manufacturing, a part number (source
-identity) is shared across instances but each physical part may also have a
-serial number (instance identity). Both are useful; a flexible mechanism should
-accommodate either.
+Some domains also assign external instance-level identifiers (e.g., serial
+numbers for individual physical parts). A flexible mechanism should
+accommodate both, but the primary gap is source identity.
 
 ### Single value vs. metadata package
 
@@ -696,16 +693,10 @@ AI during the drafting session:
 
 19. *"Let's finish addressing reviewer notes."* / *"I mean don't address
     note 3 yet."* -- Addressed note 2 only: expanded the assetInfo section
-    to contrast `UsdModelAPI` and `UsdMediaAssetPreviewsAPI`, noting that
-    `assetInfo` can technically live on any prim (model-root restriction is
-    in the convenience API), and that `UsdMediaAssetPreviewsAPI`'s
-    sub-dictionary schema pattern could be generalized. Note 3 changes
-    reverted; instance-vs-source identity section restored to original form.
+    to contrast `UsdModelAPI` and `UsdMediaAssetPreviewsAPI`.
 
-### Outstanding items for subsequent sessions
-
-- **Second reviewer, note 3:** The instance-vs-source identity question is
-  tied to the composition model argument (note 1) and to the assetInfo /
-  ModelAPI analysis (note 2). The reviewer left this open for debate but
-  suggested the answer may follow naturally once the other notes are
-  addressed.
+20. *"Now let's do note 3 -- try to keep it concise."* -- Addressed note 3:
+    connected instance-vs-source identity to the composition model argument.
+    Namespace paths already serve as instance identity; the gap is source
+    identity. Removed the open question framing, stated the conclusion
+    directly, kept the door open for external instance-level identifiers.
