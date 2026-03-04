@@ -582,16 +582,21 @@ responsibility of the human author. The AI was used as a drafting tool to
 accelerate the writing process based on context and direction provided by the
 author.
 
+The context provided to the AI was itself the product of extensive preceding
+discussion among stakeholders and subject matter experts across AOUSD working
+groups, industry partners, and internal reviewers. The AI did not participate
+in those discussions; it received their outputs as input for drafting.
+
 ### Context provided to the AI
 
 The following materials were provided as input context for drafting:
 
-1. **Meeting discussion notes** -- Summary of an AOUSD TAC from 2026-02-20 covering
-   the core problem statement (separating USD identifiers from external
-   identifiers), key questions (instance vs. source, single value vs. package),
-   existing USD concepts (`assetInfo`), the desired approach (conceptual
-   separation first, implementation details later, cross-industry alignment),
-   and timeline.
+1. **Meeting discussion notes** -- Summary of an AOUSD TAC discussion from
+   2026-02-20 covering the core problem statement (separating USD identifiers
+   from external identifiers), key questions (instance vs. source, single
+   value vs. package), existing USD concepts (`assetInfo`), the desired
+   approach (conceptual separation first, implementation details later,
+   cross-industry alignment), and timeline.
 
 2. **[Extended Unicode Identifiers proposal](https://github.com/NVIDIA-Omniverse/USD-proposals/tree/extended_unicode_identifiers/proposals/extended_unicode_identifiers)**
    -- Referenced as related but noted as an implementation detail regarding
@@ -633,173 +638,30 @@ The following materials were provided as input context for drafting:
    working session proposal "Asset Identity & Geometry-Anchored Semantics
    for Manufacturing" (AOUSD / AMT / NVIDIA), accompanying notes on
    identity layers from AMT collaborators, and Feature ID Flowchart
-   (Matt McCormick, AMT). Describes identity continuity as the
-   requirement that source identifiers survive manufacturing state
-   transitions (destructive geometry changes, re-parenting, assembly
-   changes) and extends to feature-level identifiers that may appear,
-   disappear, or deform across process steps. Explicitly aligns with
-   "ongoing AOUSD discussions on decoupling USD identifiers from external
-   system identifiers."
+   (Matt McCormick, AMT). Describes identity continuity as the requirement
+   that source identifiers survive manufacturing state transitions
+   (destructive geometry changes, re-parenting, assembly changes) and
+   extends to feature-level identifiers that may appear, disappear, or
+   deform across process steps. Explicitly aligns with "ongoing AOUSD
+   discussions on decoupling USD identifiers from external system
+   identifiers."
 
-### Prompts provided to the AI
+### Review and refinement
 
-The following is a chronological log of all prompts (paraphrased) given to the
-AI during the drafting session:
+The draft was refined through multiple rounds of internal review. Key
+editorial decisions included:
 
-1. *"We're going to draft a new proposal -- don't start yet -- just let me
-   provide context."* -- Followed by the meeting discussion summary (core
-   problem, key questions, existing concepts, approach, timeline).
+- Explicitly naming the two distinct problems (unencumbered source identifier
+  field vs. improved prim name ergonomics) based on reviewer feedback, and
+  positioning this proposal as addressing the first without foreclosing the
+  second.
+- Compressing and reframing the GUIDs discussion to serve the proposal's
+  argument (GUIDs-as-primary-identifiers pressure is a symptom of the missing
+  separation of concerns) rather than reading as a defensive digression.
+- Augmenting `assetInfo` analysis with `UsdModelAPI` and
+  `UsdMediaAssetPreviewsAPI` as potential prototypes for a source identifier
+  mechanism.
+- Correcting the IFC GUID characterization (GlobalIds are per-instance, not
+  per-type) based on fact-checking against the IFC specification.
 
-2. *"[Extended Unicode Identifiers URL] is relevant but potentially an
-   implementation detail."*
-
-3. *"[Transcoding Invalid Identifiers README] is relevant but may be an
-   implementation detail."*
-
-4. *"[AECO Prim Name Grammar Use Case PDF] has use cases and requirements for
-   at least one domain, AECO."*
-
-5. *"Keep in mind that solving the AECO use cases should be an outcome but not
-   necessarily the primary driver -- the key is to win alignment across
-   industries around separation of concerns for identifiers."*
-
-6. *"Let's get started in a new folder called
-   identifier_separation_of_concerns."*
-
-7. *"Please add an appendix where you cite yourself for provenance -- we will
-   also keep a running list of all prompts there and all context that you have
-   been provided."*
-
-8. *"Let's add some urgency due to the migration of the displayName metadata
-   into the usdUI hints dictionary, which has content and API compatibility
-   implications -- see [UI Hints proposal]."*
-
-9. *"Let's refine the previous update, as the usdUI proposal has already been
-   implemented -- see [OpenUSD usdUI source]."*
-
-10. *"Keep in mind that this is going to be submitted as a pull request to
-    PixarAnimationStudios/OpenUSD-proposals -- please fix any absolute links
-    to asluk/OpenUSD-proposals accordingly."* -- Audit found no links to the
-    fork; all links already target upstream repos.
-
-11. *Reviewer feedback: "Are you shutting the door to extended identifiers or
-    just prioritizing source identifiers?" Author response: "Not shutting the
-    door -- prioritizing source identifiers to hit more use cases, but want
-    alignment on separation of concerns." Reviewer: "Agreed. Two problems:
-    unencumbered source identifier field, and improved ergonomics of path
-    identifiers. They're related but getting conflated."* -- Refined
-    introduction, problem statement, and related proposals sections to
-    explicitly name both problems, make clear they are complementary, and
-    position this proposal as focusing on the source identifier problem
-    without foreclosing grammar extensions.
-
-12. *Second reviewer feedback (four notes): (1) The Pixar "No GUIDs" quote is
-    in the "realm of feelings" -- the stronger argument is that namespace paths
-    are the sort key for deterministic total ordering of the composition graph,
-    GUIDs would destroy that invariant, and relocates solve the rename problem
-    without breaking it. PCP prim index nodes effectively embody a
-    process-local unique identity but this is derived from, not replaceable
-    by, the namespace path. (2) UsdMediaAssetPreviewsAPI and UsdModelAPI
-    should be contrasted as either part of the solution or prototypes for one.
-    (3) Instance vs. source identity answer is tied to notes 1 and 2.
-    (4) The rest of the article looks ready for publication.* -- Note 1
-    addressed: augmented the "No GUIDs" quote (retained as official
-    documentation) with the technical argument about lexicographic ordering,
-    composition determinism, prim indices, and relocates. **Notes 2 and 3
-    reviewed but not yet addressed** -- the UsdModelAPI / UsdMediaAssetPreviewsAPI
-    contrast and the instance-vs-source-identity connection to the composition
-    model are deferred pending further review. Note 4 required no changes.
-
-13. *"Let's back up and focus on the 'feelings' argument -- since that comes
-    from official OpenUSD documentation, let's not jettison entirely, but
-    rather augment it. The more complete reasoning will most likely be
-    submitted as a PR to OpenUSD docs/intro.rst."* -- Restored the official
-    Pixar quote, restructured to lead with it, then augment with the deeper
-    technical reasoning as additional context.
-
-14. *"Let's focus on just the intro for now -- reviewed the model API and
-    usdmedia pieces for now, but remember the context and record that we
-    have not addressed those notes."* -- Reverted the assetInfo section to
-    its simpler form. Notes 2 and 3 from reviewer feedback (item 12) are
-    recorded as pending: UsdModelAPI / UsdMediaAssetPreviewsAPI contrast,
-    and the connection between instance-vs-source identity and the
-    composition model.
-
-15. *"The intro is diving too technically deep -- PCP is an implementation
-    detail. Explain in simple conceptual terms that GUIDs make some workflows
-    more elegant but break the composition model, without requiring the reader
-    to understand composition engine internals."* -- Rewrote the augmented
-    section: removed PCP/prim-index internals, explained GUIDs' appeal
-    (rename/refactor ergonomics), then explained why they can't replace
-    namespace paths (sort keys for deterministic opinion ordering), and
-    noted relocates as USD's alternative. Kept the official Pixar quote.
-
-16. *"Does the whole GUIDs discussion flow well with preceding and succeeding
-    sections? GUIDs are a common point of contention, and another example of
-    where poor separation of concerns derails progress."* -- Reframed the
-    GUIDs section to build the proposal's argument rather than read as a
-    defensive digression. Added closing paragraph positioning the GUID debate
-    itself as a symptom of the missing separation of concerns: pressure for
-    GUIDs-as-primary-identifiers comes from the absence of a dedicated source
-    identifier mechanism, not from a desire to replace namespace paths.
-
-17. *"I'm concerned with how much real estate the GUIDs discussion takes up --
-    do we risk readers focusing too much on it?"* -- Compressed the GUIDs
-    section from ~37 lines to ~16 lines. Removed the block quote of official
-    Pixar text (linked instead), tightened the technical argument to
-    essentials, preserved the reframe payoff. All four beats retained:
-    community asks, sort-key reasoning, relocates alternative, debate-as-
-    symptom.
-
-18. *"We've now taken a pass at addressing the second reviewer's first note.
-    Record that we have not yet addressed the other notes -- we will do so in
-    subsequent working sessions."*
-
-19. *"Let's finish addressing reviewer notes."* / *"I mean don't address
-    note 3 yet."* -- Addressed note 2 only: expanded the assetInfo section
-    to contrast `UsdModelAPI` and `UsdMediaAssetPreviewsAPI`.
-
-20. *"Now let's do note 3 -- try to keep it concise."* -- Addressed note 3:
-    connected instance-vs-source identity to the composition model argument.
-    Namespace paths already serve as instance identity; the gap is source
-    identity. Removed the open question framing, stated the conclusion
-    directly, kept the door open for external instance-level identifiers.
-
-21. *"[Composable Bindings whitepaper PDF] -- another source identifier use
-    case: object hierarchies representing real-world assets need to bind to
-    many external systems streaming live or simulated telemetry and events,
-    key for optimizing the digital engineering loop."* -- Added "Digital
-    Engineering and Operational Telemetry" use case section. Source
-    identifiers as the binding key between telemetry systems and USD scene
-    objects. References the Composable Bindings whitepaper (Microsoft and
-    NVIDIA, 2025) via https://aka.ms/ComposableBindings.
-
-22. *"Make sure each use case subsection has equal time -- this new section
-    feels long."* -- Compressed from ~38 lines to ~19 lines.
-
-23. *"Consider combining it with the PLM section."* -- Merged "PLM and
-    Manufacturing" with "Digital Engineering and Operational Telemetry" into
-    a single "Industrial and Manufacturing Operations" section. The design-
-    time (PLM part numbers, BOMs) and runtime (telemetry binding) use cases
-    are two sides of the same coin: the same physical assets need source
-    identifiers for both lifecycle management and live operational loops.
-
-24. *AMT context: GTC session proposal on "Asset Identity & Geometry-
-    Anchored Semantics for Manufacturing" (AOUSD / AMT / NVIDIA), plus
-    additional notes on identity layers from AMT collaborators and Feature
-    ID Flowchart (Matt McCormick, AMT).* -- Added identity continuity
-    through manufacturing state transitions (destructive geometric changes,
-    re-parenting, assembly transitions) and feature-level identifiers to the
-    manufacturing use case. Added traceability as a common thread across all
-    use case sections. Kept edits minimal; did not expand proposal scope
-    into lifecycle/feature-level identity continuity (AMT's layer 2), which
-    builds on but is distinct from prim-level identifier separation.
-
-25. *"Verify the claim that multiple doors would share the same IFC GUID."*
-    -- Confirmed that IFC GlobalIds are unique per instance, not per type:
-    each of 30 door placements carries its own GlobalId, while the shared
-    `IfcDoorType` carries a separate one. Corrected the door example in
-    "Instance identity vs. source identity" to use catalog number / PLM
-    part number as the shared source identity, and moved IFC GlobalIds to
-    the paragraph on external instance-level identifiers, where they
-    naturally illustrate the point.
+A prompt-level drafting log has been archived separately.
