@@ -207,13 +207,15 @@ represent?
 
 Consider a building where the same door type is placed in 30 locations.
 Each placement has a unique namespace path, but they all share a source
-identity: the door type's catalog number, IFC GUID, or PLM part number.
-That source identity is independent of the namespace -- it should survive
-renames and be shared across instances.
+identity: the door type's catalog number or PLM part number. That source
+identity is independent of the namespace -- it should survive renames and
+be shared across instances.
 
-Some domains also assign external instance-level identifiers (e.g., serial
-numbers for individual physical parts). A flexible mechanism should
-accommodate both, but the primary gap is source identity.
+Some domains also assign external instance-level identifiers -- serial
+numbers for individual physical parts, or IFC GlobalIds that uniquely
+identify each placement rather than the shared type. A flexible mechanism
+should accommodate both source-level and instance-level external
+identifiers, but the primary gap today is source identity.
 
 ### Single value vs. metadata package
 
@@ -792,3 +794,12 @@ AI during the drafting session:
     use case sections. Kept edits minimal; did not expand proposal scope
     into lifecycle/feature-level identity continuity (AMT's layer 2), which
     builds on but is distinct from prim-level identifier separation.
+
+25. *"Verify the claim that multiple doors would share the same IFC GUID."*
+    -- Confirmed that IFC GlobalIds are unique per instance, not per type:
+    each of 30 door placements carries its own GlobalId, while the shared
+    `IfcDoorType` carries a separate one. Corrected the door example in
+    "Instance identity vs. source identity" to use catalog number / PLM
+    part number as the shared source identity, and moved IFC GlobalIds to
+    the paragraph on external instance-level identifiers, where they
+    naturally illustrate the point.
