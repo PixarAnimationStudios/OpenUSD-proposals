@@ -17,7 +17,7 @@ Aaron Luk
   - [Instance identity vs. source identity](#instance-identity-vs-source-identity)
   - [Single value vs. metadata package](#single-value-vs-metadata-package)
 - [Existing mechanisms in USD](#existing-mechanisms-in-usd)
-  - [assetInfo](#assetinfo)
+  - [assetInfo, UsdModelAPI, and UsdMediaAssetPreviewsAPI](#assetinfo-usdmodelapi-and-usdmediaassetpreviewsapi)
   - [displayName](#displayname)
   - [customData and customLayerData](#customdata-and-customlayerdata)
 - [Industry use cases](#industry-use-cases)
@@ -251,11 +251,15 @@ Several existing mechanisms partially address the need for external
 identifiers. Understanding their strengths and limitations is essential to
 deciding whether to extend one or introduce something new.
 
-### assetInfo
+### assetInfo, UsdModelAPI, and UsdMediaAssetPreviewsAPI
 
-`assetInfo` is a composed dictionary available through `UsdModelAPI` on prims
-that represent the root of a *model* (as defined by USD's `Kind` hierarchy).
-It provides:
+[`assetInfo`](https://openusd.org/dev/api/class_usd_model_a_p_i.html#Usd_Model_AssetInfo)
+is a composed dictionary that can technically live on any prim, though its
+convenience API is provided through
+[`UsdModelAPI`](https://openusd.org/dev/api/class_usd_model_a_p_i.html),
+which is designed for prims representing the root of a *model* (as defined
+by USD's `Kind` hierarchy). `UsdModelAPI` exposes a small set of well-known
+`assetInfo` keys:
 
 - **`identifier`** (`SdfAssetPath`) -- the asset's resolvable path.
 - **`name`** (`string`) -- the asset's name, suitable for database queries.
@@ -263,22 +267,37 @@ It provides:
 - **`payloadAssetDependencies`** (`SdfAssetPath[]`) -- dependencies inside the
   payload.
 
-`assetInfo` is composed element-wise and is nestable, which makes it well-suited
-for model-level asset management metadata. However:
+`assetInfo` is composed element-wise and is nestable, which makes it
+well-suited for model-level asset management metadata.
 
-- It is designed around USD's own concept of an asset (a referenceable layer or
-  package), not around external system identifiers.
-- It lives on model roots via `UsdModelAPI`, which limits its applicability to
-  prims that participate in the `Kind` hierarchy. Many real-world objects that
-  need source identifiers (individual rooms, structural members, electrical
-  components) are not model roots.
-- Its schema is fixed around a small set of known keys. Extending it to hold
-  arbitrary external identifiers from multiple systems would require either
-  changes to the schema or reliance on the dictionary's freeform nature,
-  which reduces discoverability.
+[`UsdMediaAssetPreviewsAPI`](https://openusd.org/dev/api/class_usd_media_asset_previews_a_p_i.html)
+demonstrates an extension of this pattern: it is an applied API schema that
+provides typed access to a nested sub-dictionary of `assetInfo`
+(`assetInfo["previews"]["thumbnails"]`). This shows that `assetInfo` can be
+extended with schema-backed access for specific sub-domains, rather than
+relying solely on freeform dictionary conventions.
 
-`assetInfo` may be part of the solution, but it was not designed for the
-breadth of external identification needs emerging from cross-industry adoption.
+Together, `UsdModelAPI` and `UsdMediaAssetPreviewsAPI` may be part of the
+eventual solution or serve as prototypes for one. However, several
+limitations apply:
+
+- `UsdModelAPI` is designed around USD's own concept of an asset (a
+  referenceable layer or package), not around external system identifiers.
+  While `assetInfo` itself is not restricted to model roots, the
+  `UsdModelAPI` convenience layer encourages use only on prims that
+  participate in the `Kind` hierarchy.
+- Many real-world objects that need source identifiers (individual rooms,
+  structural members, electrical components) are not model roots.
+- The existing `assetInfo` keys are oriented toward Pixar's asset management
+  model. Supporting arbitrary external identifiers from multiple systems
+  would require either new schema following the `UsdMediaAssetPreviewsAPI`
+  pattern, or reliance on the dictionary's freeform nature, which reduces
+  discoverability.
+
+Whether the solution extends `assetInfo` (generalizing the
+`UsdMediaAssetPreviewsAPI` sub-dictionary pattern) or introduces a new
+mechanism is an open question, but the existing schemas demonstrate that
+USD already has viable patterns for structured metadata access on prims.
 
 ### displayName
 
@@ -675,18 +694,15 @@ AI during the drafting session:
     Record that we have not yet addressed the other notes -- we will do so in
     subsequent working sessions."*
 
+19. *"Let's finish addressing reviewer notes."* / *"I mean don't address
+    note 3 yet."* -- Addressed note 2 only: expanded the assetInfo section
+    to contrast `UsdModelAPI` and `UsdMediaAssetPreviewsAPI`, noting that
+    `assetInfo` can technically live on any prim (model-root restriction is
+    in the convenience API), and that `UsdMediaAssetPreviewsAPI`'s
+    sub-dictionary schema pattern could be generalized. Note 3 changes
+    reverted; instance-vs-source identity section restored to original form.
+
 ### Outstanding items for subsequent sessions
-
-The following items from reviewer feedback have been reviewed but **not yet
-addressed** in the document text:
-
-- **Second reviewer, note 2:** `UsdModelAPI` and `UsdMediaAssetPreviewsAPI`
-  should be contrasted in the existing mechanisms section as either part of
-  the solution or prototypes for one. Key observations: `assetInfo` can
-  technically live on any prim (the model-root restriction is in the
-  convenience API, not the mechanism); `UsdMediaAssetPreviewsAPI`
-  demonstrates schema-backed typed access to `assetInfo` sub-dictionaries,
-  a pattern that could be generalized for source identifiers.
 
 - **Second reviewer, note 3:** The instance-vs-source identity question is
   tied to the composition model argument (note 1) and to the assetInfo /
