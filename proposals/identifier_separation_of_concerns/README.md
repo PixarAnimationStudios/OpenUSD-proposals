@@ -388,6 +388,18 @@ product and its digital twin.
   collecting part numbers -- a workflow that requires source identifiers to be
   discoverable and unambiguous.
 
+In aerospace and defense manufacturing, the stakes are especially high: a
+part moves through multiple suppliers, routings, and process steps --
+including destructive geometric changes like machining, heat treatment, and
+stress relief -- while its identity must remain stable for safety
+certification, fleet risk management, and root cause analysis. The
+Association for Manufacturing Technology (AMT) has identified this as
+**identity continuity**: source identifiers that survive state transitions,
+re-parenting, and assembly changes without relying on the prim's position
+in the namespace. Feature-level identifiers (individual holes, datum faces,
+tolerances) add a further dimension, since features may appear, disappear,
+or deform across manufacturing operations while remaining traceable.
+
 If these identifiers are encoded into prim names, characters like hyphens and
 periods are lost or transcoded, making BOM generation from the USD stage
 unreliable without an additional decoding step.
@@ -420,6 +432,11 @@ differ from prim namespace paths:
 While `assetInfo` covers some of these cases at the model level, it does not
 address identification at finer granularities (individual props, lights,
 materials) or across multiple asset management systems.
+
+Across all three domains, the common thread is **traceability**: the ability
+to follow an entity from its origin in an external system, through its
+representation in USD, and back again -- regardless of namespace edits,
+assembly changes, or geometric mutations along the way.
 
 ## Design considerations
 
@@ -610,6 +627,18 @@ The following materials were provided as input context for drafting:
    binding key to USD scene objects. Illustrates the digital engineering
    and operational telemetry use case for source identifiers.
 
+8. **Association for Manufacturing Technology (AMT) materials** -- GTC
+   working session proposal "Asset Identity & Geometry-Anchored Semantics
+   for Manufacturing" (AOUSD / AMT / NVIDIA), accompanying notes on
+   identity layers from AMT collaborators, and Feature ID Flowchart
+   (Matt McCormick, AMT). Describes identity continuity as the
+   requirement that source identifiers survive manufacturing state
+   transitions (destructive geometry changes, re-parenting, assembly
+   changes) and extends to feature-level identifiers that may appear,
+   disappear, or deform across process steps. Explicitly aligns with
+   "ongoing AOUSD discussions on decoupling USD identifiers from external
+   system identifiers."
+
 ### Prompts provided to the AI
 
 The following is a chronological log of all prompts (paraphrased) given to the
@@ -752,3 +781,14 @@ AI during the drafting session:
     time (PLM part numbers, BOMs) and runtime (telemetry binding) use cases
     are two sides of the same coin: the same physical assets need source
     identifiers for both lifecycle management and live operational loops.
+
+24. *AMT context: GTC session proposal on "Asset Identity & Geometry-
+    Anchored Semantics for Manufacturing" (AOUSD / AMT / NVIDIA), plus
+    additional notes on identity layers from AMT collaborators and Feature
+    ID Flowchart (Matt McCormick, AMT).* -- Added identity continuity
+    through manufacturing state transitions (destructive geometric changes,
+    re-parenting, assembly transitions) and feature-level identifiers to the
+    manufacturing use case. Added traceability as a common thread across all
+    use case sections. Kept edits minimal; did not expand proposal scope
+    into lifecycle/feature-level identity continuity (AMT's layer 2), which
+    builds on but is distinct from prim-level identifier separation.
