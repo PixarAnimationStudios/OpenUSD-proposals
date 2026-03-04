@@ -466,44 +466,61 @@ questions to guide the community toward one.
    convention. This argues for a schema-based approach rather than ad-hoc
    `customData` usage.
 
-5. **Minimal disruption.** The solution should build on USD's existing
-   strengths. It should not require fundamental changes to the composition
-   engine or namespace path semantics.
+5. **External queryability.** Storing a source identifier on a prim is
+   necessary but not sufficient. Real-world workflows need to resolve the
+   reverse question: *given an external identifier, which USD layers and
+   prims reference it?* Exhaustive traversal of all USD files is not
+   practical at scale. Consumers are responsible for building and maintaining
+   their own indexes over source identifiers, optimizing for their own access
+   patterns. The source identifier mechanism should make this tractable
+   through predictable field locations and schema-based discoverability.
 
 6. **Round-trip fidelity.** Source identifiers should survive a round-trip
    through USD without loss, even if the characters they contain are not valid
    in USD prim names.
 
+7. **Minimal disruption.** The solution should build on USD's existing
+   strengths. It should not require fundamental changes to the composition
+   engine or namespace path semantics.
+
 ### Open questions for discussion
 
-1. **Extend `assetInfo` or introduce a new mechanism?**
+1. **Cross-system resolution and indexing.**
+   Once source identifiers are stored in USD, consumers will need to
+   resolve the reverse question: "which layers and prims reference
+   identifier X?" Consumers are responsible for building their own indexes
+   and optimizing for their own access patterns (key-value lookups,
+   dependency graphs, search) on top of whatever identifier mechanism USD
+   provides. What characteristics of the mechanism make that tractable?
+
+2. **Extend `assetInfo` or introduce a new mechanism?**
    `assetInfo` already provides a composed dictionary for asset metadata. Could
    it be extended with standardized keys for source identifiers from multiple
    systems? Or would overloading `assetInfo` conflate USD asset identity with
    external system identity?
 
-2. **Schema or metadata?**
+3. **Schema or metadata?**
    Should source identifiers be expressed as an applied API schema (like
    `SemanticsAPI`), as metadata (like `assetInfo`), or as properties? Each has
    different implications for composition, queryability, and performance.
 
-3. **Scope: model roots only, or any prim?**
+4. **Scope: model roots only, or any prim?**
    `assetInfo` is scoped to model roots. External identifiers are needed on
    prims at all levels of the hierarchy -- individual rooms, structural
    members, electrical components, fasteners. The mechanism must not be
    artificially limited to model roots.
 
-4. **Namespacing of identifiers.**
+5. **Namespacing of identifiers.**
    If a prim carries identifiers from multiple external systems, how should
    they be organized? A flat dictionary with well-known keys? A
    multiply-instanced schema with system-specific instance names?
 
-5. **Relationship to `displayName`.**
+6. **Relationship to `displayName`.**
    How does the source identifier relate to the prim's `displayName`? In some
    workflows the display name *is* the source identifier; in others they
    differ. The proposal should clarify this relationship.
 
-6. **Interaction with transcoding.**
+7. **Interaction with transcoding.**
    If source identifiers contain characters invalid in USD, they should be
    stored verbatim (not transcoded) in whatever mechanism is chosen. Transcoding
    is relevant when external identifiers need to be *embedded in prim names*,
@@ -663,5 +680,10 @@ editorial decisions included:
   mechanism.
 - Correcting the IFC GUID characterization (GlobalIds are per-instance, not
   per-type) based on fact-checking against the IFC specification.
+- Adding external queryability as a design principle and cross-system
+  resolution as an open question, based on reviewer feedback that the
+  practical utility of source identifiers depends on the ability to resolve
+  them from outside USD -- with the consumer responsible for building indexes
+  on top of the mechanism.
 
 A prompt-level drafting log has been archived separately.
