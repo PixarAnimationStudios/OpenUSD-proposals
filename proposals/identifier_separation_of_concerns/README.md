@@ -22,7 +22,7 @@ Aaron Luk
   - [customData and customLayerData](#customdata-and-customlayerdata)
 - [Industry use cases](#industry-use-cases)
   - [Architecture, Engineering, Construction, and Operations (AECO)](#architecture-engineering-construction-and-operations-aeco)
-  - [Product Lifecycle Management (PLM) and Manufacturing](#product-lifecycle-management-plm-and-manufacturing)
+  - [Manufacturing, Product Lifecycle, and Digital Engineering](#manufacturing-product-lifecycle-and-digital-engineering)
   - [Media and Entertainment (M&E)](#media-and-entertainment-me)
 - [Design considerations](#design-considerations)
   - [Principles](#principles)
@@ -105,11 +105,13 @@ systems with their own identification schemes:
 - **AECO tools** (Revit, ArchiCAD, IFC) use identifiers like GUIDs, room
   numbers (`1001`), classification codes with slashes and hyphens
   (`BB/500`, `Ss_25_10_30`), and revision-stamped names.
-- **PLM systems** (Teamcenter, Windchill, 3DExperience) track parts by
-  alphanumeric part numbers (`A-0000-12345`), revision identifiers, and
-  multi-attribute metadata packages.
-- **Manufacturing and ECAD/MCAD workflows** use component designators with
-  leading digits and medial hyphens (`1N4148`, `R-101`).
+- **Manufacturing and Product Lifecycle Management (PLM) systems**
+  (Teamcenter, Windchill, 3DExperience) track parts by alphanumeric part
+  numbers (`A-0000-12345`), revision identifiers, component designators
+  with leading digits and medial hyphens (`1N4148`, `R-101`), and
+  multi-attribute metadata packages. The same assets increasingly
+  participate in digital engineering loops, where equipment tags and sensor
+  addresses bind USD scene objects to live telemetry streams.
 - **GIS and infrastructure tools** use identifiers tied to geospatial
   coordinate systems or regulatory codes.
 - **Game engines and M&E pipelines** use asset management systems with their
@@ -233,6 +235,16 @@ For example, a single structural column in a building might carry:
   - For Uniclass 2015 codes, see: [Uniclass 2015 - Table Ss: Structure](https://www.thenbs.com/our-tools/uniclass/ss_25_10_30) for example codes.
   - The "Project"/"Mark" example was originally included to demonstrate a project-specific identifier. In AECO (Architecture, Engineering, Construction, and Operations) workflows, "Mark" is a commonly used parameter (e.g., in Autodesk Revit) for an instance or tag number. "Project" is not a standardized system like IFC or Revit, so "Revit / Mark" better reflects actual usage, where the "Mark" parameter is an identifier for individual elements.
 -->
+
+The need for multiple identifiers is not limited to design-time systems. In
+digital engineering workflows, the same physical asset may also carry
+operational bindings -- an equipment tag from a building management system, a
+sensor address from a telemetry platform, or a work-order ID from a
+maintenance system (see
+[Composable Bindings](https://aka.ms/ComposableBindings), Microsoft and
+NVIDIA, 2025). A single prim hierarchy representing a chiller unit might
+carry its PLM part number, its IFC GUID, *and* its OPC UA node ID -- each
+serving a different system integration.
 
 **Question:** Should the mechanism be a single identifier string, a typed
 identifier with a system qualifier, or a dictionary that can hold multiple
@@ -361,11 +373,11 @@ name (which may be a transcoded or generated valid identifier) and the
 **source name** from the originating system, which must be preserved exactly
 for round-trip fidelity.
 
-### Product Lifecycle Management (PLM) and Manufacturing
+### Manufacturing, Product Lifecycle, and Digital Engineering
 
-PLM systems are the backbone of manufacturing workflows. They assign stable
-identifiers -- part numbers, revision codes, serial numbers -- that must
-persist across the lifecycle of a physical product and its digital twin.
+PLM systems assign stable identifiers -- part numbers, revision codes,
+serial numbers -- that must persist across the lifecycle of a physical
+product and its digital twin.
 
 - A **part number** like `A-0000-12345-Rev.C` identifies the *design* of a
   component. Multiple instances of that component in an assembly share this
@@ -379,6 +391,18 @@ persist across the lifecycle of a physical product and its digital twin.
 If these identifiers are encoded into prim names, characters like hyphens and
 periods are lost or transcoded, making BOM generation from the USD stage
 unreliable without an additional decoding step.
+
+Beyond design-time identification, the same assets increasingly participate
+in live operational loops. USD scenes representing real-world equipment
+(compute racks, robotic work cells, HVAC units) must bind to external
+systems streaming telemetry -- sensor readings, performance metrics, event
+logs -- where each event carries an **object identifier** (rack ID, sensor
+address, equipment tag) that must resolve to the correct prim hierarchy.
+The [Composable Bindings](https://aka.ms/ComposableBindings) whitepaper
+(Microsoft and NVIDIA, 2025) describes this pattern in the context of the
+digital engineering loop: standardized source identifiers on prims would
+replace today's brittle, ad-hoc integration code with declarative
+telemetry-to-scene mappings.
 
 ### Media and Entertainment (M&E)
 
@@ -515,9 +539,10 @@ This proposal is conceptually upstream of several related efforts:
    members and industry stakeholders to confirm that the problem is understood
    consistently and that the framing resonates across industries.
 
-2. **Gather additional use cases.** Solicit concrete examples from PLM,
-   manufacturing, M&E, and other domains to ensure the framing is not
-   inadvertently biased toward any single industry.
+2. **Gather additional use cases.** Solicit concrete examples from
+   manufacturing, product lifecycle, digital engineering, M&E, and other
+   domains to ensure the framing is not inadvertently biased toward any
+   single industry.
 
 3. **Evaluate `assetInfo` extensibility.** Conduct a focused analysis of
    whether `assetInfo` (or a generalization of it) can serve as the vehicle
@@ -576,6 +601,14 @@ The following materials were provided as input context for drafting:
    Already implemented in OpenUSD `dev`. Identified as creating urgency due
    to API and content compatibility implications for pipelines using
    `displayName` as a workaround for source identifiers.
+
+7. **[Composable Bindings: Simplified System Integration](https://aka.ms/ComposableBindings)**
+   (Microsoft and NVIDIA, November 2025) -- Whitepaper describing an
+   integration pattern for connecting industrial data systems (data lakes,
+   telemetry, OTEL, CloudEvents) to visualization/simulation engines
+   (OpenUSD/Omniverse). Object identifiers from external systems are the
+   binding key to USD scene objects. Illustrates the digital engineering
+   and operational telemetry use case for source identifiers.
 
 ### Prompts provided to the AI
 
@@ -700,3 +733,22 @@ AI during the drafting session:
     Namespace paths already serve as instance identity; the gap is source
     identity. Removed the open question framing, stated the conclusion
     directly, kept the door open for external instance-level identifiers.
+
+21. *"[Composable Bindings whitepaper PDF] -- another source identifier use
+    case: object hierarchies representing real-world assets need to bind to
+    many external systems streaming live or simulated telemetry and events,
+    key for optimizing the digital engineering loop."* -- Added "Digital
+    Engineering and Operational Telemetry" use case section. Source
+    identifiers as the binding key between telemetry systems and USD scene
+    objects. References the Composable Bindings whitepaper (Microsoft and
+    NVIDIA, 2025) via https://aka.ms/ComposableBindings.
+
+22. *"Make sure each use case subsection has equal time -- this new section
+    feels long."* -- Compressed from ~38 lines to ~19 lines.
+
+23. *"Consider combining it with the PLM section."* -- Merged "PLM and
+    Manufacturing" with "Digital Engineering and Operational Telemetry" into
+    a single "Industrial and Manufacturing Operations" section. The design-
+    time (PLM part numbers, BOMs) and runtime (telemetry binding) use cases
+    are two sides of the same coin: the same physical assets need source
+    identifiers for both lifecycle management and live operational loops.
