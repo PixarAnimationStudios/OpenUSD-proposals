@@ -442,8 +442,12 @@ assembly changes, or geometric mutations along the way.
 
 ## Design considerations
 
-This section does not propose a solution but outlines principles and open
-questions to guide the community toward one.
+This section outlines principles and open questions to guide the community
+toward a solution. The goal of this proposal is to establish consensus on the
+problem statement and separation of concerns *before* committing to a specific
+mechanism -- not because a solution is distant, but because premature
+implementation without that consensus is what produced the current landscape
+of fragmented workarounds.
 
 ### Principles
 
@@ -528,6 +532,19 @@ questions to guide the community toward one.
    eliminate the need to encode external identifiers into prim names in most
    workflows.
 
+### Likely direction
+
+The analysis of existing mechanisms suggests that USD already has viable
+patterns for this problem. `assetInfo` provides a composed dictionary,
+`UsdModelAPI` provides schema-backed convenience access, and
+`UsdMediaAssetPreviewsAPI` demonstrates that typed access to `assetInfo`
+sub-dictionaries can be added via applied API schemas without modifying the
+core. A solution is likely to follow one of two paths: generalizing these
+existing patterns to support source identifiers at any prim (not just model
+roots), or introducing a new parallel mechanism with similar composition
+semantics. The open questions above are intended to resolve which path is
+most appropriate.
+
 ## Relationship to other proposals
 
 This proposal is conceptually upstream of several related efforts:
@@ -573,12 +590,15 @@ This proposal is conceptually upstream of several related efforts:
 
 1. **Align on the problem statement.** Circulate this document among TAC
    members and industry stakeholders to confirm that the problem is understood
-   consistently and that the framing resonates across industries.
+   consistently and that the framing resonates across industries. The
+   `displayName` deprecation path makes this time-sensitive: every month
+   without a standardized alternative adds to the technical debt accumulating
+   on ad-hoc workarounds.
 
 2. **Gather additional use cases.** Solicit concrete examples from
    manufacturing, product lifecycle, digital engineering, M&E, and other
    domains to ensure the framing is not inadvertently biased toward any
-   single industry.
+   single industry. Steps 1 and 2 can proceed in parallel.
 
 3. **Evaluate `assetInfo` extensibility.** Conduct a focused analysis of
    whether `assetInfo` (or a generalization of it) can serve as the vehicle
@@ -587,6 +607,11 @@ This proposal is conceptually upstream of several related efforts:
 4. **Draft a solution proposal.** Based on alignment from steps 1-3, draft a
    concrete proposal specifying the mechanism (schema, metadata, or properties),
    its composition semantics, and its API.
+
+Stakeholders who want to accelerate this work are encouraged to engage
+directly on any of the steps above. The pace is determined by the breadth of
+consensus achieved at each step -- and that consensus is what ensures the
+solution serves the full community rather than a single use case.
 
 ---
 
