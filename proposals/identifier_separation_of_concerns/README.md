@@ -27,9 +27,11 @@ Aaron Luk
 - [Design considerations](#design-considerations)
   - [Principles](#principles)
   - [Open questions for discussion](#open-questions-for-discussion)
+  - [Likely direction](#likely-direction)
+  - [Risks](#risks)
 - [Relationship to other proposals](#relationship-to-other-proposals)
 - [Next steps](#next-steps)
-- [Appendix A: Provenance and AI-Assisted Drafting](#appendix-a-provenance-and-ai-assisted-drafting)
+- [Appendix A: AI-Assisted Drafting](#appendix-a-ai-assisted-drafting)
 
 ## Introduction
 
@@ -58,6 +60,13 @@ extending prim name grammar -- remains an important complementary effort and is
 not foreclosed by anything proposed here. By establishing consensus on the
 separation of concerns first, both problems can be pursued on their own merits
 without one blocking or distorting the other.
+
+**Expected outcome.** Based on TAC discussion, the likely result is an
+extension of `assetInfo` with stratified, schema-backed domain extensions
+and a baseline example in the OpenUSD codebase (see
+[Likely direction](#likely-direction)). This proposal seeks consensus on
+the problem statement and design principles first, so that the resulting
+mechanism serves the full community.
 
 ## Motivation
 
@@ -175,23 +184,14 @@ Without a clear separation of concerns:
    checks without requiring knowledge of each pipeline's ad-hoc conventions.
 
 5. **The `displayName` migration is already underway.** The
-   [UI Hints](../ui-hints/README.md) work has been
-   [implemented in OpenUSD](https://github.com/PixarAnimationStudios/OpenUSD/tree/dev/pxr/usd/usdUI),
-   migrating `displayName` from a top-level metadata field on `UsdObject` into
-   a `uiHints` dictionary and cementing it as a *presentation-only* concern.
-   The new access API lives in
-   [`UsdUIObjectHints`](https://openusd.org/dev/api/class_usd_u_i_object_hints.html),
-   and the existing top-level `displayName` get/set API in `Usd` and `Sdf` is
-   on a deprecation path toward eventual removal. Any pipelines currently using
-   `displayName` as a workaround to carry source identifiers are now facing
-   both **API breakage** (deprecated accessors) and **content migration costs**
-   (existing assets authored with the old field location). This is not a future
-   risk -- it is an active change. The window to establish a proper,
-   purpose-built mechanism for source identifiers is closing as the community
-   accumulates more technical debt on `displayName`-as-identifier workarounds
-   that will need to be migrated twice: once away from the deprecated field
-   location, and again when a standardized source identifier mechanism is
-   eventually adopted.
+   [UI Hints](../ui-hints/README.md) work
+   ([implemented in OpenUSD](https://github.com/PixarAnimationStudios/OpenUSD/tree/dev/pxr/usd/usdUI))
+   has migrated `displayName` into a `uiHints` dictionary, cementing it as a
+   presentation-only concern. The old top-level accessors are on a deprecation
+   path. Pipelines using `displayName` to carry source identifiers now face
+   **API breakage** and **content migration costs** -- and without a
+   standardized alternative, they will migrate to yet another ad-hoc
+   convention that will need to be migrated again later.
 
 ## Key questions
 
@@ -248,19 +248,16 @@ NVIDIA, 2025). A single prim hierarchy representing a chiller unit might
 carry its PLM part number, its IFC GUID, *and* its OPC UA node ID -- each
 serving a different system integration.
 
-**Question:** Should the mechanism be a single identifier string, a typed
-identifier with a system qualifier, or a dictionary that can hold multiple
-identifiers from different systems?
-
-`assetInfo` already exists as a dictionary on USD model prims and may provide a
-starting point, but the question is whether it is the right vehicle or whether
-a new, more general mechanism is needed.
+This points toward a dictionary-based mechanism that can hold multiple
+identifiers from different systems, keyed by domain. `assetInfo` already
+exists as a composed dictionary on USD model prims and is the likely
+starting point (see [Likely direction](#likely-direction)).
 
 ## Existing mechanisms in USD
 
 Several existing mechanisms partially address the need for external
-identifiers. Understanding their strengths and limitations is essential to
-deciding whether to extend one or introduce something new.
+identifiers. Understanding their strengths and limitations informs the
+likely direction of extending `assetInfo` with stratified domain extensions.
 
 ### assetInfo, UsdModelAPI, and UsdMediaAssetPreviewsAPI
 
@@ -305,10 +302,10 @@ limitations apply:
   pattern, or reliance on the dictionary's freeform nature, which reduces
   discoverability.
 
-Whether the solution extends `assetInfo` (generalizing the
-`UsdMediaAssetPreviewsAPI` sub-dictionary pattern) or introduces a new
-mechanism is an open question, but the existing schemas demonstrate that
-USD already has viable patterns for structured metadata access on prims.
+These existing schemas demonstrate that USD already has viable patterns for
+structured metadata access on prims, and the `UsdMediaAssetPreviewsAPI`
+sub-dictionary pattern is the likely model for domain-specific source
+identifier extensions (see [Likely direction](#likely-direction)).
 
 ### displayName
 
@@ -471,13 +468,10 @@ of fragmented workarounds.
    `customData` usage.
 
 5. **External queryability.** Storing a source identifier on a prim is
-   necessary but not sufficient. Real-world workflows need to resolve the
-   reverse question: *given an external identifier, which USD layers and
-   prims reference it?* Exhaustive traversal of all USD files is not
-   practical at scale. Consumers are responsible for building and maintaining
-   their own indexes over source identifiers, optimizing for their own access
-   patterns. The source identifier mechanism should make this tractable
-   through predictable field locations and schema-based discoverability.
+   necessary but not sufficient. Real-world workflows also need to resolve
+   the reverse question: *given an external identifier, which USD layers and
+   prims reference it?* The source identifier mechanism should make it
+   tractable for consumers to build external indexes over USD content.
 
 6. **Round-trip fidelity.** Source identifiers should survive a round-trip
    through USD without loss, even if the characters they contain are not valid
@@ -497,16 +491,20 @@ of fragmented workarounds.
    dependency graphs, search) on top of whatever identifier mechanism USD
    provides. What characteristics of the mechanism make that tractable?
 
-2. **Extend `assetInfo` or introduce a new mechanism?**
-   `assetInfo` already provides a composed dictionary for asset metadata. Could
-   it be extended with standardized keys for source identifiers from multiple
-   systems? Or would overloading `assetInfo` conflate USD asset identity with
-   external system identity?
+2. **How should `assetInfo` extensions be stratified?**
+   TAC discussion suggests extending `assetInfo` is the likely path. The key
+   question becomes: how should domain-specific sub-dictionaries be
+   structured and governed to prevent `assetInfo` from becoming an unmanaged
+   dumping ground? What conventions ensure that extensions from different
+   domains (PLM, AECO, M&E, authorship) remain discoverable, composable,
+   and non-conflicting?
 
 3. **Schema or metadata?**
-   Should source identifiers be expressed as an applied API schema (like
-   `SemanticsAPI`), as metadata (like `assetInfo`), or as properties? Each has
-   different implications for composition, queryability, and performance.
+   Should source identifiers be expressed as applied API schemas (following
+   the `UsdMediaAssetPreviewsAPI` pattern for typed access to `assetInfo`
+   sub-dictionaries), as freeform metadata conventions, or as properties?
+   Each has different implications for composition, queryability, and
+   performance.
 
 4. **Scope: model roots only, or any prim?**
    `assetInfo` is scoped to model roots. External identifiers are needed on
@@ -524,7 +522,15 @@ of fragmented workarounds.
    workflows the display name *is* the source identifier; in others they
    differ. The proposal should clarify this relationship.
 
-7. **Interaction with transcoding.**
+7. **Relationship to authorship traceability.**
+   Authorship traceability (tracking who created or modified content) is a
+   related but distinct concern that could build on the same domain identifier
+   pattern. If the stratified `assetInfo` extension model is adopted,
+   authorship could be one domain-specific use case among many. How should
+   the design accommodate this without conflating authorship metadata with
+   source identification?
+
+8. **Interaction with transcoding.**
    If source identifiers contain characters invalid in USD, they should be
    stored verbatim (not transcoded) in whatever mechanism is chosen. Transcoding
    is relevant when external identifiers need to be *embedded in prim names*,
@@ -534,16 +540,46 @@ of fragmented workarounds.
 
 ### Likely direction
 
-The analysis of existing mechanisms suggests that USD already has viable
-patterns for this problem. `assetInfo` provides a composed dictionary,
-`UsdModelAPI` provides schema-backed convenience access, and
-`UsdMediaAssetPreviewsAPI` demonstrates that typed access to `assetInfo`
-sub-dictionaries can be added via applied API schemas without modifying the
-core. A solution is likely to follow one of two paths: generalizing these
-existing patterns to support source identifiers at any prim (not just model
-roots), or introducing a new parallel mechanism with similar composition
-semantics. The open questions above are intended to resolve which path is
-most appropriate.
+Based on TAC discussion, the likely outcome is an extension of `assetInfo`
+with a **stratified extension pattern**: concrete guidelines for how domains
+register and access source identifiers within `assetInfo` sub-dictionaries,
+following the precedent set by `UsdMediaAssetPreviewsAPI`. This approach:
+
+- Builds on `assetInfo`'s existing composition semantics (element-wise
+  composed, nestable).
+- Leverages applied API schemas for typed, discoverable access to
+  domain-specific sub-dictionaries -- preventing `assetInfo` from becoming
+  an unmanaged dumping ground.
+- Establishes a baseline example in the OpenUSD codebase that other domains
+  can follow.
+
+The remaining open questions above are intended to finalize the details of
+this approach: scope (any prim vs. model roots), namespacing conventions,
+and how domain-specific schemas (including authorship traceability) should
+be structured.
+
+### Risks
+
+1. **`assetInfo` as dumping ground.** Without clear stratification guidelines,
+   domains will add ad-hoc keys to `assetInfo` and the dictionary will become
+   unmanageable. The stratification pattern must be well-defined and enforced
+   by convention (or schema) from the start.
+
+2. **Premature standardization.** Locking in a pattern before enough domains
+   have exercised it risks discovering too late that it doesn't generalize.
+   The baseline example should be validated against at least two or three
+   distinct domain use cases before being promoted as a standard.
+
+3. **Adoption fragmentation.** If the mechanism is too generic, domains may
+   still build incompatible conventions on top of it, defeating the
+   interoperability goal. The design must balance flexibility with enough
+   structure to ensure cross-domain discoverability.
+
+4. **Scope creep.** Source identifiers shade into broader metadata concerns
+   -- authorship, semantic meaning, lifecycle state -- and the mechanism
+   tries to solve everything. The scope should remain focused on
+   identification and linking; adjacent concerns should build on the pattern
+   as separate extensions, not expand the core.
 
 ## Relationship to other proposals
 
@@ -588,25 +624,33 @@ This proposal is conceptually upstream of several related efforts:
 
 ## Next steps
 
-1. **Align on the problem statement.** Circulate this document among TAC
-   members and industry stakeholders to confirm that the problem is understood
-   consistently and that the framing resonates across industries. The
-   `displayName` deprecation path makes this time-sensitive: every month
-   without a standardized alternative adds to the technical debt accumulating
-   on ad-hoc workarounds.
+1. **Submit as pull request.** Submit this proposal to the
+   [OpenUSD-proposals](https://github.com/PixarAnimationStudios/OpenUSD-proposals)
+   repository to solicit community feedback and rally consensus on the open
+   questions.
 
-2. **Gather additional use cases.** Solicit concrete examples from
+2. **Align on the problem statement.** Confirm among TAC members and
+   industry stakeholders that the problem is understood consistently and
+   that the framing resonates across industries. The `displayName`
+   deprecation path makes this time-sensitive: every month without a
+   standardized alternative adds to the technical debt accumulating on
+   ad-hoc workarounds.
+
+3. **Gather additional use cases.** Solicit concrete examples from
    manufacturing, product lifecycle, digital engineering, M&E, and other
    domains to ensure the framing is not inadvertently biased toward any
-   single industry. Steps 1 and 2 can proceed in parallel.
+   single industry. Steps 2 and 3 can proceed in parallel.
 
-3. **Evaluate `assetInfo` extensibility.** Conduct a focused analysis of
-   whether `assetInfo` (or a generalization of it) can serve as the vehicle
-   for source identifiers, or whether a new mechanism is warranted.
+4. **Evaluate and design the mechanism.** Based on the open questions,
+   determine whether extending `assetInfo` with stratified domain
+   sub-dictionaries (the current likely direction) is the right path, or
+   whether an alternative mechanism is warranted. Define concrete guidelines
+   and a baseline example in the OpenUSD codebase.
 
-4. **Draft a solution proposal.** Based on alignment from steps 1-3, draft a
-   concrete proposal specifying the mechanism (schema, metadata, or properties),
-   its composition semantics, and its API.
+5. **Draft a solution proposal.** Based on alignment from steps 2-4, draft a
+   concrete proposal specifying the mechanism, its composition semantics,
+   and its API -- including how adjacent use cases like authorship
+   traceability fit into the pattern.
 
 Stakeholders who want to accelerate this work are encouraged to engage
 directly on any of the steps above. The pace is determined by the breadth of
@@ -615,7 +659,7 @@ solution serves the full community rather than a single use case.
 
 ---
 
-## Appendix A: Provenance and AI-Assisted Drafting
+## Appendix A: AI-Assisted Drafting
 
 This proposal was drafted with the assistance of an AI language model (Claude,
 Anthropic) operating within Cursor IDE, under the direction of Aaron Luk. All
@@ -710,5 +754,10 @@ editorial decisions included:
   practical utility of source identifiers depends on the ability to resolve
   them from outside USD -- with the consumer responsible for building indexes
   on top of the mechanism.
+- Incorporating TAC feedback: leading with expected outcome (extending
+  `assetInfo` with stratified domain-specific extensions), adding authorship
+  traceability as a related use case, updating the likely direction and
+  next steps to reflect
+  consensus trajectory, and adding PR submission as the first next step.
 
 A prompt-level drafting log has been archived separately.
