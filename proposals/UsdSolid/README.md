@@ -80,9 +80,9 @@ The absence of exact geometry support forces workarounds that undermine USD’s 
 
 Two natural questions arise: why not simply reference STEP files from USD, and why not treat Brep data as a black box (similar to how USD handles Volumes)?
 
-- **Why not STEP?** STEP is an established ISO standard for CAD data exchange, but it has drawbacks that limit its suitability as a USD-native representation:
+- **Why not STEP or another existing format?** STEP is an established ISO standard for CAD data exchange, but like other existing Brep formats, it is a serialization format designed for file interchange on disk. It lacks the in-memory data model needed for scene composition, and cannot participate in USD’s layering, referencing, or override mechanisms. For USD to deliver its core value on Brep data, that data must be expressed natively in USD. Beyond this fundamental issue, STEP has additional limitations:
   - **No non-manifold support** – STEP cannot represent non-manifold models (also called general bodies or irregular space partitions), which are common in simulation and analysis workflows.
-  - **No flexible annotation** – STEP data cannot be annotated with domain-specific metadata, so there is no mechanism for attaching per-face material properties, per-region physical properties, or other cross-domain data.
+  - **No flexible annotation** – STEP cannot be annotated with domain-specific metadata. There is no mechanism for attaching per-face material properties, per-region physical properties, or other cross-domain data.
 
 - **Why not a black box?** Treating Breps as opaque file references (similar to how USD handles Volumes) would reduce the implementation to a file path and require an external geometry kernel to extract any information. This forfeits the capabilities that make USD valuable:
   - **Loss of composition and overrides** – USD’s core strengths (layering, sparse overrides, metadata annotation, scene-level queries) would not apply to the Brep data.
