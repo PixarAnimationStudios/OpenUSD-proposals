@@ -76,6 +76,10 @@ This creates concrete problems:
 OpenUSD is increasingly adopted in industrial contexts -- digital twins, factory simulation, robotics, and AEC -- where these problems are blockers.
 The absence of exact geometry support forces workarounds that undermine USD’s value as a universal scene description.
 
+Note that this proposal does not impose new requirements on OpenUSD stakeholders who do not work with Brep data.
+Applications that do not need Brep support would not be affected.
+The broader question of how applications declare and discover which USD capabilities they support is being explored in the [USD Profiles](https://github.com/PixarAnimationStudios/OpenUSD-proposals/tree/main/proposals/profiles) proposal.
+
 ## **1.2 Why not use existing formats like STEP, or treat Breps as opaque data?**
 
 Two natural questions arise: why not simply reference STEP files from USD, and why not treat Brep data as a black box (similar to how USD handles Volumes)?
