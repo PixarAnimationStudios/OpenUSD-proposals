@@ -148,7 +148,7 @@ its own terms.
 | | **USD namespace identifier** | **Source / external identifier** |
 |---|---|---|
 | **Purpose** | Address a prim in the composed stage | Identify an asset, component, or entity in an external system |
-| **Uniqueness** | Unique per prim instance in the stage | May be shared across multiple prim instances (e.g., multiple placements of the same part) |
+| **Uniqueness** | Unique per prim instance in the stage | <ul><li>Unique per source entity, not per prim instance.</li><li>May be shared across instances (e.g., multiple placements of the same part).</li><li>Must remain stable through state transitions, re-parenting, and assembly changes.</li></ul> |
 | **Governed by** | USD prim name grammar (XID rules) | External system conventions (may include characters invalid in USD namespace identifiers) |
 | **Used for** | Composition, hierarchy traversal, overrides | Asset tracking, classification, BOM generation, regulatory compliance, cross-system linking |
 | **Persistence** | Tied to the prim's position in the namespace | Tied to the source entity; should survive namespace edits |
@@ -402,21 +402,28 @@ product and its digital twin.
   collecting part numbers -- a workflow that requires source identifiers to be
   discoverable and unambiguous.
 
+If these identifiers are encoded into prim names, characters like hyphens and
+periods are lost or transcoded, making BOM generation from the USD stage
+unreliable without an additional decoding step.
+
+#### Identity continuity
+
 In aerospace and defense manufacturing, the stakes are especially high: a
 part moves through multiple suppliers, routings, and process steps --
 including destructive geometric changes like machining, heat treatment, and
 stress relief -- while its identity must remain stable for safety
-certification, fleet risk management, and root cause analysis. The
-Association for Manufacturing Technology (AMT) has identified this as
+certification, fleet risk management, and root cause analysis.
+
+The Association for Manufacturing Technology (AMT) has identified this as
 **identity continuity**: source identifiers that survive state transitions,
 re-parenting, and assembly changes without relying on the prim's position
-in the namespace. Feature-level identifiers (individual holes, datum faces,
-tolerances) add a further dimension, since features may appear, disappear,
-or deform across manufacturing operations while remaining traceable.
+in the namespace.
 
-If these identifiers are encoded into prim names, characters like hyphens and
-periods are lost or transcoded, making BOM generation from the USD stage
-unreliable without an additional decoding step.
+Feature-level identifiers (individual holes, datum faces, tolerances) add a
+further dimension, since features may appear, disappear, or deform across
+manufacturing operations while remaining traceable.
+
+#### Operational telemetry and composable bindings
 
 Beyond design-time identification, the same assets increasingly participate
 in live operational loops. USD scenes representing real-world equipment
@@ -424,6 +431,7 @@ in live operational loops. USD scenes representing real-world equipment
 systems streaming telemetry -- sensor readings, performance metrics, event
 logs -- where each event carries an **object identifier** (rack ID, sensor
 address, equipment tag) that must resolve to the correct prim hierarchy.
+
 The [Composable Bindings](https://aka.ms/ComposableBindings) whitepaper
 (Microsoft and NVIDIA, 2025) describes this pattern in the context of the
 digital engineering loop: standardized source identifiers on prims would
