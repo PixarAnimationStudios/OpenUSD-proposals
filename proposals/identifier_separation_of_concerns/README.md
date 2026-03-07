@@ -65,7 +65,7 @@ without one blocking or distorting the other.
 source identifiers in the OpenUSD codebase, accompanied by a baseline
 example that domains can follow. Two candidate approaches are under
 evaluation -- extending `assetInfo` with stratified sub-dictionaries, or
-introducing true applied schemas with typed properties -- each with
+leveraging USD's existing applied schema mechanism with typed properties -- each with
 distinct trade-offs (see [Likely direction](#likely-direction)). This
 proposal seeks consensus on the problem statement and design principles
 first, so that the resulting mechanism serves the full community.
@@ -314,10 +314,10 @@ space but each has limitations:
   structural members, electrical components) are not model roots.
 - The existing `assetInfo` keys are oriented toward Pixar's asset management
   model. Supporting arbitrary external identifiers from multiple systems
-  would require either new sub-dictionary conventions or a fundamentally
-  different approach using true applied schemas with typed properties.
+  would require either new sub-dictionary conventions or applied schemas
+  with typed properties directed at this problem.
 These patterns inform two candidate approaches for source identifiers --
-extending `assetInfo` with stratified sub-dictionaries, or introducing true
+extending `assetInfo` with stratified sub-dictionaries, or leveraging
 applied schemas with typed properties -- each with distinct trade-offs
 (see [Likely direction](#likely-direction)).
 
@@ -506,23 +506,23 @@ of fragmented workarounds.
    dependency graphs, search) on top of whatever identifier mechanism USD
    provides. What characteristics of the mechanism make that tractable?
 
-2. **Dictionary metadata vs. true applied schema?**
-   Should source identifiers live as sub-dictionaries within `assetInfo`
-   (Approach A), or as typed properties on applied schemas that contribute
-   to `UsdPrimDefinition` (Approach B)? The choice has significant
-   implications for discoverability (GUI presentation of unauthored
-   properties), schema versioning, validation, and
-   ease of adoption across domains. See [Likely direction](#likely-direction)
-   for a detailed comparison. This question interacts strongly with the
-   single-value vs. metadata-package question: if source identifiers are
-   packages with domain-specific contents (PLM revision history vs. AECO
-   classification codes vs. OPC UA node addressing), a multi-apply schema
-   must either restrict itself to a minimal common envelope (pushing
-   domain-specific fields back into dictionaries or additional schemas) or
-   define a union of all fields that is mostly unused for any given domain.
-   The more heterogeneous the package contents across domains, the more this
-   tension favors a dictionary-based approach -- or a family of
-   domain-specific schemas rather than a single multi-apply schema.
+2. **Dictionary metadata vs. applied schema?**
+   Should source identifiers live as sub-dictionaries within `assetInfo`,
+   or as typed properties on applied schemas that contribute to
+   `UsdPrimDefinition`? (These are labeled Approach A and Approach B
+   respectively in [Likely direction](#likely-direction).) Key trade-offs:
+   - **Discoverability and validation**: applied schemas enable GUI
+     presentation of unauthored properties, schema versioning, and
+     schema-driven validation; dictionaries do not.
+   - **Heterogeneous packages**: Different domains need different identifier
+     fields. A single multi-apply schema must either carry only the common
+     subset or accumulate rarely-used properties -- the more heterogeneous
+     the contents, the more this tension favors dictionaries or a family of
+     domain-specific schemas.
+   - **Adoption velocity**: Dictionaries let domains move independently;
+     schemas require agreement on property names before shipping.
+
+   See [Likely direction](#likely-direction) for a detailed comparison.
 
 3. **Stratification and governance.**
    Under either approach, how should domain-specific extensions be structured
@@ -536,15 +536,15 @@ of fragmented workarounds.
    The `UsdModelAPI` convenience layer scopes `assetInfo` to model roots, but
    `assetInfo` itself is registered in `SdfSchema` for both prims and
    properties. Migrating the API from `UsdModelAPI` to `UsdObject` (an
-   independently worthwhile change) would eliminate this restriction. Under
-   Approach B, applied schemas naturally apply to any prim. Either way,
+   independently worthwhile change) would eliminate this restriction.
+   Applied schemas naturally apply to any prim already. Either way,
    external identifiers are needed on prims at all levels of the hierarchy
    and the mechanism must not be artificially limited to model roots.
 
 5. **Namespacing of identifiers.**
    If a prim carries identifiers from multiple external systems, how should
-   they be organized? Under Approach A, this means sub-dictionary naming
-   conventions. Under Approach B, this means choosing between multi-apply
+   they be organized? For dictionaries, this means sub-dictionary naming
+   conventions. For applied schemas, this means choosing between multi-apply
    instance names (e.g., `sourceId:revit`, `sourceId:plm`) or a family of
    single-apply schemas that include a common base.
 
@@ -583,9 +583,12 @@ Domains register source identifiers as sub-dictionaries within `assetInfo`,
 with applied API schemas providing convenience access (following the
 `UsdMediaAssetPreviewsAPI` precedent).
 
-**Approach B: True applied schema (likely multi-apply) with typed
-properties.** Source identifiers are expressed as properties on an applied
-API schema, with each external system represented as a schema instance.
+**Approach B: Applied schema (likely multi-apply) with typed properties.**
+Applied schemas are a well-established USD mechanism; the question is
+whether to direct them at the cross-domain identifier problem as a
+standards framework. Source identifiers would be expressed as properties on
+an applied API schema, with each external system represented as a schema
+instance.
 
 | | Approach A (`assetInfo` dictionary) | Approach B (applied schema) |
 |---|---|---|
@@ -694,7 +697,7 @@ This proposal is conceptually upstream of several related efforts:
 
 4. **Evaluate and design the mechanism.** Based on the open questions,
    evaluate the two candidate approaches -- extending `assetInfo` with
-   stratified domain sub-dictionaries (Approach A) vs. true applied schemas
+   stratified domain sub-dictionaries (Approach A) vs. applied schemas
    with typed properties (Approach B) -- or determine whether a hybrid or
    alternative mechanism is warranted. Define concrete guidelines and a
    baseline example in the OpenUSD codebase.
