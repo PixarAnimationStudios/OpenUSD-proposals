@@ -255,7 +255,7 @@ sensor address from a telemetry platform, or a work-order ID from a
 maintenance system (see
 [Composable Bindings](https://aka.ms/ComposableBindings), Microsoft and
 NVIDIA, 2025). A single prim hierarchy representing a chiller unit might
-carry its PLM part number, its IFC GUID, *and* its OPC UA node ID -- each
+carry its PLM part number, its IFC GlobalId, *and* its OPC UA node ID -- each
 serving a different system integration.
 
 This points toward a mechanism that can hold multiple identifiers from
@@ -332,7 +332,7 @@ concern, not an *identification* concern. Using it to carry source identifiers
 conflates two purposes: the name shown to a user in a UI may differ from the
 identifier used to link back to a source system. A structural column's display
 name might be "Column C-14 (Level 3)" while its source identifier is the
-IFC GUID `2O2Fr$t4X7Zf8NOew3FNr2`.
+IFC GlobalId `2O2Fr$t4X7Zf8NOew3FNr2`.
 
 The [UI Hints](../ui-hints/README.md) work, now
 [implemented in OpenUSD](https://github.com/PixarAnimationStudios/OpenUSD/tree/dev/pxr/usd/usdUI),
@@ -376,7 +376,7 @@ frequently conflict with USD's prim name grammar:
 - **Classification codes** use slashes, hyphens, and other delimiters not
   valid in USD prim names (e.g., `BB/500`, OmniClass `23-13 11 00`,
   Uniclass `Ss_25_10_30`).
-- **IFC GUIDs** are 22-character base64-encoded strings that uniquely identify
+- **IFC GlobalIds** are 22-character base64-encoded strings that uniquely identify
   building elements across the lifecycle of a project.
 - **Revision workflows** produce new identifiers with each design iteration;
   the ability to derive revision information from the identifier is a
@@ -799,7 +799,7 @@ editorial decisions included:
 - Augmenting `assetInfo` analysis with `UsdModelAPI` and
   `UsdMediaAssetPreviewsAPI` as potential prototypes for a source identifier
   mechanism.
-- Correcting the IFC GUID characterization (GlobalIds are per-instance, not
+- Correcting the IFC GlobalId characterization (GlobalIds are per-instance, not
   per-type) based on fact-checking against the IFC specification.
 - Adding external queryability as a design principle and cross-system
   resolution as an open question, based on reviewer feedback that the
