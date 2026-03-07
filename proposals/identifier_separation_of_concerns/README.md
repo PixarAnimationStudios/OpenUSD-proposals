@@ -616,12 +616,12 @@ traceability) should be accommodated.
    The baseline example should be validated against at least two or three
    distinct domain use cases before being promoted as a standard.
 
-4. **Adoption fragmentation.** If the mechanism is too generic, domains may
+3. **Adoption fragmentation.** If the mechanism is too generic, domains may
    still build incompatible conventions on top of it, defeating the
    interoperability goal. The design must balance flexibility with enough
    structure to ensure cross-domain discoverability.
 
-5. **Scope creep.** Source identifiers shade into broader metadata concerns
+4. **Scope creep.** Source identifiers shade into broader metadata concerns
    -- authorship, semantic meaning, lifecycle state -- and the mechanism
    tries to solve everything. The scope should remain focused on
    identification and linking; adjacent concerns should build on the pattern
