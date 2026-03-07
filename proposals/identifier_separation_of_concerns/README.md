@@ -61,12 +61,14 @@ not foreclosed by anything proposed here. By establishing consensus on the
 separation of concerns first, both problems can be pursued on their own merits
 without one blocking or distorting the other.
 
-**Expected outcome.** Based on TAC discussion, the likely result is an
-extension of `assetInfo` with stratified, schema-backed domain extensions
-and a baseline example in the OpenUSD codebase (see
-[Likely direction](#likely-direction)). This proposal seeks consensus on
-the problem statement and design principles first, so that the resulting
-mechanism serves the full community.
+**Expected outcome.** The likely result is a standardized mechanism for
+source identifiers in the OpenUSD codebase, accompanied by a baseline
+example that domains can follow. Two candidate approaches are under
+evaluation -- extending `assetInfo` with stratified sub-dictionaries, or
+introducing true applied schemas with typed properties -- each with
+distinct trade-offs (see [Likely direction](#likely-direction)). This
+proposal seeks consensus on the problem statement and design principles
+first, so that the resulting mechanism serves the full community.
 
 ## Motivation
 
@@ -147,10 +149,10 @@ its own terms.
 |---|---|---|
 | **Purpose** | Address a prim in the composed stage | Identify an asset, component, or entity in an external system |
 | **Uniqueness** | Unique per prim instance in the stage | May be shared across multiple prim instances (e.g., multiple placements of the same part) |
-| **Governed by** | USD prim name grammar (XID rules) | External system conventions (may include characters invalid in USD) |
+| **Governed by** | USD prim name grammar (XID rules) | External system conventions (may include characters invalid in USD namespace identifiers) |
 | **Used for** | Composition, hierarchy traversal, overrides | Asset tracking, classification, BOM generation, regulatory compliance, cross-system linking |
 | **Persistence** | Tied to the prim's position in the namespace | Tied to the source entity; should survive namespace edits |
-| **Multiplicity** | Exactly one per prim | Potentially many -- one per external system the entity participates in |
+| **Multiplicity** | Exactly one per composed prim | Potentially many -- one per external system the entity participates in |
 
 Today, there is no standardized place in USD to express the right-hand column.
 Users work around this through ad-hoc conventions: encoding external
@@ -176,7 +178,12 @@ Without a clear separation of concerns:
 3. **Conflation of concerns.** When prim names are forced to double as
    external identifiers, the USD namespace becomes polluted with naming
    constraints from external systems, or external systems lose fidelity when
-   their identifiers are forced into USD grammar.
+   their identifiers are forced into USD grammar. There is also a
+   fundamental **uniqueness incompatibility**: if multiple instances of the
+   same part share an external identifier (e.g., identical bolts in an
+   assembly), they must either have uniquified USD paths to coexist as
+   siblings, or be placed under artificial namespace structure -- regardless
+   of how rich USD's character set becomes.
 
 4. **Missed opportunities for tooling.** If source identifiers were
    discoverable through a standard mechanism, tools could provide cross-system
@@ -215,7 +222,10 @@ Some domains also assign external instance-level identifiers -- serial
 numbers for individual physical parts, or IFC GlobalIds that uniquely
 identify each placement rather than the shared type. A flexible mechanism
 should accommodate both source-level and instance-level external
-identifiers, but the primary gap today is source identity.
+identifiers, but the primary gap today is source identity. (Note that
+instance-level external identifiers raise additional questions about
+behavior under reparenting and namespace edits -- constraints that must be
+enforced by DCCs and validators, not by core namespace editing logic.)
 
 ### Single value vs. metadata package
 
@@ -248,16 +258,16 @@ NVIDIA, 2025). A single prim hierarchy representing a chiller unit might
 carry its PLM part number, its IFC GUID, *and* its OPC UA node ID -- each
 serving a different system integration.
 
-This points toward a dictionary-based mechanism that can hold multiple
-identifiers from different systems, keyed by domain. `assetInfo` already
-exists as a composed dictionary on USD model prims and is the likely
-starting point (see [Likely direction](#likely-direction)).
+This points toward a mechanism that can hold multiple identifiers from
+different systems, keyed by domain -- whether as a composed dictionary
+(extending `assetInfo`) or as typed properties on an applied schema (see
+[Likely direction](#likely-direction)).
 
 ## Existing mechanisms in USD
 
 Several existing mechanisms partially address the need for external
 identifiers. Understanding their strengths and limitations informs the
-likely direction of extending `assetInfo` with stratified domain extensions.
+evaluation of candidate approaches (see [Likely direction](#likely-direction)).
 
 ### assetInfo, UsdModelAPI, and UsdMediaAssetPreviewsAPI
 
@@ -281,31 +291,38 @@ well-suited for model-level asset management metadata.
 [`UsdMediaAssetPreviewsAPI`](https://openusd.org/dev/api/class_usd_media_asset_previews_a_p_i.html)
 demonstrates an extension of this pattern: it is an applied API schema that
 provides typed access to a nested sub-dictionary of `assetInfo`
-(`assetInfo["previews"]["thumbnails"]`). This shows that `assetInfo` can be
-extended with schema-backed access for specific sub-domains, rather than
-relying solely on freeform dictionary conventions.
+(`assetInfo["previews"]["thumbnails"]`). However, it is important to note
+that such applied schemas contribute nothing to a prim's *definition*
+(`UsdPrimDefinition`). They provide a described spec and a convenience API,
+but not defining data types that can be reasoned about independently of
+specific C++/Python API calls -- no fallback values, no automatic GUI
+presentation of unauthored properties, no schema-driven validation.
 
-Together, `UsdModelAPI` and `UsdMediaAssetPreviewsAPI` may be part of the
-eventual solution or serve as prototypes for one. However, several
-limitations apply:
+Together, `UsdModelAPI` and `UsdMediaAssetPreviewsAPI` inform the design
+space but each has limitations:
 
 - `UsdModelAPI` is designed around USD's own concept of an asset (a
   referenceable layer or package), not around external system identifiers.
   While `assetInfo` itself is not restricted to model roots, the
   `UsdModelAPI` convenience layer encourages use only on prims that
-  participate in the `Kind` hierarchy.
+  participate in the `Kind` hierarchy. (Note: `assetInfo` was designed
+  from the start to be applicable to both prims and properties, as
+  registered in `SdfSchema`. The API's current limitation to model roots
+  is an API gap, not a design constraint, and could be addressed by
+  migrating the `assetInfo` API from `UsdModelAPI` to `UsdObject`.)
 - Many real-world objects that need source identifiers (individual rooms,
   structural members, electrical components) are not model roots.
 - The existing `assetInfo` keys are oriented toward Pixar's asset management
   model. Supporting arbitrary external identifiers from multiple systems
-  would require either new schema following the `UsdMediaAssetPreviewsAPI`
-  pattern, or reliance on the dictionary's freeform nature, which reduces
-  discoverability.
+  would require either new sub-dictionary conventions or a fundamentally
+  different approach using true applied schemas with typed properties.
+- Dictionary entries in `assetInfo` cannot currently be blocked
+  (non-destructively erased), whereas property values on schemas can.
 
-These existing schemas demonstrate that USD already has viable patterns for
-structured metadata access on prims, and the `UsdMediaAssetPreviewsAPI`
-sub-dictionary pattern is the likely model for domain-specific source
-identifier extensions (see [Likely direction](#likely-direction)).
+These patterns inform two candidate approaches for source identifiers --
+extending `assetInfo` with stratified sub-dictionaries, or introducing true
+applied schemas with typed properties -- each with distinct trade-offs
+(see [Likely direction](#likely-direction)).
 
 ### displayName
 
@@ -359,8 +376,9 @@ frequently conflict with USD's prim name grammar:
 - **Room numbers** are often purely numeric (e.g., `1001`), which cannot serve
   as a prim name starting character under pre-24.03 rules and still cannot
   serve as identifiers under current XID rules.
-- **Classification codes** use slashes and hyphens as semantic delimiters
-  (e.g., Uniclass `Ss_25_10_30`, OmniClass `23-13 11 00`).
+- **Classification codes** use slashes, hyphens, and other delimiters not
+  valid in USD prim names (e.g., `BB/500`, OmniClass `23-13 11 00`,
+  Uniclass `Ss_25_10_30`).
 - **IFC GUIDs** are 22-character base64-encoded strings that uniquely identify
   building elements across the lifecycle of a project.
 - **Revision workflows** produce new identifiers with each design iteration;
@@ -491,44 +509,54 @@ of fragmented workarounds.
    dependency graphs, search) on top of whatever identifier mechanism USD
    provides. What characteristics of the mechanism make that tractable?
 
-2. **How should `assetInfo` extensions be stratified?**
-   TAC discussion suggests extending `assetInfo` is the likely path. The key
-   question becomes: how should domain-specific sub-dictionaries be
-   structured and governed to prevent `assetInfo` from becoming an unmanaged
-   dumping ground? What conventions ensure that extensions from different
-   domains (PLM, AECO, M&E, authorship) remain discoverable, composable,
-   and non-conflicting?
+2. **Dictionary metadata vs. true applied schema?**
+   Should source identifiers live as sub-dictionaries within `assetInfo`
+   (Approach A), or as typed properties on applied schemas that contribute
+   to `UsdPrimDefinition` (Approach B)? The choice has significant
+   implications for discoverability (GUI presentation of unauthored
+   properties), schema versioning, validation, erasability (blocking), and
+   ease of adoption across domains. See [Likely direction](#likely-direction)
+   for a detailed comparison.
 
-3. **Schema or metadata?**
-   Should source identifiers be expressed as applied API schemas (following
-   the `UsdMediaAssetPreviewsAPI` pattern for typed access to `assetInfo`
-   sub-dictionaries), as freeform metadata conventions, or as properties?
-   Each has different implications for composition, queryability, and
-   performance.
+3. **Stratification and governance.**
+   Under either approach, how should domain-specific extensions be structured
+   and governed? For `assetInfo` sub-dictionaries, what naming and nesting
+   conventions prevent unmanaged growth? For multi-apply schemas, what
+   tensions arise in standardizing property names across disparate systems?
+   What conventions ensure that extensions from different domains (PLM, AECO,
+   M&E, authorship) remain discoverable, composable, and non-conflicting?
 
 4. **Scope: model roots only, or any prim?**
-   `assetInfo` is scoped to model roots. External identifiers are needed on
-   prims at all levels of the hierarchy -- individual rooms, structural
-   members, electrical components, fasteners. The mechanism must not be
-   artificially limited to model roots.
+   The `UsdModelAPI` convenience layer scopes `assetInfo` to model roots, but
+   `assetInfo` itself is registered in `SdfSchema` for both prims and
+   properties. Migrating the API from `UsdModelAPI` to `UsdObject` (an
+   independently worthwhile change) would eliminate this restriction. Under
+   Approach B, applied schemas naturally apply to any prim. Either way,
+   external identifiers are needed on prims at all levels of the hierarchy
+   and the mechanism must not be artificially limited to model roots.
 
 5. **Namespacing of identifiers.**
    If a prim carries identifiers from multiple external systems, how should
-   they be organized? A flat dictionary with well-known keys? A
-   multiply-instanced schema with system-specific instance names?
+   they be organized? Under Approach A, this means sub-dictionary naming
+   conventions. Under Approach B, this means choosing between multi-apply
+   instance names (e.g., `sourceId:revit`, `sourceId:plm`) or a family of
+   single-apply schemas that include a common base.
 
 6. **Relationship to `displayName`.**
    How does the source identifier relate to the prim's `displayName`? In some
    workflows the display name *is* the source identifier; in others they
-   differ. The proposal should clarify this relationship.
+   differ. When multiple instances share a source identifier, deriving
+   `displayName` from it may be confusing for presentation (e.g., 30 doors
+   all displaying the same catalog number). `displayName` substitution
+   patterns -- as used for symmetry in rigging and for multiple instances of
+   character groups -- may be relevant if this is a needful pattern.
 
 7. **Relationship to authorship traceability.**
    Authorship traceability (tracking who created or modified content) is a
    related but distinct concern that could build on the same domain identifier
-   pattern. If the stratified `assetInfo` extension model is adopted,
-   authorship could be one domain-specific use case among many. How should
-   the design accommodate this without conflating authorship metadata with
-   source identification?
+   pattern. Under either candidate approach, authorship could be one
+   domain-specific use case among many. How should the design accommodate
+   this without conflating authorship metadata with source identification?
 
 8. **Interaction with transcoding.**
    If source identifiers contain characters invalid in USD, they should be
@@ -540,42 +568,60 @@ of fragmented workarounds.
 
 ### Likely direction
 
-Based on TAC discussion, the likely outcome is an extension of `assetInfo`
-with a **stratified extension pattern**: concrete guidelines for how domains
-register and access source identifiers within `assetInfo` sub-dictionaries,
-following the precedent set by `UsdMediaAssetPreviewsAPI`. This approach:
+TAC discussion has identified two candidate approaches, each with distinct
+trade-offs. The next phase of this work will evaluate both before committing
+to one.
 
-- Builds on `assetInfo`'s existing composition semantics (element-wise
-  composed, nestable).
-- Leverages applied API schemas for typed, discoverable access to
-  domain-specific sub-dictionaries -- preventing `assetInfo` from becoming
-  an unmanaged dumping ground.
-- Establishes a baseline example in the OpenUSD codebase that other domains
-  can follow.
+**Approach A: Extend `assetInfo` with stratified sub-dictionaries.**
+Domains register source identifiers as sub-dictionaries within `assetInfo`,
+with applied API schemas providing convenience access (following the
+`UsdMediaAssetPreviewsAPI` precedent).
 
-The remaining open questions above are intended to finalize the details of
-this approach: scope (any prim vs. model roots), namespacing conventions,
-and how domain-specific schemas (including authorship traceability) should
-be structured.
+| | |
+|---|---|
+| **Pros** | Builds on existing composition semantics (element-wise composed, nestable). Low barrier to adoption -- `assetInfo` already exists and is familiar. |
+| **Cons** | Dictionary entries cannot be blocked (non-destructively erased). Applied schemas on metadata provide only a convenience API, not true data type definitions in `UsdPrimDefinition` -- no fallback values, no automatic GUI presentation of unauthored fields, limited schema-driven validation. Risk of `assetInfo` becoming a dumping ground without strong governance. |
+
+**Approach B: True applied schema (likely multi-apply) with typed
+properties.** Source identifiers are expressed as properties on an applied
+API schema, with each external system represented as a schema instance.
+
+| | |
+|---|---|
+| **Pros** | Identifier schemes become part of the prim's `UsdPrimDefinition` and `UsdTypeInfo`, enabling full discoverability, GUI presentation of unauthored properties, schema versioning, and validation. Property values can be blocked. More rigorous structure may reduce adoption fragmentation. |
+| **Cons** | Multi-apply creates tension in standardizing property names across domains. Requires distributing schema plugins (or stage-attached schemas, still on the roadmap). Less freeform than a dictionary -- may not accommodate unforeseen identifier structures as easily. |
+
+A possible variant of Approach B is a single-apply base schema in the core
+(empty or with only common properties), with domain-specific single-apply
+schemas that include the base and add their own extensions. This encodes
+systems in concrete schemas rather than multi-apply instance names, but
+requires `UsdSchemaRegistry` query enhancements.
+
+The remaining open questions above are intended to resolve which approach
+best serves the community, including scope (any prim vs. model roots),
+namespacing conventions, and how adjacent use cases (including authorship
+traceability) should be accommodated.
 
 ### Risks
 
-1. **`assetInfo` as dumping ground.** Without clear stratification guidelines,
-   domains will add ad-hoc keys to `assetInfo` and the dictionary will become
-   unmanageable. The stratification pattern must be well-defined and enforced
-   by convention (or schema) from the start.
+1. **Uncurated proliferation.** Both approaches are vulnerable to
+   unmanaged growth. Under Approach A, ad-hoc keys accumulate in `assetInfo`
+   without structure. Under Approach B, a proliferation of domain-specific
+   schema plugins creates its own discoverability and distribution burden.
+   The mechanism alone does not prevent this -- either approach requires
+   clear governance and curation from the start.
 
 2. **Premature standardization.** Locking in a pattern before enough domains
    have exercised it risks discovering too late that it doesn't generalize.
    The baseline example should be validated against at least two or three
    distinct domain use cases before being promoted as a standard.
 
-3. **Adoption fragmentation.** If the mechanism is too generic, domains may
+4. **Adoption fragmentation.** If the mechanism is too generic, domains may
    still build incompatible conventions on top of it, defeating the
    interoperability goal. The design must balance flexibility with enough
    structure to ensure cross-domain discoverability.
 
-4. **Scope creep.** Source identifiers shade into broader metadata concerns
+5. **Scope creep.** Source identifiers shade into broader metadata concerns
    -- authorship, semantic meaning, lifecycle state -- and the mechanism
    tries to solve everything. The scope should remain focused on
    identification and linking; adjacent concerns should build on the pattern
@@ -642,10 +688,11 @@ This proposal is conceptually upstream of several related efforts:
    single industry. Steps 2 and 3 can proceed in parallel.
 
 4. **Evaluate and design the mechanism.** Based on the open questions,
-   determine whether extending `assetInfo` with stratified domain
-   sub-dictionaries (the current likely direction) is the right path, or
-   whether an alternative mechanism is warranted. Define concrete guidelines
-   and a baseline example in the OpenUSD codebase.
+   evaluate the two candidate approaches -- extending `assetInfo` with
+   stratified domain sub-dictionaries (Approach A) vs. true applied schemas
+   with typed properties (Approach B) -- or determine whether a hybrid or
+   alternative mechanism is warranted. Define concrete guidelines and a
+   baseline example in the OpenUSD codebase.
 
 5. **Draft a solution proposal.** Based on alignment from steps 2-4, draft a
    concrete proposal specifying the mechanism, its composition semantics,
@@ -653,8 +700,8 @@ This proposal is conceptually upstream of several related efforts:
    traceability fit into the pattern.
 
 Stakeholders who want to accelerate this work are encouraged to engage
-directly on any of the steps above. The pace is determined by the breadth of
-consensus achieved at each step -- and that consensus is what ensures the
+directly on any of the steps above. The pace is determined by the breadth
+of consensus achieved at each step -- and that consensus is what ensures the
 solution serves the full community rather than a single use case.
 
 ---
@@ -754,10 +801,13 @@ editorial decisions included:
   practical utility of source identifiers depends on the ability to resolve
   them from outside USD -- with the consumer responsible for building indexes
   on top of the mechanism.
-- Incorporating TAC feedback: leading with expected outcome (extending
-  `assetInfo` with stratified domain-specific extensions), adding authorship
-  traceability as a related use case, updating the likely direction and
-  next steps to reflect
-  consensus trajectory, and adding PR submission as the first next step.
+- Incorporating TAC feedback: adding authorship traceability as a related
+  use case, updating next steps to reflect consensus trajectory, and adding
+  PR submission as the first next step.
+- Incorporating TAC feedback on applied schema limitations: tempering the
+  `UsdMediaAssetPreviewsAPI` pattern's characterization, presenting the case
+  for true applied schemas (multi-apply or single-apply with base) as an
+  alternative to the `assetInfo` dictionary approach, and restructuring the
+  "Likely direction" section to compare both approaches with their trade-offs.
 
 A prompt-level drafting log has been archived separately.
