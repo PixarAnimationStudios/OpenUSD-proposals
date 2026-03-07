@@ -85,7 +85,7 @@ USD's namespace paths are:
 - **Structural** -- they encode the scene hierarchy and are used for traversal,
   queries, and composition arc targeting.
 - **Governed by grammar rules** -- identifiers must conform to syntactic
-  constraints (currently the XID specification as of OpenUSD 24.03).
+  constraints (currently the XID specification as of OpenUSD v24.03).
 - **The primary key** for binding opinions across layers.
 
 A recurring community question is
@@ -113,11 +113,11 @@ naming conventions that align well with USD's identifier grammar. As USD
 expands into new industries, it increasingly encounters data originating from
 systems with their own identification schemes:
 
-- **AECO tools** (Revit, ArchiCAD, IFC) use identifiers like GUIDs, room
+- **AECO tools** (Revit, Archicad, IFC) use identifiers like GUIDs, room
   numbers (`1001`), classification codes with slashes and hyphens
   (`BB/500`, `Ss_25_10_30`), and revision-stamped names.
 - **Manufacturing and Product Lifecycle Management (PLM) systems**
-  (Teamcenter, Windchill, 3DExperience) track parts by alphanumeric part
+  (Teamcenter, Windchill, 3DEXPERIENCE) track parts by alphanumeric part
   numbers (`A-0000-12345`), revision identifiers, component designators
   with leading digits and medial hyphens (`1N4148`, `R-101`), and
   multi-attribute metadata packages. The same assets increasingly
@@ -255,7 +255,7 @@ sensor address from a telemetry platform, or a work-order ID from a
 maintenance system (see
 [Composable Bindings](https://aka.ms/ComposableBindings), Microsoft and
 NVIDIA, 2025). A single prim hierarchy representing a chiller unit might
-carry its PLM part number, its IFC GlobalId, *and* its OPC UA node ID -- each
+carry its PLM part number, its IFC GlobalId, *and* its OPC UA NodeId -- each
 serving a different system integration.
 
 This points toward a mechanism that can hold multiple identifiers from
@@ -366,15 +366,15 @@ identifiers from source identifiers is broad and cross-cutting.
 
 ### Architecture, Engineering, Construction, and Operations (AECO)
 
-AECO data originates from tools like Autodesk Revit, Graphisoft ArchiCAD,
+AECO data originates from tools like Autodesk Revit, Graphisoft Archicad,
 Bentley MicroStation, and the open IFC standard. Naming conventions in AECO
 frequently conflict with USD's prim name grammar:
 
 - **Room numbers** are often purely numeric (e.g., `1001`), which cannot serve
-  as a prim name starting character under pre-24.03 rules and still cannot
+  as a prim name starting character under pre-v24.03 rules and still cannot
   serve as identifiers under current XID rules.
 - **Classification codes** use slashes, hyphens, and other delimiters not
-  valid in USD prim names (e.g., `BB/500`, OmniClass `23-13 11 00`,
+  valid in USD prim names (e.g., CI/SfB `BB/500`, OmniClass `23-13 11 00`,
   Uniclass `Ss_25_10_30`).
 - **IFC GlobalIds** are 22-character base64-encoded strings that uniquely identify
   building elements across the lifecycle of a project.
@@ -440,7 +440,7 @@ differ from prim namespace paths:
   hierarchy.
 - **Shot and sequence identifiers** follow studio-specific conventions that may
   include characters not valid in prim names.
-- **Published asset versions** are tracked by systems (e.g., ShotGrid, ftrack)
+- **Published asset versions** are tracked by systems (e.g., Flow Production Tracking, ftrack)
   that assign their own unique identifiers alongside the USD asset path.
 
 While `assetInfo` covers some of these cases at the model level, it does not
@@ -637,7 +637,7 @@ traceability) should be accommodated.
 This proposal is conceptually upstream of several related efforts:
 
 - **[Unicode Identifiers in USD](../tf_utf8_identifiers/README.md)**
-  (Implemented, 24.03) -- Expanded USD's prim name grammar to support Unicode
+  (Implemented, v24.03) -- Expanded USD's prim name grammar to support Unicode
   XID characters. This broadens what can be expressed *as a prim name* but
   does not address the separation of concerns between prim names and external
   identifiers.
