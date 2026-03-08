@@ -686,10 +686,9 @@ This proposal is conceptually upstream of several related efforts:
 
 ## Next steps
 
-1. **Submit as pull request.** Submit this proposal to the
-   [OpenUSD-proposals](https://github.com/PixarAnimationStudios/OpenUSD-proposals)
-   repository to solicit community feedback and rally consensus on the open
-   questions.
+1. **~~Submit as pull request.~~** ✅ Submitted as
+   [PR #105](https://github.com/PixarAnimationStudios/OpenUSD-proposals/pull/105).
+   Community feedback and discussion on the open questions is welcome there.
 
 2. **Align on the problem statement.** Confirm among TAC members and
    industry stakeholders that the problem is understood consistently and
