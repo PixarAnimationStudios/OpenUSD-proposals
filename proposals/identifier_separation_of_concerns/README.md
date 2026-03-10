@@ -819,6 +819,25 @@ The following materials were provided as input context for drafting:
    discussions on decoupling USD identifiers from external system
    identifiers."
 
+9. **AOUSD IEDT Interest Group presentation (PTC)** -- Steve Ghee (PTC)
+   presented CAD/PLM integration with USD: direct USD export from Creo
+   and Onshape, automatic USD generation from Windchill PLM on CAD
+   check-in, configuration-driven on-demand USD generation,
+   bidirectional traceability via asset resolvers, and access control
+   flowing through the resolver. Demonstrated with a ~6,000-part tractor
+   from Creo rendered in Omniverse.
+
+10. **PLM identifier architecture (PTC/Windchill)** -- Discussion with
+    Steve Ghee on how PLM identifiers work in practice: Windchill OIDs
+    are intentionally opaque URIs (e.g., `VR:wt.part.WTPart:23639563`);
+    the object identifier, display name, assembly occurrence ID, and
+    system-unique "number" are all distinct concepts; multiple OIDs per
+    item (PLM part, CAD document, navigation context); the asset resolver
+    URI is the real external reference. Part numbers don't scale in
+    complex parametric/configuration use cases -- the real identifier is
+    a composite URI meaningful only to the originating system. Motivated
+    the addition of vendor extensibility as a design principle.
+
 ### Review and refinement
 
 The draft was refined through multiple rounds of internal review. Key
@@ -849,5 +868,11 @@ editorial decisions included:
   for true applied schemas (multi-apply or single-apply with base) as an
   alternative to the `assetInfo` dictionary approach, and restructuring the
   "Likely direction" section to compare both approaches with their trade-offs.
+- Adding vendor extensibility as a design principle, based on PLM identifier
+  architecture discussions revealing that real-world identifiers are often
+  opaque, vendor-specific URIs. Referenced the OpenGL/Vulkan vendor extension
+  model (`GL_NV_` → `GL_EXT_` → `GL_ARB_` → core) as proven precedent for
+  fast time-to-market with a path to standardization. Sharpened governance
+  and namespacing open questions accordingly.
 
 A prompt-level drafting log has been archived separately.
