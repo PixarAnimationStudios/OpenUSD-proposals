@@ -406,9 +406,9 @@ In complex configuration-managed systems, the identifier may not be a
 human-readable part number at all. PLM systems may use composite URIs or
 opaque system keys -- meaningful only to the originating system's asset
 resolver -- where a "part" is an abstract container whose concrete identity
-depends on configuration rules and context. The mechanism must treat such
-opaque, vendor-specific identifiers as first-class citizens alongside
-human-readable strings.
+depends on configuration rules and context. These opaque, vendor-specific
+identifiers must survive a round-trip through USD without loss, just as
+human-readable strings do.
 
 If these identifiers are encoded into prim names, characters like hyphens and
 periods are lost or transcoded, making BOM generation from the USD stage
@@ -492,9 +492,13 @@ of fragmented workarounds.
    from a single company to an industry standard like IFC -- should be able
    to declare its own identifier scheme without central approval before
    deployment. Identifiers may be opaque -- meaningful only to the declaring
-   system -- and that is correct behavior, not a governance failure. Proven
-   vendor extensions can be promoted to multi-vendor or core status over time,
-   following the model established by OpenGL and Vulkan.
+   system. Support for such proprietary schemes is necessary; however,
+   centralizing the management of such schemes is neither desirable nor
+   required. When a vendor scheme matures to the point of requiring systems
+   interoperability, proven extensions can be promoted to multi-vendor or
+   core status over time -- a vendor-extension model with precedent in
+   Khronos APIs (OpenGL, Vulkan), IETF internet standards, and the W3C
+   web platform.
 
 4. **Composability.** External identifiers should participate in USD's
    composition model in a well-defined way. It should be clear how source
@@ -868,11 +872,8 @@ editorial decisions included:
   for true applied schemas (multi-apply or single-apply with base) as an
   alternative to the `assetInfo` dictionary approach, and restructuring the
   "Likely direction" section to compare both approaches with their trade-offs.
-- Adding vendor extensibility as a design principle, based on PLM identifier
-  architecture discussions revealing that real-world identifiers are often
-  opaque, vendor-specific URIs. Referenced the OpenGL/Vulkan vendor extension
-  model (`GL_NV_` → `GL_EXT_` → `GL_ARB_` → core) as proven precedent for
-  fast time-to-market with a path to standardization. Sharpened governance
-  and namespacing open questions accordingly.
+- Adding vendor extensibility as a design principle, referencing cross-industry
+  precedent (Khronos, IETF, W3C) for vendor-first deployment with a path to
+  standardization.
 
 A prompt-level drafting log has been archived separately.
