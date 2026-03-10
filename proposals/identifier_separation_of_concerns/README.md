@@ -402,6 +402,14 @@ product and its digital twin.
   collecting part numbers -- a workflow that requires source identifiers to be
   discoverable and unambiguous.
 
+In complex configuration-managed systems, the identifier may not be a
+human-readable part number at all. PLM systems may use composite URIs or
+opaque system keys -- meaningful only to the originating system's asset
+resolver -- where a "part" is an abstract container whose concrete identity
+depends on configuration rules and context. The mechanism must treat such
+opaque, vendor-specific identifiers as first-class citizens alongside
+human-readable strings.
+
 If these identifiers are encoded into prim names, characters like hyphens and
 periods are lost or transcoded, making BOM generation from the USD stage
 unreliable without an additional decoding step.
@@ -480,27 +488,35 @@ of fragmented workarounds.
    GUIDs, PLM part numbers, M&E asset database IDs, and schemes not yet
    envisioned.
 
-3. **Composability.** External identifiers should participate in USD's
+3. **Vendor extensibility.** Any vendor, standards body, or consortium --
+   from a single company to an industry standard like IFC -- should be able
+   to declare its own identifier scheme without central approval before
+   deployment. Identifiers may be opaque -- meaningful only to the declaring
+   system -- and that is correct behavior, not a governance failure. Proven
+   vendor extensions can be promoted to multi-vendor or core status over time,
+   following the model established by OpenGL and Vulkan.
+
+4. **Composability.** External identifiers should participate in USD's
    composition model in a well-defined way. It should be clear how source
    identifiers are resolved when a prim is referenced, inherited, or
    specialized.
 
-4. **Discoverability.** Tools should be able to discover that a prim carries
+5. **Discoverability.** Tools should be able to discover that a prim carries
    source identifiers without prior knowledge of a pipeline-specific
    convention. This argues for a schema-based approach rather than ad-hoc
    `customData` usage.
 
-5. **External queryability.** Storing a source identifier on a prim is
+6. **External queryability.** Storing a source identifier on a prim is
    necessary but not sufficient. Real-world workflows also need to resolve
    the reverse question: *given an external identifier, which USD layers and
    prims reference it?* The source identifier mechanism should make it
    tractable for consumers to build external indexes over USD content.
 
-6. **Round-trip fidelity.** Source identifiers should survive a round-trip
+7. **Round-trip fidelity.** Source identifiers should survive a round-trip
    through USD without loss, even if the characters they contain are not valid
    in USD prim names.
 
-7. **Minimal disruption.** The solution should build on USD's existing
+8. **Minimal disruption.** The solution should build on USD's existing
    strengths. It should not require fundamental changes to the composition
    engine or namespace path semantics.
 
@@ -533,12 +549,17 @@ of fragmented workarounds.
    See [Likely direction](#likely-direction) for a detailed comparison.
 
 3. **Stratification and governance.**
-   Under either approach, how should domain-specific extensions be structured
-   and governed? For `assetInfo` sub-dictionaries, what naming and nesting
-   conventions prevent unmanaged growth? For multi-apply schemas, what
-   tensions arise in standardizing property names across disparate systems?
-   What conventions ensure that extensions from different domains (PLM, AECO,
-   M&E, authorship) remain discoverable, composable, and non-conflicting?
+   Under either approach, how should vendor and domain extensions be
+   structured and governed? The vendor extension principle implies a tiered
+   lifecycle -- analogous to the `GL_NV_` → `GL_EXT_` → `GL_ARB_` → core
+   promotion path in OpenGL -- where vendor-specific conventions can ship
+   immediately, successful patterns are promoted to multi-vendor conventions,
+   and mature conventions become candidates for core standardization. What
+   naming, namespacing, and registration conventions ensure that extensions
+   from different vendors and domains (PLM systems, AECO standards, M&E
+   pipelines, authorship tools) remain discoverable, composable, and
+   non-conflicting -- while allowing vendors to ship without waiting for
+   cross-industry consensus?
 
 4. **Scope: model roots only, or any prim?**
    The `UsdModelAPI` convenience layer scopes `assetInfo` to model roots, but
@@ -551,10 +572,14 @@ of fragmented workarounds.
 
 5. **Namespacing of identifiers.**
    If a prim carries identifiers from multiple external systems, how should
-   they be organized? For dictionaries, this means sub-dictionary naming
-   conventions. For applied schemas, this means choosing between multi-apply
-   instance names (e.g., `sourceId:revit`, `sourceId:plm`) or a family of
-   single-apply schemas that include a common base.
+   they be organized? The namespacing convention must accommodate the full
+   spectrum of "vendors" -- from a single product (e.g., `windchill`,
+   `revit`) to an industry standard (e.g., `ifc`, `opcua`) to an internal
+   enterprise system. For dictionaries, this means sub-dictionary naming
+   conventions with vendor prefixes. For applied schemas, this means
+   choosing between multi-apply instance names (e.g., `sourceId:revit`,
+   `sourceId:ifc`) or a family of single-apply schemas that include a
+   common base.
 
 6. **Relationship to `displayName`.**
    How does the source identifier relate to the prim's `displayName`? In some
