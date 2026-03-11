@@ -488,17 +488,19 @@ of fragmented workarounds.
    GUIDs, PLM part numbers, M&E asset database IDs, and schemes not yet
    envisioned.
 
-3. **Vendor extensibility.** Any vendor, standards body, or consortium --
-   from a single company to an industry standard like IFC -- should be able
-   to declare its own identifier scheme without central approval before
-   deployment. Identifiers may be opaque -- meaningful only to the declaring
-   system. Support for such proprietary schemes is necessary; however,
-   centralizing the management of such schemes is neither desirable nor
-   required. When a vendor scheme matures to the point of requiring systems
-   interoperability, proven extensions can be promoted to multi-vendor or
-   core status over time -- a vendor-extension model with precedent in
-   Khronos APIs (OpenGL, Vulkan), IETF internet standards, and the W3C
-   web platform.
+3. **Vendor extensibility.**
+   - Any vendor, standards body, or consortium -- from a single company to
+     an industry standard like IFC -- should be able to declare its own
+     identifier scheme without central approval before deployment.
+   - Identifiers may be opaque -- meaningful only to the declaring system.
+     Support for such proprietary schemes is necessary; centralizing their
+     management is neither desirable nor required.
+   - When a vendor scheme matures to the point of requiring systems
+     interoperability, proven extensions can be promoted to multi-vendor or
+     core status over time -- a model with broad precedent, e.g.:
+     - Khronos APIs (OpenGL, Vulkan)
+     - IETF internet standards
+     - The W3C web platform
 
 4. **Composability.** External identifiers should participate in USD's
    composition model in a well-defined way. It should be clear how source
