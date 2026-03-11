@@ -115,7 +115,7 @@ systems with their own identification schemes:
 
 - **AECO tools** (Revit, Archicad, IFC) use identifiers like GUIDs, room
   numbers (`1001`), classification codes with slashes and hyphens
-  (`BB/500`, `Ss_25_10_30`), and revision-stamped names.
+  (`BB/500`), and revision-stamped names.
 - **Manufacturing and Product Lifecycle Management (PLM) systems**
   (Teamcenter, Windchill, 3DEXPERIENCE) track parts by alphanumeric part
   numbers (`A-0000-12345`), revision identifiers, component designators
@@ -373,9 +373,9 @@ frequently conflict with USD's prim name grammar:
 - **Room numbers** are often purely numeric (e.g., `1001`), which cannot serve
   as a prim name starting character under pre-v24.03 rules and still cannot
   serve as identifiers under current XID rules.
-- **Classification codes** use slashes, hyphens, and other delimiters not
-  valid in USD prim names (e.g., CI/SfB `BB/500`, OmniClass `23-13 11 00`,
-  Uniclass `Ss_25_10_30`).
+- **Classification codes** use slashes, hyphens, spaces, and other delimiters
+  not valid in USD prim names (e.g., CI/SfB `BB/500`, OmniClass
+  `23-13 11 00`).
 - **IFC GlobalIds** are 22-character base64-encoded strings that uniquely identify
   building elements across the lifecycle of a project.
 - **Revision workflows** produce new identifiers with each design iteration;
