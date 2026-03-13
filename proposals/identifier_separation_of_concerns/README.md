@@ -166,7 +166,7 @@ Without a clear separation of concerns:
 
 1. **Data loss on ingest.** External identifiers that contain characters
    invalid in USD prim names (leading digits, hyphens, slashes, GUIDs) are
-   either mutilated or lost when data enters USD. Round-tripping back to the
+   either altered or lost when data enters USD. Round-tripping back to the
    source system becomes unreliable.
 
 2. **Ad-hoc solutions fragment the ecosystem.** Each integrator invents its own
@@ -196,9 +196,9 @@ Without a clear separation of concerns:
    has migrated `displayName` into a `uiHints` dictionary, cementing it as a
    presentation-only concern. The old top-level accessors are on a deprecation
    path. Pipelines using `displayName` to carry source identifiers now face
-   **API breakage** and **content migration costs** -- and without a
-   standardized alternative, they will migrate to yet another ad-hoc
-   convention that will need to be migrated again later.
+   **deprecation-driven migration costs** -- and without a standardized
+   alternative, they will migrate to yet another ad-hoc convention that
+   will need to be migrated again later.
 
 ## Key questions
 
@@ -224,8 +224,9 @@ identify each placement rather than the shared type. A flexible mechanism
 should accommodate both source-level and instance-level external
 identifiers, but the primary gap today is source identity. (Note that
 instance-level external identifiers raise additional questions about
-behavior under reparenting and namespace edits -- constraints that must be
-enforced by DCCs and validators, not by core namespace editing logic.)
+behavior under reparenting and namespace edits -- constraints that would
+likely need to be enforced by DCCs and validators rather than by core
+namespace editing logic.)
 
 ### Single value vs. metadata package
 
@@ -305,17 +306,19 @@ space but each has limitations:
   referenceable layer or package), not around external system identifiers.
   While `assetInfo` itself is not restricted to model roots, the
   `UsdModelAPI` convenience layer encourages use only on prims that
-  participate in the `Kind` hierarchy. (Note: `assetInfo` was designed
-  from the start to be applicable to both prims and properties, as
-  registered in `SdfSchema`. The API's current limitation to model roots
-  is an API gap, not a design constraint, and could be addressed by
-  migrating the `assetInfo` API from `UsdModelAPI` to `UsdObject`.)
+  participate in the `Kind` hierarchy. (Note: `assetInfo` is registered
+  in `SdfSchema` for both prims and properties, suggesting it was
+  intended to be broadly applicable. The API's current limitation to
+  model roots appears to be an API gap rather than a design constraint,
+  and could potentially be addressed by migrating the `assetInfo` API
+  from `UsdModelAPI` to `UsdObject`.)
 - Many real-world objects that need source identifiers (individual rooms,
   structural members, electrical components) are not model roots.
 - The existing `assetInfo` keys are oriented toward Pixar's asset management
   model. Supporting arbitrary external identifiers from multiple systems
   would require either new sub-dictionary conventions or applied schemas
   with typed properties directed at this problem.
+
 These patterns inform two candidate approaches for source identifiers --
 extending `assetInfo` with stratified sub-dictionaries, or leveraging
 applied schemas with typed properties -- each with distinct trade-offs
@@ -498,9 +501,20 @@ of fragmented workarounds.
    - When a vendor scheme matures to the point of requiring systems
      interoperability, proven extensions can be promoted to multi-vendor or
      core status over time -- a model with broad precedent, e.g.:
-     - Khronos APIs (OpenGL, Vulkan)
+     - Khronos glTF (vendor prefix → `EXT_` → `KHR_`)
+     - Khronos graphics APIs (OpenGL, Vulkan)
      - IETF internet standards
      - The W3C web platform
+
+     Of these, glTF is the closest analogy: it is a 3D data interchange
+     format (not a graphics API), and its extension model governs
+     *properties on objects* -- analogous to attaching vendor-defined
+     identifier metadata to USD prims. glTF also distinguishes governed
+     `extensions` from freeform `extras`, paralleling the tension between
+     schema-based metadata and `customData` in USD. The details of a
+     vendor extension model for source identifiers -- prefix conventions,
+     registration process, promotion criteria -- are out of scope for this
+     proposal and would be addressed in a follow-up.
 
 4. **Composability.** External identifiers should participate in USD's
    composition model in a well-defined way. It should be clear how source
@@ -557,15 +571,17 @@ of fragmented workarounds.
 3. **Stratification and governance.**
    Under either approach, how should vendor and domain extensions be
    structured and governed? The vendor extension principle implies a tiered
-   lifecycle -- analogous to the `GL_NV_` → `GL_EXT_` → `GL_ARB_` → core
-   promotion path in OpenGL -- where vendor-specific conventions can ship
-   immediately, successful patterns are promoted to multi-vendor conventions,
-   and mature conventions become candidates for core standardization. What
-   naming, namespacing, and registration conventions ensure that extensions
-   from different vendors and domains (PLM systems, AECO standards, M&E
-   pipelines, authorship tools) remain discoverable, composable, and
-   non-conflicting -- while allowing vendors to ship without waiting for
-   cross-industry consensus?
+   lifecycle -- analogous to glTF's vendor → `EXT_` → `KHR_` promotion
+   path, or OpenGL's `GL_NV_` → `GL_EXT_` → `GL_ARB_` → core -- where
+   vendor-specific conventions can ship immediately, successful patterns
+   are promoted to multi-vendor conventions, and mature conventions become
+   candidates for core standardization. What naming, namespacing, and
+   registration conventions ensure that extensions from different vendors
+   and domains (PLM systems, AECO standards, M&E pipelines, authorship
+   tools) remain discoverable, composable, and non-conflicting -- while
+   allowing vendors to ship without waiting for cross-industry consensus?
+   Concrete governance and registration mechanisms are deferred to the
+   follow-up solution proposal (see [Next steps](#next-steps)).
 
 4. **Scope: model roots only, or any prim?**
    The `UsdModelAPI` convenience layer scopes `assetInfo` to model roots, but
@@ -742,8 +758,9 @@ This proposal is conceptually upstream of several related efforts:
 
 5. **Draft a solution proposal.** Based on alignment from steps 2-4, draft a
    concrete proposal specifying the mechanism, its composition semantics,
-   and its API -- including how adjacent use cases like authorship
-   traceability fit into the pattern.
+   and its API -- including the vendor extension governance model (prefix
+   conventions, registration process, promotion criteria) and how adjacent
+   use cases like authorship traceability fit into the pattern.
 
 Stakeholders who want to accelerate this work are encouraged to engage
 directly on any of the steps above. The pace is determined by the breadth
@@ -877,5 +894,11 @@ editorial decisions included:
 - Adding vendor extensibility as a design principle, referencing cross-industry
   precedent (Khronos, IETF, W3C) for vendor-first deployment with a path to
   standardization.
+- Adding Khronos glTF as the primary vendor extension precedent (a 3D data
+  interchange format whose extension model governs properties on objects,
+  more directly analogous than the OpenGL/Vulkan graphics API precedent).
+  Explicitly deferring vendor extension governance details (prefix
+  conventions, registration process, promotion criteria) to the follow-up
+  solution proposal.
 
 A prompt-level drafting log has been archived separately.
