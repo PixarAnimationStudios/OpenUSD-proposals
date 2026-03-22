@@ -555,9 +555,19 @@ of fragmented workarounds.
    or as typed properties on applied schemas that contribute to
    `UsdPrimDefinition`? (These are labeled Approach A and Approach B
    respectively in [Likely direction](#likely-direction).) Key trade-offs:
-   - **Discoverability and validation**: applied schemas enable GUI
-     presentation of unauthored properties, schema versioning, and
-     schema-driven validation; dictionaries do not.
+   - **Discoverability and validation**:
+     - Applied schemas enable GUI presentation of unauthored properties,
+       schema versioning, and schema-driven validation; dictionaries do
+       not.
+     - The gap narrows if each organization or discipline provides a
+       fallback value for every field it introduces (even an empty string
+       or `assetPath`): an applied schema can then populate a
+       sub-dictionary of `assetInfo` whose entries appear in the
+       `UsdPrimDefinition` and are therefore discoverable by any
+       `assetInfo`-aware GUI, just as properties would be.
+     - Adopting that convention could also motivate `usdGenSchema` support
+       for generating getters and setters for metadata in the prim
+       definition.
    - **Heterogeneous packages**: Different domains need different identifier
      fields. A single multi-apply schema must either carry only the common
      subset or accumulate rarely-used properties -- the more heterogeneous
@@ -570,18 +580,21 @@ of fragmented workarounds.
 
 3. **Stratification and governance.**
    Under either approach, how should vendor and domain extensions be
-   structured and governed? The vendor extension principle implies a tiered
-   lifecycle -- analogous to glTF's vendor → `EXT_` → `KHR_` promotion
-   path, or OpenGL's `GL_NV_` → `GL_EXT_` → `GL_ARB_` → core -- where
-   vendor-specific conventions can ship immediately, successful patterns
-   are promoted to multi-vendor conventions, and mature conventions become
-   candidates for core standardization. What naming, namespacing, and
-   registration conventions ensure that extensions from different vendors
-   and domains (PLM systems, AECO standards, M&E pipelines, authorship
-   tools) remain discoverable, composable, and non-conflicting -- while
-   allowing vendors to ship without waiting for cross-industry consensus?
-   Concrete governance and registration mechanisms are deferred to the
-   follow-up solution proposal (see [Next steps](#next-steps)).
+   structured and governed?
+   - The vendor extension principle implies a tiered lifecycle --
+     analogous to glTF's vendor → `EXT_` → `KHR_` promotion path, or
+     OpenGL's `GL_NV_` → `GL_EXT_` → `GL_ARB_` → core -- where
+     vendor-specific conventions can ship immediately, successful patterns
+     are promoted to multi-vendor conventions, and mature conventions
+     become candidates for core standardization.
+   - The open question is what naming, namespacing, and registration
+     conventions ensure that extensions from different vendors and domains
+     (PLM systems, AECO standards, M&E pipelines, authorship tools)
+     remain discoverable, composable, and non-conflicting -- while
+     allowing vendors to ship without waiting for cross-industry
+     consensus.
+   - Concrete governance and registration mechanisms are deferred to the
+     follow-up solution proposal (see [Next steps](#next-steps)).
 
 4. **Scope: model roots only, or any prim?**
    The `UsdModelAPI` convenience layer scopes `assetInfo` to model roots, but
