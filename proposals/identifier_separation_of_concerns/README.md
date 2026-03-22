@@ -500,21 +500,40 @@ of fragmented workarounds.
      management is neither desirable nor required.
    - When a vendor scheme matures to the point of requiring systems
      interoperability, proven extensions can be promoted to multi-vendor or
-     core status over time -- a model with broad precedent, e.g.:
-     - Khronos glTF (vendor prefix → `EXT_` → `KHR_`)
-     - Khronos graphics APIs (OpenGL, Vulkan)
-     - IETF internet standards
-     - The W3C web platform
+     core status over time. This tiered lifecycle -- ship independently,
+     converge when proven, standardize when mature -- recurs across
+     standards bodies:
+     - Khronos glTF (vendor prefix → `EXT_` → `KHR_`); Khronos
+       graphics APIs (OpenGL, Vulkan: vendor → `EXT_` → `ARB_` → core)
+     - W3C web platform (Community Group incubation → Working Group →
+       Recommendation; CSS vendor prefixes → unprefixed standard
+       properties)
+     - IETF internet standards (Experimental → Proposed Standard →
+       Internet Standard)
 
-     Of these, glTF is the closest analogy: it is a 3D data interchange
-     format (not a graphics API), and its extension model governs
-     *properties on objects* -- analogous to attaching vendor-defined
-     identifier metadata to USD prims. glTF also distinguishes governed
-     `extensions` from freeform `extras`, paralleling the tension between
-     schema-based metadata and `customData` in USD. The details of a
-     vendor extension model for source identifiers -- prefix conventions,
-     registration process, promotion criteria -- are out of scope for this
-     proposal and would be addressed in a follow-up.
+     The underlying pattern is the same across bodies, though the
+     terminology differs: Khronos formalizes "vendor extensions" with
+     registered prefixes; the W3C frames the same lifecycle as
+     "incubation and staged maturity"; the IETF uses "experimental"
+     and "proposed standard" designations.
+
+     Two parallels are especially instructive. **Khronos glTF** is a
+     3D data interchange format whose extension model governs
+     *properties on objects* -- directly analogous to attaching
+     vendor-defined identifier metadata to USD prims. Its `extensions`
+     vs. `extras` distinction parallels schema-based metadata vs.
+     `customData` in USD. The **W3C web platform** stages features
+     from Community Group incubation (low barrier to entry) through
+     Working Group specification to Recommendation (demonstrated
+     interoperability) -- a consensus-driven maturity path well-suited
+     to the multi-industry AOUSD context. HTML's `data-*` attributes
+     similarly provide a freeform extension slot alongside governed
+     standard attributes, echoing the `customData` vs. schema
+     distinction.
+
+     The details of a vendor extension model for source identifiers --
+     prefix conventions, registration process, promotion criteria -- are
+     out of scope for this proposal and would be addressed in a follow-up.
 
 4. **Composability.** External identifiers should participate in USD's
    composition model in a well-defined way. It should be clear how source
@@ -582,11 +601,12 @@ of fragmented workarounds.
    Under either approach, how should vendor and domain extensions be
    structured and governed?
    - The vendor extension principle implies a tiered lifecycle --
-     analogous to glTF's vendor → `EXT_` → `KHR_` promotion path, or
-     OpenGL's `GL_NV_` → `GL_EXT_` → `GL_ARB_` → core -- where
-     vendor-specific conventions can ship immediately, successful patterns
-     are promoted to multi-vendor conventions, and mature conventions
-     become candidates for core standardization.
+     analogous to glTF's vendor → `EXT_` → `KHR_` promotion path,
+     OpenGL's `GL_NV_` → `GL_EXT_` → `GL_ARB_` → core, or the W3C's
+     Community Group → Working Group → Recommendation maturity stages
+     -- where vendor-specific conventions can ship immediately,
+     successful patterns are promoted to multi-vendor conventions, and
+     mature conventions become candidates for core standardization.
    - The open question is what naming, namespacing, and registration
      conventions ensure that extensions from different vendors and domains
      (PLM systems, AECO standards, M&E pipelines, authorship tools)
@@ -907,11 +927,14 @@ editorial decisions included:
 - Adding vendor extensibility as a design principle, referencing cross-industry
   precedent (Khronos, IETF, W3C) for vendor-first deployment with a path to
   standardization.
-- Adding Khronos glTF as the primary vendor extension precedent (a 3D data
-  interchange format whose extension model governs properties on objects,
-  more directly analogous than the OpenGL/Vulkan graphics API precedent).
-  Explicitly deferring vendor extension governance details (prefix
-  conventions, registration process, promotion criteria) to the follow-up
-  solution proposal.
+- Adding Khronos glTF and the W3C web platform as co-equal vendor extension
+  precedents alongside Khronos graphics APIs and IETF: glTF as a 3D data
+  interchange format whose extension model governs properties on objects;
+  the W3C model for its consensus-driven staged maturity path (Community
+  Group → Working Group → Recommendation) and its freeform/governed
+  distinction (`data-*` attributes vs. standard attributes). Explicitly
+  deferring vendor extension governance details (prefix conventions,
+  registration process, promotion criteria) to the follow-up solution
+  proposal.
 
 A prompt-level drafting log has been archived separately.
