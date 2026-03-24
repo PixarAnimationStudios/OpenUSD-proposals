@@ -535,6 +535,14 @@ of fragmented workarounds.
      prefix conventions, registration process, promotion criteria -- are
      out of scope for this proposal and would be addressed in a follow-up.
 
+   - A vendor extension (a schema, identifier scheme, or set of
+     conventions) is not the same thing as an OpenUSD plugin -- the latter
+     is a runtime implementation detail. The AOUSD Core Specification 1.0
+     established this distinction by specifying schemas without prescribing
+     a plugin or schema registry. This proposal follows the same principle:
+     vendor identifier schemes are defined at the data model level,
+     independent of any particular plugin architecture.
+
 4. **Composability.** External identifiers should participate in USD's
    composition model in a well-defined way. It should be clear how source
    identifiers are resolved when a prim is referenced, inherited, or
@@ -791,9 +799,14 @@ This proposal is conceptually upstream of several related efforts:
 
 5. **Draft a solution proposal.** Based on alignment from steps 2-4, draft a
    concrete proposal specifying the mechanism, its composition semantics,
-   and its API -- including the vendor extension governance model (prefix
-   conventions, registration process, promotion criteria) and how adjacent
-   use cases like authorship traceability fit into the pattern.
+   and its API -- including how adjacent use cases like authorship
+   traceability fit into the pattern. This should also include or be
+   accompanied by a vendor extensibility model: prefix conventions, naming
+   rules, registration process, and promotion criteria. As established in
+   the design requirements, vendor extensions operate at the data model
+   level and are independent of any particular plugin architecture; the
+   solution proposal should define the concrete conventions and governance
+   that make this practical.
 
 Stakeholders who want to accelerate this work are encouraged to engage
 directly on any of the steps above. The pace is determined by the breadth
@@ -936,5 +949,12 @@ editorial decisions included:
   deferring vendor extension governance details (prefix conventions,
   registration process, promotion criteria) to the follow-up solution
   proposal.
+- Clarifying that a "vendor extension" is a specification-level concept (a
+  schema, identifier scheme, or set of conventions) distinct from an OpenUSD
+  plugin, which is a runtime implementation detail. This distinction follows
+  the precedent set by the AOUSD Core Specification 1.0, which specifies
+  schemas without prescribing a plugin or schema registry. Expanded the
+  solution proposal next step to include the vendor extensibility model
+  (prefix conventions, naming rules, registration, promotion criteria).
 
 A prompt-level drafting log has been archived separately.
