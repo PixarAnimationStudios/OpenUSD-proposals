@@ -65,7 +65,7 @@ This proposal aims to add native support for back plates to USD and will outline
   <img width="700" img src="backPlateAutofocus.png"/>
 </p>
 
-_Fig 3. The back plate will be default be positioned at focus distance and scaled to fill the camera frustum accordingly. 
+_Fig 3. The back plate will be default be positioned at focus distance and scaled to fill the camera frustum accordingly._
 
 However let's say that the artist took the shot with everything in focus, and wanted to blur it virtually; this is also possible. We offer another set of controls (translate, rotate, scale) that allow us to tweak the plate to further adjust the image **after** it has been set to the focus distance. This means if we have a shot in full focus, we can simply tweak the plate to a position with the "right" amount of blurriness. Note that because these controls do not affect the focus distance of the camera, shifting the plate back could also further blur the footage. For background plate workflows, this may pose problems if the background was shot off-focus, and the plate needs to be moved away from the focus distance in order to avoid occluding objects in the scene. For a never-occluding background that is captured with some depth of field or blur, we advocate using an image plane instead of a back plate. If the background should block some elements, then in order to cheat the plate's position while also maintaining focus, one may consider increasing the depth of field. 
 
