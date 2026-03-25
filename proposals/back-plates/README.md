@@ -59,15 +59,14 @@ Let us begin by defining a few terms:
 - **Focal length**: The distance from the principal plane H to the focal point when the lens is focused at infinity.
 
 ## Proposal
-This proposal aims to add native support for back plates to USD and will outline the framework for image planes though we will leave the latter for when there is better infrastructure to implement image planes in Hydra.
-
 This proposal aims to add native support for back plates to USD and will outline the framework for image planes though we will leave the latter for when there is better infrastructure to implement image planes in Hydra. Back plates are placed at the focus distance by default, and scaled to fit the camera frustum such that the plate is always in focus. If the focus distance changes, then the back plate will also shift along the optical axis to remain at focus distance and scale accordingly. This auto-focus setup is tailored for match moving and assumes that whatever photos were captured are intended to be shown as is without any additional blurring. However let's say that the artist took the shot with everything in focus, and wanted to blur it virtually; this is also possible. We offer another set of controls (translate, rotate, scale) that allow us to tweak the plate to further adjust the image **after** it has been set to the focus distance. This means if we have a shot in full focus, we can simply tweak the plate to a position with the "right" amount of blurriness. Note that because these controls do not affect the focus distance of the camera, shifting the plate back could also further blur the footage. For background plate workflows, this may pose problems if the background was shot off-focus, and the plate needs to be moved away from the focus distance in order to avoid occluding objects in the scene. For a never-occluding background that is captured with some depth of field or blur, we advocate using an image plane instead of a back plate. If the background should block some elements, then in order to cheat the plate's position while also maintaining focus, one may consider increasing the depth of field. 
 
-<p align="center">
-  <img width="700" height="550" src="backPlateTranslate.png">
+<p float="left" align="center">
+  <img width="300" height="200" img src="backPlateAutofocus.png"/>
+  <img width="300" height="200" src="backPlateTranslate.png"/>
 </p>
 
-_Fig 3. back plate model depicting the effects of tweak:translate. Back plate is placed at the focus distance and the translation is applied to the back plate's center at that point. Note that the size of the back plate does not change as it is translated._
+_Fig 3. Left. The back plate will be default be positioned at focus distance and scaled to fill the camera frustum accordingly. Right. back plate model depicting the effects of tweak:translate. Back plate is placed at the focus distance and the translation is applied to the back plate's center at that point. Note that the size of the back plate does not change as it is translated._
 
 
 Other image adjustments provided by our tweak controls include perspective corrections or de-squeezing if the image was shot through an anamorphic lens. Geometrically, this set up is like the inverse of a film projector, with the image plane being analogous to a movie screen in extrinsic space. Unlike a film projector though, the transformations applied through the schema, i.e. scale, rotation, and translation, are applied on the back plate itself. We can think of it like tilting the screen to correct for key-stoning as opposed to adjusting the lens in the projector. 
