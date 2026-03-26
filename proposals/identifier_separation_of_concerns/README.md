@@ -657,13 +657,14 @@ of fragmented workarounds.
    external identifiers are needed on prims at all levels of the hierarchy
    and the mechanism must not be artificially limited to model roots.
 
-   In manufacturing, an asset
-   may collapse internal product structure for visualization, but
-   individual meshes within the asset still need to trace back to the
-   source parts they represent -- identifiers that differ from the model
-   root's own identifier. An assembly (e.g., a rack) may contain
-   components (e.g., trays) whose visual prims carry their own source
-   identifiers even though they are not model roots.
+   An asset may collapse internal structure for downstream use -- a
+   manufacturer simplifying a product assembly, a service team stripping
+   internals for lighter instruction models, or an M&E artist reducing
+   detail for layout. Even so, individual meshes still need to trace back
+   to the source parts they represent -- identifiers that differ from the
+   model root's own. An assembly (e.g., a rack) may contain components
+   (e.g., trays) whose visual prims carry their own source identifiers
+   even though they are not model roots.
 
    However, broadening scope introduces a **discoverability cost**. Today,
    the model hierarchy (via `Usd.PrimIsModel` and `Kind`) provides a cheap
