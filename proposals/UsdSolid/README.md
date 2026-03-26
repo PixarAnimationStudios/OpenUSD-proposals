@@ -51,12 +51,13 @@ See also the [Frequently Asked Questions](FAQ/Brep%20Schema%20proposal%20FAQ.md)
 
 > **Note:** The diagrams referenced in this document (`images/`) need to be committed to the repository for them to render correctly. If the images are not displaying, please contact the Geometry WG for the source files.
 
-Adding Breps to OpenUSD creates questions with answers outside the scope of the Geometry WG.
+Adding Breps to OpenUSD creates questions with answers outside the scope of this proposal.
 For example, Breps and Meshes are a source-and-derived data pair that do not have a natural connectivity in OpenUSD.
 A Brep prim should know if it has a Mesh on the stage, so it does not have to be tessellated.
 A Mesh prim should know if there is an associated Brep on the stage when picked.
 Further, a Brep could have multiple meshes in the stage (e.g., LoDs).
-These relationships all need to be managed and are expected to be addressed in follow-up proposals.
+These relationships are important but are not prerequisites for deploying the core Brep schema.
+They will be addressed in follow-up proposals once the base representation is available for experimentation (see [Open Questions, A.5](#a5-add-an-open-questions-section)).
 
 
 
@@ -1509,6 +1510,15 @@ Unresolved design questions scattered throughout the document could be collected
 
 - How should CAD assemblies be represented? (currently Section 2.7)
 - How should Brep-to-Mesh relationships be managed? (currently in the Preamble)
+  One concrete approach (Steve Ghee): because gprims are generally derived
+  from Breps in an N:1 relationship, the gprims could back-reference
+  their source Brep(s) by identifier or path via an applied API schema.
+  At runtime, these cross-references let the Brep discover which gprims
+  represent it (avoiding redundant tessellation) and let a picked gprim
+  trace back to its source Brep. Supporting an array of references would
+  handle the case where a single gprim is derived from multiple Breps.
+  This mechanism should be designed as a follow-up once the core Brep
+  schema is deployed and real-world datasets are available.
 - Should constraint systems for assembly simulation be part of this schema or a follow-up?
 - What is the migration path from existing STEP/PRC/Parasolid data?
 - How should `kind` interact with CAD assembly concepts?
