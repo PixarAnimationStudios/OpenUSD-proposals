@@ -414,6 +414,12 @@ distinct fields serving different roles:
   replacement part numbers, and service part numbers may all refer to the
   same form/fit/function item under different schemes. A single component
   may legitimately carry multiple identifiers that coexist without conflict.
+  Individual numbering systems may also embed internal structure -- for
+  example, the [Mercedes-Benz part numbering
+  system](https://www.benzworld.org/threads/the-mercedes-benz-parts-numbering-system.1473937/)
+  uses a base part number with optional extension suffixes (`ES1`, `ES2`)
+  that encode color and variant information, governed by rules about which
+  combinations are valid.
 
 In complex configuration-managed systems, the identifier may not be a
 human-readable part number at all. PLM systems may use opaque system
@@ -610,6 +616,14 @@ of fragmented workarounds.
      - Applied schemas enable GUI presentation of unauthored properties,
        schema versioning, and schema-driven validation; dictionaries do
        not.
+     - Note that this refers to USD's *built-in* schema validation
+       (type checking, fallback values, conformance to a declared
+       schema). *Domain-specific* validation -- checking whether a
+       value is well-formed according to the source system's own rules
+       (e.g., that a Mercedes-Benz ES2 color code is exactly four
+       digits) -- can be implemented equally well against either
+       mechanism, since it is performed by external validators that
+       interpret the stored values regardless of how they are stored.
      - The gap narrows if each organization or discipline provides a
        fallback value for every field it introduces (even an empty string
        or `assetPath`): an applied schema can then populate a
@@ -1018,6 +1032,11 @@ editorial decisions included:
   - Governance details deferred to solution proposal.
 - **Vendor extension vs. plugin** -- clarified as specification-level vs.
   runtime distinction, citing AOUSD Core Spec 1.0 precedent.
+- **PR feedback (perfectproducts)** -- added Mercedes-Benz part numbering
+  (base number + ES1/ES2 extension codes) as a concrete example of
+  identifier schemes with internal structural rules. Clarified the
+  distinction between USD's built-in schema validation and domain-specific
+  validation, which applies equally to dictionaries or schemas.
 - **PLM feedback (Steve Ghee, PTC)** -- expanded manufacturing section:
   - Part number separated from revision; opaque handles; alternative
     identifiers (OEM, replacement, service).
