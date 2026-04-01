@@ -24,6 +24,7 @@ Aaron Luk
   - [Architecture, Engineering, Construction, and Operations (AECO)](#architecture-engineering-construction-and-operations-aeco)
   - [Manufacturing, Product Lifecycle, and Digital Engineering](#manufacturing-product-lifecycle-and-digital-engineering)
   - [Media and Entertainment (M&E)](#media-and-entertainment-me)
+  - [Robotics and Simulation](#robotics-and-simulation)
 - [Design considerations](#design-considerations)
   - [Principles](#principles)
   - [Open questions for discussion](#open-questions-for-discussion)
@@ -496,10 +497,55 @@ While `assetInfo` covers some of these cases at the model level, it does not
 address identification at finer granularities (individual props, lights,
 materials) or across multiple asset management systems.
 
-Across all three domains, the common thread is **traceability**: the ability
+### Robotics and Simulation
+
+Robotics simulation assets are increasingly authored and exchanged as OpenUSD
+files. A community-driven effort to standardize these conventions -- the
+[OpenUSD Conventions for Simulation Asset Interoperability
+REP](https://github.com/RobotecAI/wip-openusd-interoperability-rep) -- is
+defining schemas for ROS interfaces, physics layering, and asset composition
+across simulators (Gazebo, Isaac Sim, MuJoCo, O3DE). The identifier gap
+surfaces in several concrete ways:
+
+- **Source format provenance.** Assets are converted from URDF, SDFormat, or
+  MJCF into OpenUSD. The original package URI (e.g.,
+  `package://my_robot/urdf/robot.urdf`) and model name are lost unless
+  stored in ad-hoc `customData`. Round-trip fidelity -- exporting back to
+  URDF/SDF without information loss -- requires a standardized place to
+  carry the source identifier.
+- **ROS package identity.** ROS assets reference dependencies via
+  `package://` URIs resolved by the host environment. The originating
+  package name and version are metadata that should travel with the asset
+  for dependency resolution and compliance checking, distinct from the USD
+  namespace path.
+- **Multi-robot fleet composition.** When the same robot asset is
+  instantiated multiple times in a stage (e.g., `robot_1`, `robot_2`), each
+  instance shares the same source design identifier (model, manufacturer,
+  firmware version) while differing in instance identity (fleet ID, station
+  assignment). Today there is no standardized way to carry the shared source
+  identifier alongside the per-instance namespace path.
+- **Sensor and actuator catalogs.** Simulation assets compose modular
+  sub-assets (LiDAR modules, camera units, grippers) from component
+  libraries. Each component carries a catalog identifier (manufacturer part
+  number, datasheet revision) that must survive composition into the parent
+  robot without being encoded into the prim name.
+- **Operational binding in digital twins.** When simulation assets represent
+  real-world equipment, sensor prims must bind to telemetry streams
+  identified by equipment tags, OPC UA NodeIds, or ROS topic names. These
+  operational identifiers coexist with the asset's design-time identifiers
+  and must be discoverable by runtime systems without prior knowledge of
+  pipeline-specific conventions.
+
+The REP currently lacks `assetInfo` or introspection guidance. The robotics
+community would benefit from a standardized identifier mechanism that supports
+a namespaced sub-dictionary (e.g., `assetInfo["ros"]`) for robotics-specific
+provenance, positioned as a domain convention that can be promoted through the
+vendor extensibility lifecycle as the broader identifier mechanism matures.
+
+Across all four domains, the common thread is **traceability**: the ability
 to follow an entity from its origin in an external system, through its
 representation in USD, and back again -- regardless of namespace edits,
-assembly changes, or geometric mutations along the way.
+assembly changes, format conversions, or geometric mutations along the way.
 
 ## Design considerations
 
@@ -1005,6 +1051,21 @@ The following materials were provided as input context for drafting:
     a composite URI meaningful only to the originating system. Motivated
     the addition of vendor extensibility as a design principle.
 
+11. **[OpenUSD Conventions for Simulation Asset Interoperability
+    REP](https://github.com/RobotecAI/wip-openusd-interoperability-rep)**
+    -- A community-driven ROS Enhancement Proposal defining schemas for
+    ROS interfaces, physics layering, and asset composition across
+    robotics simulators (Gazebo, Isaac Sim, MuJoCo, O3DE). A review of
+    the REP against the [NVIDIA Asset Structure
+    Principles](https://docs.omniverse.nvidia.com/usd/latest/learn-openusd/independent/asset-structure-principles.html)
+    identified the absence of `assetInfo` or introspection guidance as a
+    high-severity gap. Robotics identifier needs include source format
+    provenance (URDF/SDF/MJCF round-trip), ROS package identity, fleet
+    composition (shared design ID vs. per-instance namespace), sensor
+    catalog part numbers, and operational telemetry binding (equipment
+    tags, OPC UA NodeIds). Motivated the addition of the Robotics and
+    Simulation industry use case.
+
 ### Review and refinement
 
 The draft was refined through multiple rounds of internal review. Key
@@ -1045,5 +1106,10 @@ editorial decisions included:
   - Namespacing open question: vendor-in-value vs. key-level namespacing;
     tension with schema enforceability.
   - `displayName` open question: asserted independence from identifiers.
+- **Robotics REP review** -- added Robotics and Simulation industry use
+  case. Surfaced by reviewing the RobotecAI interoperability REP against
+  NVIDIA Asset Structure Principles: source format provenance
+  (URDF/SDF/MJCF), ROS package identity, multi-robot fleet composition,
+  sensor/actuator catalog identifiers, operational telemetry binding.
 
 A prompt-level drafting log has been archived separately.
