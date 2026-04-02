@@ -100,7 +100,7 @@ Two natural questions arise: why not simply reference STEP files from USD, and w
 We propose the adoption of a solid model boundary representation (Brep) schema to USD.
 The proposed schema is an implementation of the Radial Edge Data Model, as first published by Kevin Weiler in 1986.
 In the last 35+ years, this model has proven itself to be flexible and robust, supporting myriad industries via commercial geometry kernels.
-Kevin Weiler’s thesis is available here: [https://www.scorec.rpi.edu/REPORTS/1986-1.pdf](https://www.scorec.rpi.edu/REPORTS/1986-1.pdf)
+Kevin Weiler’s thesis is available here: [https://webserver2.tecgraf.puc-rio.br/~lfm/teses/KevinWeiler-Doutorado-1986.pdf](http://webserver2.tecgraf.puc-rio.br/~lfm/teses/KevinWeiler-Doutorado-1986.pdf)
 
 In support of this model we propose to also add many new curve, surface, and volume geometry types.
 The set of shapes was derived from the Product Representation Compact (PRC) format, a well known ISO standard used in, e.g., 3D models in PDFs.
@@ -346,7 +346,7 @@ They are the projection of the edge curves onto the face surfaces.
 ### **2.4.4 Geometry type extensions**
 
 Not yet included at this stage of the proposal is the _USD_ implementation of the new geometry types.
-The definitions of the PRC geometry types listed above can be found in the[ PRC specification.](https://docs.techsoft3d.com/exchange/latest/SC2N570-PRC-WD.pdf)
+The definitions of the PRC geometry types listed above can be found in the[ PRC specification.](https://docs.techsoft3d.com/exchange/2024/_downloads/a7028c5c324de43fc7d5083bfa100c2a/SC2N570-PRC-WD.pdf)
 Having reviewed the definitions, we see no issues with the potential implementation.
 Care will be taken to ensure proper architecture.
 Each geometry type definition will be another applied API.
@@ -581,15 +581,6 @@ class BrepArray  "BrepArray" (
     uniform double2[] brep:xExtent               ( doc = """ {Xmin, Xmax} for brep_ii's bounding extent. size() = number of Breps. """ )
     uniform double2[] brep:yExtent               ( doc = """ {Ymin, Ymax} for brep_ii's bounding extent. size() = number of Breps. """ )
     uniform double2[] brep:zExtent               ( doc = """ {Zmin, Zmax} for brep_ii's bounding extent. size() = number of Breps. """ )
-    uniform token[]   brep:type                  ( allowedTokens = ["pointSet", "wireFrame", "sheet", "manifoldSolid", "nonManifoldSolid", "empty"]
-                                                   doc = """ pointSet         = set of unconnected points in a single infinite region. 
-                                                             wireFrame        = set of connected wires in a single infinite region.
-                                                             sheet            = set of connected sheetFaces in a single infinite region where all connections between faces are made thru manifold edges and all unconnected face boundaries are marked by lamina edges.
-                                                             manifoldSolid    = a set of connected manifold faces with all connections between faces made through manifold edges dividing space into one internal solid region, an infinite region, and any number of internal void regions.
-                                                             nonManifoldSolid = any set of connected faces where the connections between faces includes one or more spine edges where more than two faces connect together thru a common edge.
-                                                             mixed            = any combination of the named model types above.
-                                                             empty            = no geometry.
-                                                             size() = Number of Breps.  """ )
     uniform uint[]    brep:regionCount           ( doc = """ Number of Regions in this Brep. size() = Number of Breps """ )
          
     uniform int[]     region:userId              ( doc = """ optional User applied ID for region_ii. size() = number of regions. """ )
@@ -992,7 +983,6 @@ def Xform "World"
         uniform uint[] brep:surface:nurb:vOrder = [2, 2, 2, 2, 2, 2]
         uniform uint[] brep:surface:nurb:vVertexCount = [2, 2, 2, 2, 2, 2]
         uniform double[] brep:surface:nurb:weights = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-        uniform token[] brep:type = ["manifoldSolid"]
         uniform int[] brep:userId = [0]
         uniform vector3d[] brep:vertexPoint:point:position = [(1, 1, 1), (0, 0, 1), (0, 0, 0), (1, 0, 0), (1, 0, 1), (0, 1, 1), (0, 1, 0), (1, 1, 0)]
         uniform double2[] brep:xExtent = [(0, 1)]
@@ -1076,7 +1066,6 @@ def Xform "World"
         uniform uint[] brep:surface:nurb:vOrder = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
         uniform uint[] brep:surface:nurb:vVertexCount = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
         uniform double[] brep:surface:nurb:weights = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-        uniform token[] brep:type = ["nonManifoldSolid"]
         uniform int[] brep:userId = [0]
         uniform vector3d[] brep:vertexPoint:point:position = [(1, 1, 1), (0, 0, 1), (0, 0, 0), (1, 0, 0), (1, 0, 1), (0, 1, 1), (0, 1, 0), (1, 1, 0), (2, 0, 1), (2, 1, 1), (2, 1, 0), (2, 0, 0)]
         uniform double2[] brep:xExtent = [(0, 2)]
@@ -1157,7 +1146,6 @@ def Xform "World"
         uniform uint[] brep:surface:nurb:vOrder = [2, 2, 2, 2, 2, 2, 3]
         uniform uint[] brep:surface:nurb:vVertexCount = [2, 2, 2, 2, 2, 2, 5]
         uniform double[] brep:surface:nurb:weights = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.7071067811865476, 1, 0.7071067811865476, 1, 0.7071067811865476, 1, 0.7071067811865476, 1, 0.7071067811865476, 0.5000000000000001, 0.7071067811865476, 0.5000000000000001, 0.7071067811865476, 0.5000000000000001, 0.7071067811865476, 0.5000000000000001, 0.7071067811865476, 1, 0.7071067811865476, 1, 0.7071067811865476, 1, 0.7071067811865476, 1, 0.7071067811865476, 1, 0.7071067811865476, 0.5000000000000001, 0.7071067811865476, 0.5000000000000001, 0.7071067811865476, 0.5000000000000001, 0.7071067811865476, 0.5000000000000001, 0.7071067811865476, 1, 0.7071067811865476, 1, 0.7071067811865476, 1, 0.7071067811865476, 1, 0.7071067811865476, 1]
-        uniform token[] brep:type = ["manifoldSolid"]
         uniform int[] brep:userId = [0]
         uniform vector3d[] brep:vertexPoint:point:position = [(1, 1, 1), (0, 0, 1), (0, 0, 0), (1, 0, 0), (1, 0, 1), (0, 1, 1), (0, 1, 0), (1, 1, 0), (0.5000000000000001, 0.5, 0.7), (0.49999999999999994, 0.5, 0.3)]
         uniform double2[] brep:xExtent = [(0, 1)]
@@ -1239,7 +1227,6 @@ def Xform "World"
         uniform uint[] brep:surface:nurb:vOrder = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
         uniform uint[] brep:surface:nurb:vVertexCount = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
         uniform double[] brep:surface:nurb:weights = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-        uniform token[] brep:type = ["manifoldSolid", "manifoldSolid"]
         uniform int[] brep:userId = [0, 0]
         uniform vector3d[] brep:vertexPoint:point:position = [(1, 1, 1), (0, 0, 1), (0, 0, 0), (1, 0, 0), (1, 0, 1), (0, 1, 1), (0, 1, 0), (1, 1, 0), (3, 1, 1), (2, 0, 1), (2, 0, 0), (3, 0, 0), (3, 0, 1), (2, 1, 1), (2, 1, 0), (3, 1, 0)]
         uniform double2[] brep:xExtent = [(0, 1), (2, 3)]
@@ -1362,7 +1349,6 @@ def Xform "World"
         uniform uint[] brep:surface:nurb:vOrder = [2, 2, 2, 2, 2, 2]
         uniform uint[] brep:surface:nurb:vVertexCount = [2, 2, 2, 2, 2, 2]
         uniform double[] brep:surface:nurb:weights = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-        uniform token[] brep:type = ["manifoldSolid"]
         uniform int[] brep:userId = [0]
         uniform vector3d[] brep:vertexPoint:point:position = [(1, 1, 1), (0, 0, 1), (0, 0, 0), (1, 0, 0), (1, 0, 1), (0, 1, 1), (0, 1, 0), (1, 1, 0)]
         uniform double2[] brep:xExtent = [(0, 1)]
