@@ -7,7 +7,7 @@ Having the Brep data available within USD will enable enhanced functionality, in
 
 This design allows the annotation of Brep topology and geometry with cross-domain data, such as physical and material properties. This metadata could be assigned per BrepArray, and by using GeomSubsets, per Brep, or per topology object.
 
-Having Brep data in USD fits with its ability to aggregate data from various sources to create homogeneous scenes.  This will allow users to control, e.g., the visual data quality rather than relying on CAD vendors.
+Having Brep data in USD fits with its ability to aggregate data from various sources to create homogeneous scenes.  This will allow users to control, e.g., the visual data quality rather than relying on the choices made by the user who exported the data to USD.
 
 Further, the AOUSD geometry working group could explore the possibility of using sparse overrides for variants. One could calculate an appropriate delta that represents a sequence of changes to a source Brep. This work is not actively considered in this proposal, but presented here as an avenue for future work. 
 
