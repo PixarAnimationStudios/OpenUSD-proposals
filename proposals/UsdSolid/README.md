@@ -578,16 +578,14 @@ class BrepArray  "BrepArray" (
 ) {
     uniform int[]     brep:userId                ( doc = """ optional User applied ID. size() = Number of Breps. """ )
     uniform double[]  brep:intersectTol3d        ( doc = """ Max distance at which two objects intersect and min distance at which two points are distinct. size() = number of Breps. """ )
-    uniform double2[] brep:xExtent               ( doc = """ {Xmin, Xmax} for brep_ii's bounding extent. size() = number of Breps. """ )
-    uniform double2[] brep:yExtent               ( doc = """ {Ymin, Ymax} for brep_ii's bounding extent. size() = number of Breps. """ )
-    uniform double2[] brep:zExtent               ( doc = """ {Zmin, Zmax} for brep_ii's bounding extent. size() = number of Breps. """ )
+    uniform double3[] brep:extent                ( doc = """ Brep_ii's bounding box corner pts {XYZmin, XYZmax}. size() = 2 * number of Breps. """ )
     uniform uint[]    brep:regionCount           ( doc = """ Number of Regions in this Brep. size() = Number of Breps """ )
-         
+    
     uniform int[]     region:userId              ( doc = """ optional User applied ID for region_ii. size() = number of regions. """ )
     uniform uint[]    region:shellCount          ( doc = """ Region_ii's number of Shells.  1st shell = outerShell, subsequent shells = innerShells. size() = number of regions. """ )
     uniform token[]   region:type                ( allowedTokens = ["solidRegion", "voidRegion"]
                                                    doc = """ solidRegion = region_ii points are in the Brep. voidRegion = region_ii points are out of the Brep. size() = number of regions. """ )
-                                                
+    
     uniform int[]     shell:userId               ( doc = """ optional User applied ID for Shell_ii. size() = number of Shells. """ )
     uniform uint[]    shell:faceuseCount         ( doc = """Shell_ii's number of faceuses. size() = number of Shells """ )
     uniform uint[]    shell:wireEdgeCount        ( doc = """Shell_ii's number of connected wireEdges. size() = number of Shells """ )
@@ -610,8 +608,7 @@ class BrepArray  "BrepArray" (
     uniform token[]   face:trimType             ( allowedTokens = ["rectangular", "general"]
                                                   doc = """ rectangular = face_ii's outerLoop is a rectangle in the face's parameter space consisting of 4 isoparameter UVTrimCurves. 
                                                             general     = face_ii's outerLoop is any other shape. size() = number of faces. """ )
-    uniform double2[] face:uRange               ( doc = """ {Umin, Umax} for face_ii's u domain bounding interval. size() = number of faces. """ )
-    uniform double2[] face:vRange               ( doc = """ {Vmin, Vmax} for face_ii's v domain bounding interval. size() = number of faces. """ )
+    uniform double2[] face:range                ( doc = """ face_ii's domain range corner pts {UVmin, UVmax}. size() = 2 * number of faces. """ )
                                                 
     uniform int[]     loop:userId               ( doc = """ optional User applied ID for vertexLoop_ii.  size() = number of vertexLoops. """ )
     uniform uint[]    loop:edgeuseCount         ( doc = """ Loop_ii's number of head-to-tail connected edgeuses. size() = number of Loops. """ )
@@ -644,7 +641,7 @@ class BrepArray  "BrepArray" (
                                                    doc = """ BrepEdgeCurveNurbAPI = shape for edge_ii is a NURB function in the associated curveType array. 
                                                              Currently only NURB curves are allowed. In the future analytics will be added. 
                                                              size() = Number of edges. """ )
-    uniform double2[] edge:range                 ( doc = """ {min, max} for edge_ii's domain interval. size() = number of Edges. """ )
+    uniform double[]  edge:range                 ( doc = """ Edge_ii's domain interval bounds {paramMin, paramMax}. size() = 2 * number of Edges. """ )
     uniform int2[]    edge:vertexIndices         ( doc = """ Edge_ii's vertexIndices = {startVertexIndex, endVertexIndex}.
                                                               where Vertex_startVertexIndex:position = Edge_ii:Curve(Edge:Range(0)).
                                                                     Vertex_endVertexIndex:position   = Edge_ii:Curve(Edge:Range(1)).
@@ -658,7 +655,7 @@ class BrepArray  "BrepArray" (
                                                    doc = """ BrepCurve3dNurbAPI = shape for wireEdge_ii is a NURB function in the associated curveType array. 
                                                              Currently only NURB curves are allowed. In the future analytics will be added. 
                                                              size() = Number of wireEdges. """ )
-    uniform double2[] wireEdge:range             ( doc = """ {min, max} for wireEdge_ii's domain interval. size() = number of Edges. """ )
+    uniform double[]  wireEdge:range             ( doc = """ WireEdge_ii's domain interval bounds {paramMin, paramMax}. size() = 2 * number of WireEdges. """ )
     uniform int2[]    wireEdge:vertexIndices     ( doc = """ WireEdge_ii's vertexIndices = {startVertexIndex, EndVertexIndex}.
                                                               where Vertex_startVertexIndex:position = Edge_ii:Curve(Edge:Range(0)).
                                                                     Vertex_EndVertexIndex:position   = Edge_ii:Curve(Edge:Range(1)).
@@ -744,7 +741,7 @@ class "BrepCurve3dNurbAPI" (
         }
     ) 
     
-    uniform int[] curve3d:nurb:vertexCount (
+    uniform uint[] curve3d:nurb:vertexCount (
         doc = """ Curve3d_ii's number of control vertices.
         size() = number of this instance's 3dNURB curves. """
         customData = {
@@ -752,7 +749,7 @@ class "BrepCurve3dNurbAPI" (
         }
     )
     
-    uniform int[] curve3d:nurb:order (
+    uniform uint[] curve3d:nurb:order (
         doc = """ Curve3d_ii's order. Where, Order = Degree + 1.
         Order must be positive and is equal to the degree of the polynomial basis to be evaluated, plus 1.
         Its value for the 'ii'th curve must be less than or equal to vertexCount[ii].
@@ -799,7 +796,7 @@ class "BrepCurveUvNurbAPI" (
         }
     ) 
     
-    uniform int[] brep:curveUv:nurb:vertexCount (
+    uniform uint[] brep:curveUv:nurb:vertexCount (
         doc = """ CurveUv_ii's number of control vertices.
         size() = number of UV NURB curves. """
         customData = {
@@ -807,7 +804,7 @@ class "BrepCurveUvNurbAPI" (
         }
     )
     
-    uniform int[] brep:curveUv:nurb:order (
+    uniform uint[] brep:curveUv:nurb:order (
         doc = """ CurveUv_ii's order. Where, Order = Degree + 1.
         Order must be positive and is equal to the degree of the polynomial basis to be evaluated, plus 1.
         Its value for the 'ii'th curve must be less than or equal to vertexCount[ii].
@@ -876,7 +873,7 @@ class "BrepSurfaceNurbAPI" (
         }
     )
 
-    uniform int[] brep:surface:nurb:uVertexCount (
+    uniform uint[] brep:surface:nurb:uVertexCount (
         doc = """surface_ii's number of control vertices in U dir.
         size() = number of NURB surfaces. """
         customData = {
@@ -884,7 +881,7 @@ class "BrepSurfaceNurbAPI" (
         }
     )
 
-    uniform int[] brep:surface:nurb:vVertexCount (
+    uniform uint[] brep:surface:nurb:vVertexCount (
         doc = """surface_ii's number of control vertices in V dir.
         size() = number of NURB surfaces. """
         customData = {
@@ -892,7 +889,7 @@ class "BrepSurfaceNurbAPI" (
         }
     )
     
-    uniform int[] brep:surface:nurb:uOrder (
+    uniform uint[] brep:surface:nurb:uOrder (
         doc = """Order in the U direction.
         Order must be positive and is equal to the degree of the polynomial basis to be evaluated, plus 1.
         size() = surface_ii's order in the U dir. Where, Order = Degree + 1."""
@@ -901,7 +898,7 @@ class "BrepSurfaceNurbAPI" (
         }
     )
     
-    uniform int[] brep:surface:nurb:vOrder (
+    uniform uint[] brep:surface:nurb:vOrder (
         doc = """Order in the V direction.
         Order must be positive and is equal to the degree of the polynomial basis to be evaluated, plus 1.
         size() = surface_ii's order in the V dir. Where, Order = Degree + 1."""
