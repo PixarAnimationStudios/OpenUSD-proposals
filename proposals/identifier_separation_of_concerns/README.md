@@ -229,6 +229,16 @@ behavior under reparenting and namespace edits -- constraints that would
 likely need to be enforced by DCCs and validators rather than by core
 namespace editing logic.)
 
+The Asset Administration Shell (AAS) standard addresses this same
+distinction: asset identity is structured into a `globalAssetId` and a
+list of `specificAssetIds`, with submodel templates (e.g., [Digital
+Nameplate, IDTA 02006](https://industrialdigitaltwin.org/en/content-hub/submodels))
+further separating type-level fields from instance-level fields. This
+suggests the schema may benefit from an explicit `kind` or `scope`
+qualifier on each identifier -- at minimum distinguishing type vs.
+instance -- rather than treating "source identifier" as a single
+undifferentiated concept.
+
 ### Single value vs. metadata package
 
 Some external identification schemes are simple strings -- a GUID, a part
@@ -263,7 +273,15 @@ serving a different system integration.
 This points toward a mechanism that can hold multiple identifiers from
 different systems, keyed by domain -- whether as a composed dictionary
 (extending `assetInfo`) or as typed properties on an applied schema (see
-[Likely direction](#likely-direction)).
+[Likely direction](#likely-direction)). External feedback suggests that
+each identifier in the list should carry an explicit type label naming
+the source system or ontology it belongs to (e.g., PLM, IFC, ERP, CAD,
+ECLASS). Explicit typing would make round-tripping deterministic (a
+consuming tool knows which field to write back to), enable filtering
+across large scene graphs without parsing opaque strings, prevent
+collision when two systems use the same identifier format but different
+namespaces, and provide a foundation for future validation (e.g.,
+verifying that an IFC GlobalId conforms to the IFC GUID format).
 
 ## Existing mechanisms in USD
 
@@ -429,6 +447,13 @@ handles -- meaningful only to the originating system's resolver -- where a
 configuration rules and context. These opaque, vendor-specific identifiers
 must survive a round-trip through USD without loss, just as human-readable
 strings do.
+
+The industrial automation community has addressed this same
+multi-identifier problem through the Asset Administration Shell (AAS)
+standard, where an asset may simultaneously carry identifiers from
+multiple systems (PLM, CAD, ERP, equipment management) as parallel
+entries in a `specificAssetIds` list -- each with an explicit type
+label -- without any one being privileged over the others.
 
 #### Configurable products and composite keys
 
@@ -805,6 +830,26 @@ Discussion and review feedback have converged on several points:
 - **Any prim, with cost-aware discovery.** Identifiers are needed below
   model roots, but discovery must not require full stage traversal on
   large scenes (see [open question 4](#open-questions-for-discussion)).
+- **Type-vs-instance scoping.** External feedback from the AAS community
+  suggests that source identifiers should distinguish between type-level
+  identifiers (part families, product designations) and instance-level
+  identifiers (serial numbers, deployed unit IDs), potentially through
+  an explicit scope qualifier. This aligns with the type/instance
+  discussion in [Key questions](#instance-identity-vs-source-identity)
+  but has not yet been debated across domains.
+- **Explicit identifier typing.** The same feedback recommends that each
+  identifier carry a type label naming its source system or ontology,
+  which would enable deterministic round-tripping, filtering, and
+  collision prevention across systems.
+
+An independent proof-of-concept
+([PR](https://github.com/asluk/OpenUSD-proposals/pull/2), Michael
+Wagner, SyncTwin) has explored the approach with a bidirectional AAS
+Digital Battery Passport ↔ OpenUSD mapping. The sample defines USD API
+schema classes alongside `sourceId:dpp:` custom attributes,
+demonstrates `assetInfo` fallback for legacy tools, and includes
+encodings under both Approach A and Approach B -- providing a concrete
+artifact for evaluating the mechanism choice.
 
 #### Remaining design choice: mechanism
 
@@ -1066,6 +1111,30 @@ The following materials were provided as input context for drafting:
     tags, OPC UA NodeIds). Motivated the addition of the Robotics and
     Simulation industry use case.
 
+12. **AAS community feedback (Prof. Dr. Bernd Lüdemann-Ravit, Pooja
+    Gupta, University of Applied Sciences Kempten)** -- Three concrete
+    suggestions for the proposal: (a) distinguish asset type vs. asset
+    instance identifiers, with an explicit `kind`/`scope` field;
+    (b) natively support multiple identifiers per prim as a list, each
+    associated with its source system; (c) introduce explicit identifier
+    typing (PLM, IFC, ERP, CAD, ECLASS, etc.) for deterministic
+    round-tripping, filtering, and collision prevention. Accompanied by
+    AAS reference materials: the Digital Nameplate submodel specification
+    (IDTA 02006, v3.0.1), worked examples of `globalAssetId` and
+    `specificAssetIds` multi-identifier patterns, and reference to the
+    IDTA submodel catalog.
+
+13. **AAS DPP ↔ OpenUSD bidirectional mapping (Michael Wagner,
+    SyncTwin)** -- Independent proof-of-concept mapping between AAS
+    Digital Battery Passport (IDTA 02035-1) and OpenUSD
+    ([PR](https://github.com/asluk/OpenUSD-proposals/pull/2)).
+    Includes a sample `.usda` with USD API schema classes and
+    `sourceId:dpp:` custom attributes, a bidirectional mapping document
+    with field-by-field round-trip fidelity analysis, and encodings
+    under both Approach A (`assetInfo` sub-dictionaries) and Approach B
+    (`sourceId:` attributes). Exercises the `sourceId:<system>:<field>`
+    naming pattern and identification/presentation distinction.
+
 ### Review and refinement
 
 The draft was refined through multiple rounds of internal review. Key
@@ -1111,5 +1180,16 @@ editorial decisions included:
   NVIDIA Asset Structure Principles: source format provenance
   (URDF/SDF/MJCF), ROS package identity, multi-robot fleet composition,
   sensor/actuator catalog identifiers, operational telemetry binding.
+- **AAS community feedback (Lüdemann-Ravit, Gupta)** -- incorporated
+  three suggestions: type-vs-instance distinction with explicit
+  `kind`/`scope` qualifier (into Key Questions and Emerging Consensus);
+  multiple identifiers per prim with explicit typing (into Single Value
+  vs. Metadata Package); AAS Digital Nameplate submodel as reference
+  design (into Manufacturing section and Key Questions). AAS
+  `globalAssetId` / `specificAssetIds` pattern cited as direct precedent.
+- **AAS DPP mapping (Wagner, SyncTwin)** -- incorporated independent
+  proof-of-concept (PR linked) exercising both Approach A and B with
+  a concrete AAS Digital Battery Passport ↔ OpenUSD mapping. Added to
+  Emerging Consensus.
 
 A prompt-level drafting log has been archived separately.
