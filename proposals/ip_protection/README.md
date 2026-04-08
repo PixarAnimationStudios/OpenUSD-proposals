@@ -28,7 +28,7 @@ Stephen Prideaux-Ghee (PTC), Steve Blackwell (Vertiv), Aaron Luk (NVIDIA)
 - [Concern 2: Ephemeral data and runtime protection](#concern-2-ephemeral-data-and-runtime-protection)
   - [The flatten problem](#the-flatten-problem)
   - [Secure asset resolution](#secure-asset-resolution)
-  - [Language-level protection concepts](#language-level-protection-concepts)
+  - [Language-level protection concepts (illustrative, not proposed)](#language-level-protection-concepts-illustrative-not-proposed)
   - [Streaming as an alternative](#streaming-as-an-alternative)
 - [Concern 3: Copyright and attribution](#concern-3-copyright-and-attribution)
 - [Concern 4: Provenance and compositional integrity](#concern-4-provenance-and-compositional-integrity)
@@ -202,9 +202,9 @@ consistently used as a single label for at least four separate things:
 | Concern | Threat model | Primary mitigation | USD role |
 |---|---|---|---|
 | **Dissemination** | Unauthorized access to sensitive geometry, metadata, or operational parameters | Omission, filtering, tiered representations managed by external systems | Guidance on asset structure; no core changes needed |
-| **Ephemeral data** | Authorized viewer saves or redistributes data beyond their access level | Controlled resolution, streaming, flatten prevention | May benefit from composition arc semantics (e.g., non-flattenable references); fundamentally hard to enforce |
-| **Copyright** | Content used without attribution; ownership claims lost through processing | Metadata that travels with the data | Candidate for standardized layer/prim metadata |
-| **Provenance** | Recombined components presented as supplier-sanctioned configurations | Origin tracking that invalidates on unauthorized recomposition | Relationship to source identifiers; may benefit from digital signatures or watermarking |
+| **Ephemeral data** | Authorized viewer saves or redistributes data beyond their access level | Controlled resolution, streaming, flatten prevention | Raises format-level questions (see [Open questions](#open-questions-for-discussion)); fundamentally hard to enforce |
+| **Copyright** | Content used without attribution; ownership claims lost through processing | Metadata that travels with the data | Relates to how metadata travels through composition (see [Open questions](#open-questions-for-discussion)) |
+| **Provenance** | Recombined components presented as supplier-sanctioned configurations | Origin tracking that invalidates on unauthorized recomposition | Relationship to source identifiers; approaches from other domains (digital signatures, watermarking) may inform solutions |
 
 Separating these matters because what works for one may be useless for
 another. Omission handles dissemination well but does nothing for
@@ -406,7 +406,7 @@ persons.
 
 ### Tiered representations
 
-A less binary variant: provide multiple representations of the same
+A less binary approach: provide multiple representations of the same
 asset, each curated for a different audience:
 
 - **Full access.** The complete engineering representation with all
@@ -480,11 +480,14 @@ other is painful.
   included in the exported asset, rather than being stripped after the
   fact.
 
-- **Use payloads for privilege boundaries.** Payloads are deferred-loading
-  composition arcs that provide a natural point for access-controlled
-  resolution. An asset resolver that requires authentication before
-  resolving a payload can enforce per-user access control at the
-  composition level.
+- **Use composition arcs as privilege boundaries.** Any composition
+  arc that targets an external layer -- references, payloads,
+  sublayers -- can serve as an access-control boundary. An asset
+  resolver that requires authentication before resolving the target
+  can enforce per-user access control at the composition level.
+  Payloads are especially convenient because they are deferred by
+  default, but references and sublayers work the same way from the
+  resolver's perspective.
 
 - **Design for the lowest common denominator.** The base representation
   of any shared asset should be the most restricted version -- the one
@@ -531,21 +534,32 @@ enters the USD stage. But they cannot prevent a user from saving the
 resolved data -- once it is in the composed stage, any code with stage
 access can read it.
 
-### Language-level protection concepts
+### Language-level protection concepts (illustrative, not proposed)
 
-An idea raised in our working sessions: extend USD's grammar to express
-protection intent on composition arcs. For example, a `final` keyword on
-a payload could tell tools not to flatten it:
+> **Note:** This section documents a *requirement* expressed by
+> practitioners, not a proposal for changes to USD's grammar or
+> composition engine. The sketches below are included to make the
+> requirement concrete and to explain why it is difficult to address
+> at the format level. They are not recommendations.
+
+In our working sessions, the question came up: could USD's grammar
+express protection intent on composition arcs? For example, imagine a
+`final`-like keyword on a payload telling tools not to flatten it:
 
 ```
+# Hypothetical syntax -- NOT a proposal
 prepend final payload = @windchill:OR:wt.part:1234567@
 ```
 
 Borrowed from programming language semantics (`final` in C++/Java
-prevents overriding), the idea here is to prevent "overriding" a
+prevents overriding), the idea would be to prevent "overriding" a
 reference with its resolved content.
 
-Appealing as a statement of intent, but hard to implement:
+The requirement behind this idea is real: data owners want to share
+live references that stay connected to the source system, and they
+want assurance that those references cannot be resolved and saved
+out from under them. But implementing this at the format level is
+hard:
 
 - **Renderers need full data.** To draw geometry, the renderer must have
   access to the actual vertices, normals, and textures. If the renderer
@@ -562,13 +576,20 @@ Appealing as a statement of intent, but hard to implement:
   making format-level protection insufficient without also controlling the
   render pipeline.
 
-Despite this, a `final` or `protected` annotation could still serve as
-a **statement of producer intent**:
-- Conforming tools would respect the annotation and refuse to flatten.
-- Non-conforming tools could ignore it -- but they would be operating
-  outside the producer's stated policy.
-- Even advisory protection is a useful signal, analogous to `const` in
-  C: it does not prevent all misuse, but it communicates expectations.
+Whether any of this belongs in USD is an open question (see
+[Open questions for discussion](#open-questions-for-discussion)).
+One lighter-weight possibility: an advisory annotation that signals
+producer intent without changing composition semantics:
+- Conforming tools would respect the annotation and refuse to
+  flatten the marked arc.
+- Non-conforming tools could ignore it -- but they would be
+  operating outside the producer's stated policy.
+- Even advisory protection is a useful signal, analogous to `const`
+  in C: it does not prevent all misuse, but it communicates
+  expectations.
+
+This is documented here to capture the requirement, not to advocate
+for a specific solution.
 
 ### Streaming as an alternative
 
@@ -591,10 +612,16 @@ matters for getting people to participate in shared asset ecosystems.
 If you invest in building a high-quality digital asset and put it in a
 library, you want to know your name stays on it.
 
-One practical approach: a standardized copyright field in the USD layer
-header:
+To illustrate the requirement, one approach that has come up in
+discussion is a standardized copyright field in the USD layer header:
+
+> **Note:** The syntax below is illustrative -- it shows what the
+> requirement *looks like*, not what USD should implement. The
+> specifics of any metadata schema would be the subject of a
+> separate proposal.
 
 ```usda
+# Illustrative syntax -- NOT a proposal
 #usda 1.0
 (
     upAxis = "Y"
@@ -604,33 +631,33 @@ header:
 )
 ```
 
-The `copyright` field could be an array to accommodate composition:
+If copyright metadata were an array, it could accommodate
+composition:
 
 ```usda
+    # Illustrative
     copyright = ["© ACME Corp. 2026", "© WidgetWorks Inc. 2026"]
 ```
 
-When layers are composed or flattened, copyright notices from all
-contributing layers would be accumulated rather than overwritten.
+Key considerations regardless of the specific mechanism:
 
-Key considerations:
+- **Persistence through flattening.** Copyright metadata needs to
+  survive `Flatten` operations. Whether this requires explicit
+  handling in the flatten implementation, an applied schema, or
+  external tooling is an open question.
 
-- **Persistence through flattening.** Copyright metadata should survive
-  `Flatten` operations. This may require explicit handling in the flatten
-  implementation if copyright is to be accumulated from source layers.
+- **Relationship to `customLayerData`.** Copyright can be stored in
+  `customLayerData` today. Whether a standardized field would
+  improve discoverability and cross-tool consistency enough to
+  justify a schema addition is worth discussing.
 
-- **Relationship to `customLayerData`.** Copyright could be stored in
-  `customLayerData` today, but a standardized field improves
-  discoverability and enables consistent handling across tools.
+- **Not enforcement.** A copyright field does not *enforce*
+  copyright -- it merely asserts it. Enforcement is a legal and
+  business matter, not a data format problem. But clear assertion
+  is a prerequisite for enforcement.
 
-- **Not enforcement.** A copyright field does not *enforce* copyright --
-  it merely asserts it. Enforcement is a legal and business matter, not a
-  data format problem. But clear assertion is a prerequisite for
-  enforcement.
-
-This concern is a candidate for a focused follow-up proposal specifying
-the metadata schema and composition semantics for copyright and
-attribution fields.
+Whether and how USD should address this is an open question (see
+[Open questions for discussion](#open-questions-for-discussion)).
 
 ## Concern 4: Provenance and compositional integrity
 
@@ -753,16 +780,19 @@ what is really about guidance and best practices.
 
 ### What USD can address
 
-- **Standardized copyright and attribution metadata.** Adding a governed
-  `copyright` field to the layer metadata schema, with defined
-  composition semantics (accumulate on flatten), is a tractable,
-  low-risk enhancement.
+- **Copyright and attribution metadata.** Copyright metadata is one
+  area where a standardized field *might* reduce fragmentation
+  across toolchains. The specifics -- schema design, composition
+  semantics, whether this belongs in core USD or in an applied
+  schema convention -- would be the subject of a separate, focused
+  proposal informed by community discussion.
 
-- **Statement-of-intent annotations on composition arcs.** A `final` or
-  `protected` annotation that signals producer intent regarding
-  flattening could be added to the grammar. Enforcement would be
-  advisory (conforming tools respect it; non-conforming tools can ignore
-  it), but even advisory protection is better than no signal at all.
+- **Statement-of-intent annotations on composition arcs.** An
+  advisory annotation signaling producer intent regarding
+  flattening has been discussed as an illustration of the
+  requirement (see [Language-level protection concepts](#language-level-protection-concepts-illustrative-not-proposed)).
+  Whether this belongs in USD, in external tooling conventions, or
+  nowhere at all is an open question.
 
 - **Source identifier infrastructure.** The
   [Separation of Concerns for Identifiers](https://github.com/PixarAnimationStudios/OpenUSD-proposals/pull/105)
@@ -871,11 +901,11 @@ what is really about guidance and best practices.
      flattened?
 
 2. **Flatten-protection semantics.**
-   - Is there value in a `final` or `protected` annotation on composition
-     arcs?
+   - Is there value in a `final` or `protected` annotation on
+     composition arcs?
    - Purely advisory, or enforced by conforming tools?
-   - How does this interact with existing `final` semantics in USD
-     (e.g., `final` properties)?
+   - `final` is not currently a keyword in USD. Would introducing it
+     create ambiguity or conflict with future USD features?
 
 3. **Provenance representation.**
    - Static metadata (origin, timestamp, signature)?
@@ -920,9 +950,9 @@ what is really about guidance and best practices.
    and protection through omission. This is the most immediately
    actionable outcome.
 
-4. **Draft focused follow-up proposals.** For concerns that may benefit
-   from USD enhancements (copyright metadata, flatten-protection
-   annotations), draft targeted proposals with concrete schemas and
+4. **Draft focused follow-up proposals if warranted.** If community
+   discussion identifies concerns that would benefit from USD
+   enhancements, draft targeted proposals with concrete schemas and
    semantics.
 
 5. **Prototype asset resolver patterns.** Develop reference
