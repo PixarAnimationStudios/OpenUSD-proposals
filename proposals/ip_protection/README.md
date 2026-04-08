@@ -561,20 +561,20 @@ want assurance that those references cannot be resolved and saved
 out from under them. But implementing this at the format level is
 hard:
 
-- **Renderers need full data.** To draw geometry, the renderer must have
-  access to the actual vertices, normals, and textures. If the renderer
-  has the data, preventing other code paths from accessing it is a
-  runtime enforcement problem, not a data format problem.
+- **Renderers need geometry, not policy.** The renderer must have
+  vertices, normals, and textures to draw. But a performant
+  renderer should not carry IP privilege or access-control metadata
+  it does not need -- and if it does not carry that context, it
+  cannot enforce it.
 
-- **Driver interception.** Even if USD enforced non-flattening,
-  graphics data passing through the GPU driver may be interceptable.
-  This is a challenge common to client-side DRM approaches: if the
-  pixels must be displayed, the data may be capturable.
+- **Driver interception.** Even if USD prevented flattening,
+  graphics data passing through the GPU driver is interceptable.
+  If the pixels must be displayed, the data is capturable.
 
-- **Hydra's open traversal model.** Hydra render delegates have full
-  access to the scene graph. Any delegate can read and extract data,
-  making format-level protection insufficient without also controlling the
-  render pipeline.
+- **Hydra's open traversal model.** Any Hydra render delegate can
+  read the full scene graph, and anyone can write a delegate.
+  Format-level protection cannot work without also controlling
+  the render pipeline.
 
 Whether any of this belongs in USD is an open question (see
 [Open questions for discussion](#open-questions-for-discussion)).
@@ -646,10 +646,13 @@ Key considerations regardless of the specific mechanism:
   handling in the flatten implementation, an applied schema, or
   external tooling is an open question.
 
-- **Relationship to `customLayerData`.** Copyright can be stored in
-  `customLayerData` today. Whether a standardized field would
-  improve discoverability and cross-tool consistency enough to
-  justify a schema addition is worth discussing.
+- **`customLayerData` is not sufficient.** Copyright can be stored
+  in `customLayerData` today, but `customLayerData` does not
+  survive `Flatten` -- it is per-layer metadata that is discarded
+  when layers are composed into one (see
+  [Revise Use of Layer Metadata](https://github.com/PixarAnimationStudios/OpenUSD-proposals/tree/main/proposals/revise_use_of_layer_metadata)).
+  If copyright must persist through flattening, it needs a
+  different mechanism.
 
 - **Not enforcement.** A copyright field does not *enforce*
   copyright -- it merely asserts it. Enforcement is a legal and
@@ -769,8 +772,11 @@ protection policy could be stored here today, but:
 - Every pipeline must agree on key names independently.
 - Tools have no way to discover or interpret the metadata without prior
   knowledge of the convention used.
-- There is no composition semantics beyond what `customData` already
-  provides.
+- `customLayerData` does not survive `Flatten` -- it is per-layer
+  metadata that is discarded when layers are composed into one
+  (see [Revise Use of Layer Metadata](https://github.com/PixarAnimationStudios/OpenUSD-proposals/tree/main/proposals/revise_use_of_layer_metadata)).
+  Any metadata that must persist through flattening (e.g.,
+  copyright) cannot rely on `customLayerData` alone.
 
 ## Separation of concerns
 
