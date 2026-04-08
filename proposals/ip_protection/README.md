@@ -667,6 +667,17 @@ Whether and how USD should address this is an open question (see
 Provenance -- tracking where content came from -- gets complicated in
 USD because composition lets you pull things apart and recombine them.
 
+A note on terminology: the
+[Separation of Concerns for Identifiers](https://github.com/PixarAnimationStudios/OpenUSD-proposals/pull/105)
+proposal identifies **authorship traceability** as a related use
+case -- tracking *who* created or modified content, at the person
+or tool level. Provenance as used here is a different concern:
+tracking whether a *composed assembly* still matches what the
+supplier validated. Authorship asks "who touched this?";
+compositional provenance asks "is this still a valid product
+configuration?" Both build on source identifiers, but they track
+different things for different audiences.
+
 ### The recombination problem
 
 Consider a vendor who provides two configured products as USD assets:
@@ -749,9 +760,20 @@ for IP protection in USD today.
 
 The OpenUSD repository includes a
 [resolver example](https://github.com/PixarAnimationStudios/OpenUSD/tree/dev/extras/usd/examples/usdResolverExample)
-that demonstrates the plugin interface. Each stakeholder would implement
+that demonstrates the plugin interface. Each stakeholder implements
 their own resolver to integrate with their specific access control
 infrastructure.
+
+Pluggable authentication is a well-established pattern: OAuth 2.0,
+web server auth modules (Apache `mod_authn_*`, Nginx
+`auth_request`), PAM, and Java JAAS all define a plugin interface
+that each deployment wires to its own infrastructure. Those systems
+go further than `ArResolver` by also standardizing authorization
+rules (token formats, module types, principal semantics).
+`ArResolver` intentionally stops at the extension point -- it
+defines *where* to plug in but says nothing about *how*
+authorization should work, leaving that to the external systems
+where it belongs.
 
 ### Composition arcs and layering
 
@@ -867,9 +889,10 @@ what is really about guidance and best practices.
    has different characteristics and likely solutions. They should be
    addressed independently, even where the mechanisms overlap.
 
-2. **Defense in depth.** No single mechanism provides complete protection.
-   Effective IP protection combines asset structuring, access control,
-   metadata hygiene, and appropriate delivery mechanisms.
+2. **No single mechanism is sufficient.** Layer multiple protections
+   so no single failure is catastrophic. Effective IP protection
+   combines asset structuring, access control, metadata hygiene,
+   and appropriate delivery mechanisms.
 
 3. **Protection by default.** The base representation of any shared asset
    should be the most restricted version. Additional detail should be
@@ -900,27 +923,15 @@ what is really about guidance and best practices.
 
 ### Open questions for discussion
 
-1. **Copyright metadata schema.**
-   - What fields? A simple `copyright` string, an array for composition,
-     or structured fields (license type, attribution, usage restrictions)?
-   - How should copyright metadata compose when layers are referenced or
-     flattened?
+1. **Scope of standardization.**
+   - Which of the four concerns belong in core USD (metadata schemas,
+     grammar extensions)?
+   - Which should be left to external conventions and best-practice
+     guides?
+   - Where is the line between "USD should standardize this" and "USD
+     should provide extension points for this"?
 
-2. **Flatten-protection semantics.**
-   - Is there value in a `final` or `protected` annotation on
-     composition arcs?
-   - Purely advisory, or enforced by conforming tools?
-   - `final` is not currently a keyword in USD. Would introducing it
-     create ambiguity or conflict with future USD features?
-
-3. **Provenance representation.**
-   - Static metadata (origin, timestamp, signature)?
-   - A relationship to source identifiers?
-   - A compositional checksum that invalidates on recomposition?
-   - What is the minimum viable provenance that would address the
-     recombination problem?
-
-4. **Interaction with asset resolvers.**
+2. **Interaction with asset resolvers.**
    - What conventions or APIs would make tiered delivery easier to
      implement?
    - Should resolvers have a standard way to advertise what protection
@@ -928,13 +939,25 @@ what is really about guidance and best practices.
    - How should a resolver communicate the requesting user's
      authorization level to the content management system?
 
-5. **Scope of standardization.**
-   - Which of the four concerns belong in core USD (metadata schemas,
-     grammar extensions)?
-   - Which should be left to external conventions and best-practice
-     guides?
-   - Where is the line between "USD should standardize this" and "USD
-     should provide extension points for this"?
+3. **Copyright metadata schema.**
+   - What fields? A simple `copyright` string, an array for composition,
+     or structured fields (license type, attribution, usage restrictions)?
+   - How should copyright metadata compose when layers are referenced or
+     flattened?
+
+4. **Provenance representation.**
+   - Static metadata (origin, timestamp, signature)?
+   - A relationship to source identifiers?
+   - A compositional checksum that invalidates on recomposition?
+   - What is the minimum viable provenance that would address the
+     recombination problem?
+
+5. **Flatten-protection semantics.**
+   - Is there value in a `final` or `protected` annotation on
+     composition arcs?
+   - Purely advisory, or enforced by conforming tools?
+   - `final` is not currently a keyword in USD. Would introducing it
+     create ambiguity or conflict with future USD features?
 
 6. **Relationship to streaming and cloud delivery.**
    - As USD scenes are increasingly served from cloud infrastructure,
@@ -986,11 +1009,11 @@ received as input.
 
 The following materials were provided as input context for drafting:
 
-1. **JIRA user story OMPE-67496** -- "Configurable IP Protection" user
-   story and full comment history documenting the evolution of
-   requirements,
-   including contributions from Aaron Luk (NVIDIA), Max Bickley (NVIDIA),
-   Daniel Lindsey (NVIDIA), and Alex Fuchs (NVIDIA).
+1. **Internal requirements tracking** -- "Configurable IP Protection"
+   user story and comment history documenting the evolution of
+   requirements, including contributions from Alex Fuchs (NVIDIA),
+   Max Bickley (NVIDIA), Aaron Luk (NVIDIA), and Daniel Lindsey
+   (NVIDIA).
 
 2. **Working document from Stephen Prideaux-Ghee (PTC)** -- "IP
    Protection" document outlining four pillars: protection against
