@@ -18,6 +18,7 @@ Stephen Prideaux-Ghee (PTC), Steve Blackwell (Vertiv), Aaron Luk (NVIDIA)
   - [Manufacturing and product engineering](#manufacturing-and-product-engineering)
   - [Data center infrastructure](#data-center-infrastructure)
   - [Aerospace and defense](#aerospace-and-defense)
+  - [Media and entertainment](#media-and-entertainment)
   - [Digital asset libraries and content marketplaces](#digital-asset-libraries-and-content-marketplaces)
 - [Concern 1: Protection against dissemination](#concern-1-protection-against-dissemination)
   - [Protection through omission](#protection-through-omission)
@@ -51,13 +52,16 @@ Stephen Prideaux-Ghee (PTC), Steve Blackwell (Vertiv), Aaron Luk (NVIDIA)
 ## Introduction
 
 OpenUSD is increasingly used outside its original visual effects context --
-in manufacturing, infrastructure, and industrial digital twins. This brings
-a question that the CAD and PLM industries have wrestled with for decades:
+in manufacturing, infrastructure, industrial digital twins, and
+multi-vendor production pipelines. This brings a question that
+industries from visual effects to heavy manufacturing have wrestled
+with for decades:
 how do you share a digital representation of a product without giving away
 the parts you need to keep secret?
 
-The PLM world has extensive experience here, from access control lists and
-simplified representations to DRM and watermarking. USD adds a new
+Both M&E and PLM have extensive experience here, from baked caches and
+vendor-restricted sequences to access control lists and simplified
+representations to DRM and watermarking. USD adds a new
 dimension to the problem: its composition model lets multiple parties
 reference, layer, and recombine data from different sources, which is
 exactly what makes it powerful for collaborative workflows -- and exactly
@@ -126,10 +130,10 @@ Several properties of USD's composition model are directly relevant:
 
 - **Referencing and payloads** allow consumers to compose assets from
   multiple vendors into a single scene. This is powerful for building
-  complex digital twins (e.g., a data center with thousands of pieces of
-  equipment from dozens of vendors), but it means that once a reference is
-  resolved, the geometry and metadata become part of the consumer's
-  composed stage.
+  complex environments (e.g., a data center with thousands of pieces of
+  equipment from dozens of vendors, or a feature film with assets from
+  multiple VFX studios), but it means that once a reference is resolved,
+  the geometry and metadata become part of the consumer's composed stage.
 
 - **Flattening** (`UsdStage::Flatten`) collapses the entire composition
   graph into a single layer, stripping away the reference structure that
@@ -170,12 +174,21 @@ two parties:
   a usable asset for their workflow -- layout, simulation, visualization,
   procurement -- and the richer the asset, the more useful it is.
 
-Data owners are motivated to share because a good digital asset helps sell
-the physical product, enables better integration, and reduces support
-costs. But sharing too much risks exposing competitive advantage or
-violating regulatory restrictions. Consumers, meanwhile, need enough data
-to build useful simulations. If the data is too locked down or too hard
-to get, people fall back to manual workflows.
+The data owner's incentives to share:
+- A good digital asset helps sell the physical product.
+- Better integration reduces support costs.
+- Richer data makes the vendor's equipment easier to specify and deploy.
+
+The data owner's reasons to withhold:
+- Competitive advantage -- internal construction, control strategies,
+  supplier relationships.
+- Regulatory restrictions -- ITAR, classification levels, export controls.
+- Liability -- unauthorized configurations that appear to work but are
+  not supported.
+
+Consumers, meanwhile, need enough data to build useful simulations. If
+the data is too locked down or too hard to get, people fall back to
+manual workflows.
 
 This tension is inherent to the domain. This proposal does not try to
 resolve it, but provides a framework for understanding where different
@@ -203,37 +216,36 @@ not always available.
 
 Why now:
 
-1. **Industrial adoption is accelerating.** Manufacturing, infrastructure,
-   and energy companies are actively evaluating USD for digital twins and
-   simulation. Many of these companies have strict IP protection
-   requirements that must be addressed before they will commit to
-   USD-based workflows. The data center industry, for example, would
-   benefit from a common repository of vendor equipment models -- but
-   building that repository requires vendors to trust that their IP is
-   protected.
+1. **Cross-industry adoption is accelerating.** Manufacturing,
+   infrastructure, and energy companies are evaluating USD for digital
+   twins and simulation -- joining M&E studios that already manage
+   multi-vendor IP boundaries on every production. Many of these
+   organizations have strict IP protection requirements that must be
+   addressed before they will commit to USD-based workflows.
 
 2. **The composition model invites collaboration.** USD's strength in
    composing data from multiple sources is precisely what makes IP
    protection necessary. The more powerful the collaboration, the more
    critical the protection.
 
-3. **Expectations exceed reality.** People sometimes assume USD or
-   Omniverse will "magically" handle IP protection. Setting clear
-   expectations about what USD can and cannot do -- and what data owners
-   need to do themselves -- is important for building trust.
+3. **Expectations exceed reality.** People sometimes assume USD
+   will "magically" handle IP protection. Setting clear expectations
+   about what USD can and cannot do -- and what data owners need to do
+   themselves -- is important for building trust.
 
 4. **The source identifiers proposal provides a foundation.** The
-   [Separation of Concerns for Identifiers](../identifier_separation_of_concerns/README.md)
+   [Separation of Concerns for Identifiers](https://github.com/PixarAnimationStudios/OpenUSD-proposals/pull/105)
    proposal establishes a framework for carrying external system
    identifiers on USD prims. Provenance, copyright, and access control
    all depend on the ability to identify the source and lineage of
-   content -- making standardized source identifiers a useful foundation for
-   IP protection workflows.
+   content -- making standardized source identifiers a useful
+   foundation for IP protection workflows.
 
 ## Industry use cases
 
-The examples below come from direct conversations with practitioners in
-each domain.
+The examples below come from direct conversations with practitioners.
+They span USD's original M&E domain through to newer industrial
+adopters.
 
 ### Manufacturing and product engineering
 
@@ -269,11 +281,11 @@ sharing digital representations of their products:
   supplier.
 
 PLM systems (PTC Windchill, Siemens Teamcenter, Dassault 3DEXPERIENCE)
-address many of these concerns through access-controlled data management:
-different users accessing the same part receive different representations
-based on their authorization level. The challenge arises when data
-"escapes" the PLM environment -- exported as USD files, the access control
-context is lost.
+handle much of this through access-controlled data management:
+- Different users accessing the same part get different representations
+  based on their authorization level.
+- The challenge: when data "escapes" the PLM environment -- exported as
+  USD files -- the access control context is lost.
 
 ### Data center infrastructure
 
@@ -324,6 +336,27 @@ judgment:
   "restricted" still reveals that something exists in that location;
   true protection requires that restricted content not appear in the
   delivered asset at all.
+
+### Media and entertainment
+
+USD's home territory has its own IP protection needs, particularly
+when multiple vendors collaborate on the same production:
+
+- **Multi-vendor VFX pipelines.** A feature film may involve several
+  VFX studios working on different sequences, sharing assets through
+  a common USD scene graph. Each studio's work is proprietary --
+  character rigs, simulation setups, proprietary shader networks --
+  and must not leak to the other vendors on the same show.
+- **Pre-release confidentiality.** Character designs, story elements,
+  and unreleased footage are highly sensitive. Assets shared between
+  studios for integration work must be restricted to authorized
+  personnel, and studios are contractually liable for leaks.
+- **Animation studio collaboration.** When animation and lighting are
+  split across studios, the lighting team needs geometry and layout
+  but should not have access to the animation rig internals. Today
+  this is managed by exporting baked caches -- a form of protection
+  through omission -- but tighter USD-native integration would
+  benefit from more granular access control.
 
 ### Digital asset libraries and content marketplaces
 
@@ -389,17 +422,18 @@ asset, each curated for a different audience:
   properties. Suitable for facility layout and basic collision detection.
   May be provided to anyone.
 
-These representations are not the same as Levels of Detail (LODs), which
-manage runtime display fidelity and performance. Tiered representations
-manage *information access* -- the simplified versions are intentionally
-less informative, not just less detailed.
+These are not the same as Levels of Detail (LODs). LODs manage runtime
+display fidelity and performance. Tiered representations manage
+*information access* -- the simplified versions are intentionally less
+informative, not just less detailed.
 
-In managed environments (PLM systems), these tiers can be generated from
-the same source data and delivered dynamically based on the requesting
-user's authorization level. The PLM system acts as the access control
-layer, and the USD asset resolver provides the integration point. In
-unmanaged environments, the tiers must be curated and distributed as
-separate assets.
+How these tiers get delivered depends on the environment:
+- **Managed (PLM):** Tiers are generated from the same source data and
+  delivered dynamically based on the requesting user's authorization
+  level. The PLM system handles access control; the USD asset resolver
+  is the integration point.
+- **Unmanaged:** Tiers must be curated and distributed as separate
+  assets by the data owner.
 
 ### Metadata filtering
 
@@ -418,12 +452,13 @@ part is making sure filtering is systematic -- that every property and
 custom data entry is evaluated against the access policy, not just the
 ones someone remembered to check.
 
-Redacted placeholders (e.g., `designedBy = "********"`) can indicate that
-a field exists but is not accessible to the current user, which may be
-useful in some workflows. However, in many cases it is safer to omit the
-field entirely -- even the presence of a redacted field can reveal
-information (e.g., that a particular analysis was performed, or that a
-particular supplier relationship exists).
+Two options for sensitive fields:
+- **Redact:** Replace values with placeholders
+  (e.g., `designedBy = "********"`). Useful when you want users to know
+  a field exists but they lack access.
+- **Omit entirely:** Safer, because even the presence of a redacted
+  field can reveal information -- e.g., that a particular analysis was
+  performed, or that a particular supplier relationship exists.
 
 ### Relationship to asset structure and composition
 
@@ -506,12 +541,11 @@ a payload could tell tools not to flatten it:
 prepend final payload = @windchill:OR:wt.part:1234567@
 ```
 
-The concept is borrowed from programming language semantics: `final` in
-C++ or Java prevents overriding; here it would prevent "overriding" the
+Borrowed from programming language semantics (`final` in C++/Java
+prevents overriding), the idea here is to prevent "overriding" a
 reference with its resolved content.
 
-The idea is appealing as a statement of intent, but implementing it
-is hard:
+Appealing as a statement of intent, but hard to implement:
 
 - **Renderers need full data.** To draw geometry, the renderer must have
   access to the actual vertices, normals, and textures. If the renderer
@@ -528,25 +562,27 @@ is hard:
   making format-level protection insufficient without also controlling the
   render pipeline.
 
-Despite these challenges, a `final` or `protected` annotation on
-composition arcs could serve as a **statement of producer intent** -- a
-signal to conforming tools that this data should not be flattened, even
-if enforcement is advisory rather than absolute. Tools that respect the
-annotation provide a layer of protection; tools that ignore it are
-operating outside the producer's stated policy.
+Despite this, a `final` or `protected` annotation could still serve as
+a **statement of producer intent**:
+- Conforming tools would respect the annotation and refuse to flatten.
+- Non-conforming tools could ignore it -- but they would be operating
+  outside the producer's stated policy.
+- Even advisory protection is a useful signal, analogous to `const` in
+  C: it does not prevent all misuse, but it communicates expectations.
 
 ### Streaming as an alternative
 
-One approach to ephemeral data protection is to never deliver the geometry
-to the client at all. Streaming -- where the server renders the scene and
-transmits only pixels to the client -- significantly reduces the
-possibility of client-side data extraction (though screen capture and
-reconstruction techniques remain possible).
+Another approach: never deliver geometry to the client at all.
 
-This is not a USD-specific solution, but it is an approach that some
-organizations with strict IP protection requirements have adopted. The
-trade-off is infrastructure cost and latency, and it requires that the
-server have sufficient rendering capability.
+- **How it works:** The server renders the scene and transmits only
+  pixels. The client sees the image but never has access to the
+  underlying geometry or metadata.
+- **Limitations:** Screen capture and 3D reconstruction from images
+  remain possible. Not USD-specific.
+- **Trade-offs:** Requires server-side rendering infrastructure, adds
+  latency, and limits interactivity compared to local rendering.
+- **Adoption:** Some organizations with strict IP protection
+  requirements have adopted this approach despite the trade-offs.
 
 ## Concern 3: Copyright and attribution
 
@@ -577,7 +613,7 @@ The `copyright` field could be an array to accommodate composition:
 When layers are composed or flattened, copyright notices from all
 contributing layers would be accumulated rather than overwritten.
 
-Considerations:
+Key considerations:
 
 - **Persistence through flattening.** Copyright metadata should survive
   `Flatten` operations. This may require explicit handling in the flatten
@@ -614,12 +650,12 @@ USD's composition model allows a consumer to:
 3. Compose them into a new structure C+F.
 4. Save this as a new asset that looks like a valid product.
 
-The resulting C+F assembly may render correctly, may even pass simulation
-tests, but it is not a product that the vendor manufactures or supports.
-If a customer approaches the vendor to purchase C+F based on this
-simulated configuration, both parties are frustrated: the customer
-expected a real product, and the vendor faces a negative customer
-experience for something they never offered.
+The resulting C+F assembly may render correctly and even pass simulation
+tests, but:
+- It is not a product the vendor manufactures or supports.
+- The customer approaches the vendor expecting to buy C+F -- and
+  discovers it does not exist.
+- The vendor gets a frustrated customer for a product they never offered.
 
 This scenario has been raised as a specific concern by manufacturers who
 see USD's composition capabilities as both an opportunity and a risk.
@@ -631,14 +667,14 @@ problem needs something stronger: **provenance that breaks when the
 composition is changed**.
 
 If product C+D carries a provenance marker indicating it is a validated
-configuration from vendor X, then the act of extracting C and composing
-it with F from a different assembly should *break* that provenance --
-the new assembly C+F should not inherit the validated status of its
-source components.
+configuration from vendor X:
+- Extracting C and composing it with F from a different assembly should
+  *break* that provenance.
+- The new assembly C+F should not inherit the validated status of its
+  source components.
 
-This is a "living" or "dynamic" provenance requirement: the provenance
-is not merely a static stamp but a property that is sensitive to
-compositional changes.
+This is "living" or "dynamic" provenance -- not a static stamp, but a
+property that is sensitive to compositional changes.
 
 Some approaches from other domains:
 
@@ -662,16 +698,13 @@ Some approaches from other domains:
   assembly matches the supplier's validated configuration, without the
   full infrastructure of cryptographic signatures.
 
-Provenance ties into the source identifiers work. If components carry
-standardized source identifiers from the
-[Separation of Concerns for Identifiers](../identifier_separation_of_concerns/README.md)
-proposal, provenance tracking can build on those identifiers to record
-which source components were combined and whether the combination has
-been validated.
-
-Provenance and copyright may also benefit from similar mechanisms:
-digital signatures or watermarks that attest to both origin and
-integrity could serve both concerns simultaneously.
+Provenance ties into the source identifiers work:
+- If components carry standardized source identifiers
+  ([Separation of Concerns for Identifiers](https://github.com/PixarAnimationStudios/OpenUSD-proposals/pull/105)),
+  provenance tracking can build on them to record which components were
+  combined and whether the combination has been validated.
+- Copyright and provenance may benefit from overlapping mechanisms --
+  e.g., digital signatures that attest to both origin and integrity.
 
 ## Existing mechanisms in USD
 
@@ -692,25 +725,25 @@ infrastructure.
 
 ### Composition arcs and layering
 
-USD's composition model -- references, payloads, inherits, variants,
-specializes -- provides natural boundaries where access control can be
-applied. Payloads are particularly relevant because they are deferred:
-a tool can open a stage without loading payloads, then selectively load
-only the payloads that the user is authorized to access.
-
-The separation of data across layers also supports protection through
-omission: proprietary metadata can be authored in layers that are never
-distributed, while the layers that are shared contain only the
-information appropriate for the recipient.
+USD's composition arcs (references, payloads, inherits, variants,
+specializes) provide natural boundaries for access control:
+- **Payloads** are particularly useful because they are deferred -- a
+  tool can open a stage without loading payloads, then selectively load
+  only those the user is authorized to access.
+- **Layer separation** supports protection through omission: proprietary
+  metadata can be authored in layers that are never distributed, while
+  shared layers contain only what is appropriate for the recipient.
 
 ### customData and customLayerData
 
 `customData` (on prims and properties) and `customLayerData` (on layers)
-provide freeform dictionary metadata that can carry any key-value pairs.
-Copyright, provenance, and protection policy metadata could be stored
-here today, but without standardization: every pipeline must agree on
-key names, and tools have no way to discover or interpret this metadata
-without prior knowledge of the convention used.
+can carry arbitrary key-value metadata. Copyright, provenance, and
+protection policy could be stored here today, but:
+- Every pipeline must agree on key names independently.
+- Tools have no way to discover or interpret the metadata without prior
+  knowledge of the convention used.
+- There is no composition semantics beyond what `customData` already
+  provides.
 
 ## Separation of concerns
 
@@ -732,7 +765,7 @@ what is really about guidance and best practices.
   it), but even advisory protection is better than no signal at all.
 
 - **Source identifier infrastructure.** The
-  [Separation of Concerns for Identifiers](../identifier_separation_of_concerns/README.md)
+  [Separation of Concerns for Identifiers](https://github.com/PixarAnimationStudios/OpenUSD-proposals/pull/105)
   proposal provides the foundation for provenance tracking by
   standardizing how source identifiers are carried on prims.
 
@@ -775,7 +808,7 @@ what is really about guidance and best practices.
 
 ## Relationship to other proposals
 
-- **[Separation of Concerns for Identifiers](../identifier_separation_of_concerns/README.md)**
+- **[Separation of Concerns for Identifiers](https://github.com/PixarAnimationStudios/OpenUSD-proposals/pull/105)**
   -- Source identifiers are a prerequisite for provenance and copyright
   tracking. IP protection builds on the ability to identify the origin
   and lineage of components.
@@ -820,57 +853,58 @@ what is really about guidance and best practices.
    each new policy.
 
 6. **Industry agnosticism.** The framework should apply equally to
-   manufacturing, AECO, M&E, data center infrastructure, and domains
+   M&E, manufacturing, AECO, data center infrastructure, and domains
    not yet envisioned. Domain-specific policies are implemented through
    the extension points, not hard-coded into the framework.
 
 7. **Pragmatism over perfection.** Perfect IP protection for digital
-   data is an unsolved problem. Practical guidance that addresses the majority of real-world concerns
-   is more valuable than a theoretically complete solution that is too
-   complex to implement.
+   data is an unsolved problem. Practical guidance that addresses the
+   majority of real-world concerns is more valuable than a theoretically
+   complete solution that is too complex to implement.
 
 ### Open questions for discussion
 
 1. **Copyright metadata schema.**
-   What fields should a standardized copyright metadata schema include?
-   A simple `copyright` string? An array for composition? Structured
-   fields for license type, attribution requirements, and usage
-   restrictions? How should copyright metadata compose when layers are
-   referenced or flattened?
+   - What fields? A simple `copyright` string, an array for composition,
+     or structured fields (license type, attribution, usage restrictions)?
+   - How should copyright metadata compose when layers are referenced or
+     flattened?
 
 2. **Flatten-protection semantics.**
-   Is there value in a `final` or `protected` annotation on composition
-   arcs that signals producer intent regarding flattening? What would the
-   semantics be -- purely advisory, or enforced by conforming tools? How
-   does this interact with existing `final` semantics in USD (e.g.,
-   `final` properties)?
+   - Is there value in a `final` or `protected` annotation on composition
+     arcs?
+   - Purely advisory, or enforced by conforming tools?
+   - How does this interact with existing `final` semantics in USD
+     (e.g., `final` properties)?
 
 3. **Provenance representation.**
-   How should provenance information be represented in USD? Static
-   metadata (origin, timestamp, signature)? A relationship to source
-   identifiers? A compositional checksum that invalidates on
-   recomposition? What is the minimum viable provenance that would
-   address the recombination problem?
+   - Static metadata (origin, timestamp, signature)?
+   - A relationship to source identifiers?
+   - A compositional checksum that invalidates on recomposition?
+   - What is the minimum viable provenance that would address the
+     recombination problem?
 
 4. **Interaction with asset resolvers.**
-   What conventions or APIs would make it easier for asset resolver
-   authors to implement tiered delivery? Should there be a standard
-   way for a resolver to advertise what protection levels it supports,
-   or to communicate the requesting user's authorization level to the
-   content management system?
+   - What conventions or APIs would make tiered delivery easier to
+     implement?
+   - Should resolvers have a standard way to advertise what protection
+     levels they support?
+   - How should a resolver communicate the requesting user's
+     authorization level to the content management system?
 
 5. **Scope of standardization.**
-   Which of the four concerns should be addressed in core USD (metadata
-   schemas, grammar extensions) vs. left to external conventions and
-   best-practice guides? Where is the line between "USD should
-   standardize this" and "USD should provide extension points for this"?
+   - Which of the four concerns belong in core USD (metadata schemas,
+     grammar extensions)?
+   - Which should be left to external conventions and best-practice
+     guides?
+   - Where is the line between "USD should standardize this" and "USD
+     should provide extension points for this"?
 
 6. **Relationship to streaming and cloud delivery.**
-   As USD scenes are increasingly served from cloud infrastructure,
-   how does the IP protection framework interact with delivery
-   mechanisms like NVIDIA Omniverse, cloud rendering, and streaming?
-   Should the proposal address these scenarios explicitly, or treat
-   them as infrastructure concerns outside USD's scope?
+   - As USD scenes are increasingly served from cloud infrastructure,
+     how does this framework interact with cloud rendering and streaming?
+   - Should the proposal address these scenarios explicitly, or treat
+     them as infrastructure concerns outside USD's scope?
 
 ## Next steps
 
@@ -917,7 +951,8 @@ received as input.
 The following materials were provided as input context for drafting:
 
 1. **JIRA user story OMPE-67496** -- "Configurable IP Protection" user
-   story and full comment history documenting the evolution of requirements,
+   story and full comment history documenting the evolution of
+   requirements,
    including contributions from Aaron Luk (NVIDIA), Max Bickley (NVIDIA),
    Daniel Lindsey (NVIDIA), and Alex Fuchs (NVIDIA).
 
@@ -931,8 +966,8 @@ The following materials were provided as input context for drafting:
    Full transcript of working session with Stephen Prideaux-Ghee (PTC),
    Steve Blackwell (Vertiv), Aaron Luk (NVIDIA), Alex Fuchs (NVIDIA),
    and Daniel Lindsey (NVIDIA). Covered all four IP protection concerns
-   with real-world examples from data center infrastructure, manufacturing,
-   and aerospace.
+   with real-world examples from data center infrastructure,
+   manufacturing, M&E, and aerospace.
 
 4. **Workflow diagram from Alex Fuchs (NVIDIA)** -- "As of today - a
    complete detached workflow" diagram illustrating the current
@@ -940,7 +975,7 @@ The following materials were provided as input context for drafting:
    Simulate (Customer/Consumer digital twin), highlighting the manual
    work gap that USD-based workflows aim to bridge.
 
-5. **[Separation of Concerns for Identifiers](../identifier_separation_of_concerns/README.md)**
+5. **[Separation of Concerns for Identifiers](https://github.com/PixarAnimationStudios/OpenUSD-proposals/pull/105)**
    -- The identifiers proposal, used as both a methodological template
    (problem-first, separation of concerns, industry-agnostic framing)
    and a technical foundation (source identifiers as prerequisite for
