@@ -849,7 +849,14 @@ Digital Battery Passport ↔ OpenUSD mapping. The sample defines USD API
 schema classes alongside `sourceId:dpp:` custom attributes,
 demonstrates `assetInfo` fallback for legacy tools, and includes
 encodings under both Approach A and Approach B -- providing a concrete
-artifact for evaluating the mechanism choice.
+artifact for evaluating the mechanism choice. AAS community review of
+the proof-of-concept confirmed that the identifier handling aligns well
+with AAS conventions, but noted that a Digital Product Passport is a
+broader concept than identity alone -- it includes structured lifecycle,
+compliance, and sustainability information realized through multiple AAS
+submodels. Those additional semantic requirements depend on a
+standardized identifier mechanism as a foundation, but are out of scope
+for this proposal.
 
 #### Remaining design choice: mechanism
 
@@ -915,7 +922,8 @@ accommodated.
    structure to ensure cross-domain discoverability.
 
 4. **Scope creep.** Source identifiers shade into broader metadata concerns
-   -- authorship, semantic meaning, lifecycle state -- and the mechanism
+   -- authorship, semantic meaning, lifecycle state, compliance
+   frameworks (e.g., Digital Product Passports) -- and the mechanism
    tries to solve everything. The scope should remain focused on
    identification and linking; adjacent concerns should build on the pattern
    as separate extensions, not expand the core.
@@ -1191,5 +1199,11 @@ editorial decisions included:
   proof-of-concept (PR linked) exercising both Approach A and B with
   a concrete AAS Digital Battery Passport ↔ OpenUSD mapping. Added to
   Emerging Consensus.
+- **AAS community review of DPP proof-of-concept (Pooja Gupta,
+  HS Kempten)** -- confirmed identifier handling aligns with AAS
+  conventions; noted that DPP encompasses structured lifecycle,
+  compliance, and sustainability information beyond identity alone.
+  Acknowledged in Emerging Consensus as a dependent but out-of-scope
+  concern; named in Scope Creep risk.
 
 A prompt-level drafting log has been archived separately.
