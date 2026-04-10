@@ -497,7 +497,11 @@ other is painful.
 ## Concern 2: Ephemeral data and runtime protection
 
 A harder problem: let a user *see* data at runtime but prevent them from
-*saving or redistributing* it.
+*saving or redistributing* it. A familiar analogy: a password-protected
+website controls who can access a page, but once it renders in a browser,
+nothing stops the viewer from taking a screenshot or saving the HTML.
+The same fundamental tension applies to USD -- once data is resolved and
+visible on a composed stage, it is capturable.
 
 ### The flatten problem
 
