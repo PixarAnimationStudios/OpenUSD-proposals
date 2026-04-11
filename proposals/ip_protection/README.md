@@ -300,10 +300,14 @@ at scale:
 - **Tiered protection needs.** An equipment vendor like Vertiv provides
   mechanical models as correct exterior boxes with pipe and electrical
   connections that terminate at the enclosure boundary -- nothing inside
-  the box. Static performance data published on the vendor's website is
-  shared freely. Dynamic performance data required for detailed system
-  simulation is shared only with customers under agreement. Internal
-  control system parameters are never shared.
+  the box. Operational data has its own tiering axis, independent of
+  geometry: static performance data published on the vendor's website
+  is shared freely; dynamic performance data required for detailed
+  system simulation is shared only with customers under agreement;
+  internal control system parameters are never shared. These tiers do
+  not map one-to-one onto geometry tiers -- a customer may receive
+  simplified geometry but detailed operational parameters, or vice
+  versa, depending on their role.
 
 - **Competing vendors in shared environments.** A data center operator's
   digital twin may include equipment from competing vendors. Each vendor
@@ -404,6 +408,15 @@ the only approach that satisfies the legal requirement. Restricted
 content must not be present in any form accessible to unauthorized
 persons.
 
+This requirement extends beyond regulatory contexts. Factory planners
+have expressed the need to hide not just the *content* behind a
+reference, but the *existence* of the reference itself. A bounding box
+labeled "restricted" or a payload that fails to resolve still reveals
+that something is there -- and even that can be informative to a
+competitor or an unauthorized party. True omission means the
+restricted content does not appear in the delivered asset's structure
+at all: no placeholder prim, no dangling reference, no redacted field.
+
 ### Tiered representations
 
 A less binary approach: provide multiple representations of the same
@@ -418,9 +431,19 @@ asset, each curated for a different audience:
   construction simplified or omitted. Proprietary metadata stripped.
 
 - **Public / layout.** A bounding box or simplified shell that claims the
-  correct physical space, with basic connection points and rigid body
-  properties. Suitable for facility layout and basic collision detection.
-  May be provided to anyone.
+  correct physical space, with basic connection points, rigid body
+  properties, colliders, and measurements. May include a minimal set of
+  metadata for basic simulation (e.g., weight, power rating, thermal
+  output). May be provided to anyone.
+
+The principle behind tiered representations is that **even the lowest
+tier must serve a workflow.** A bounding box with no usable properties
+is not a useful asset -- it is a placeholder that forces the consumer
+back to manual workflows. If the lowest tier carries correct
+dimensions, collision geometry, and enough metadata for basic layout
+and simulation, it justifies the vendor's investment in creating and
+maintaining tiered representations, and it gives the consumer a reason
+to use the system rather than work around it.
 
 These are not the same as Levels of Detail (LODs). LODs manage runtime
 display fidelity and performance. Tiered representations manage
@@ -434,6 +457,17 @@ How these tiers get delivered depends on the environment:
   is the integration point.
 - **Unmanaged:** Tiers must be curated and distributed as separate
   assets by the data owner.
+
+Tiered delivery has a real operational cost. The data owner must
+create and maintain multiple representations, and -- particularly in
+unmanaged environments -- track which customers received which tier.
+As one equipment vendor put it: *"It's a problem for them in terms of
+having to reach out to everybody and get the data, and frankly a
+problem for us because we have to keep up with who we gave what to."*
+Managed systems (PLM, DAM with resolver integration) can absorb much
+of this cost by generating tiers dynamically, but organizations
+without that infrastructure face a manual burden that factors into
+whether tiered delivery is practical at all.
 
 ### Metadata filtering
 
@@ -459,6 +493,32 @@ Two options for sensitive fields:
 - **Omit entirely:** Safer, because even the presence of a redacted
   field can reveal information -- e.g., that a particular analysis was
   performed, or that a particular supplier relationship exists.
+
+Property-level protection surfaces as two similar but distinct
+requirements:
+
+- **Producer-side: export control.** The data owner wants to tag
+  individual properties so that export processes know not to include
+  them in outbound assets. This is a filtering concern -- ensuring
+  that the right properties are systematically stripped at the point
+  of export, rather than relying on someone remembering to remove
+  them manually.
+
+- **Consumer-side: access-controlled visibility.** Even after delivery,
+  a consumer working with an asset should not be able to see certain
+  properties based on their access level. The data may be present in
+  the delivered layers, but the consumer's tooling -- mediated by an
+  asset resolver or a managed environment -- restricts what is visible.
+
+These requirements call for different approaches. Export control is
+a form of protection through omission -- the sensitive properties are
+never in the exported file at all, so structuring them into layers
+that are excluded from export (or stripping them during export) is
+the natural solution. Consumer-side visibility is an access control
+problem -- the properties may be present in the delivered data, but
+structured into separate layers that the consumer's tooling
+(mediated by an asset resolver or managed environment) can
+independently restrict.
 
 ### Relationship to asset structure and composition
 
@@ -609,6 +669,26 @@ Another approach: never deliver geometry to the client at all.
 - **Adoption:** Some organizations with strict IP protection
   requirements have adopted this approach despite the trade-offs.
 
+The reasoning behind streaming adoption is instructive. Even
+delivering tessellated mesh data (as opposed to source CAD geometry)
+is considered risky by some vendors: mesh vertices lie on the
+original surfaces, so surface geometry can be reconstructed from
+the mesh with reasonable fidelity. One PLM vendor described arriving
+at streaming specifically because every other delivery mechanism --
+including simplified meshes -- left enough information for a
+determined party to reverse-engineer the original shapes. Pixel
+streaming was the only approach that kept geometry entirely
+server-side.
+
+A related technique explored in prior industry research is
+**view-dependent geometric obfuscation**: mathematically composing
+geometry so that it renders correctly from a specific camera
+viewpoint, but is meaningless from any other angle -- conceptually
+similar to Gaussian splatting. In practice this proved too difficult
+to implement at production scale, which reinforced the industry
+trend toward simpler approaches: omission for what can be withheld,
+streaming for what must be shown but not delivered.
+
 ## Concern 3: Copyright and attribution
 
 Copyright is more straightforward than the previous concerns, but it
@@ -662,6 +742,16 @@ Key considerations regardless of the specific mechanism:
   copyright -- it merely asserts it. Enforcement is a legal and
   business matter, not a data format problem. But clear assertion
   is a prerequisite for enforcement.
+
+- **Display watermarking as prior art.** Some PLM vendors already
+  ship watermarking in their file formats: copyright and watermark
+  data are embedded in the file, and conforming viewers are expected
+  to display a visible mark (a company logo, for example) on screen.
+  This does not prevent copying, but it makes the provenance visible
+  to anyone viewing the asset and creates a social and contractual
+  deterrent. Whether USD should support a similar convention -- and
+  whether Hydra render delegates should be expected to honor it --
+  is a question worth raising.
 
 Whether and how USD should address this is an open question (see
 [Open questions for discussion](#open-questions-for-discussion)).
