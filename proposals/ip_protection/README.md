@@ -35,14 +35,7 @@ Stephen Prideaux-Ghee (PTC), Steve Blackwell (Vertiv), Aaron Luk (NVIDIA)
   - [The recombination problem](#the-recombination-problem)
   - [Living provenance](#living-provenance)
 - [Existing mechanisms in USD](#existing-mechanisms-in-usd)
-  - [Asset resolvers](#asset-resolvers)
-  - [Composition arcs and layering](#composition-arcs-and-layering)
-  - [customData and customLayerData](#customdata-and-customlayerdata)
 - [Separation of concerns](#separation-of-concerns)
-  - [What USD can address](#what-usd-can-address)
-  - [What requires external systems](#what-requires-external-systems)
-  - [What requires guidance and best practices](#what-requires-guidance-and-best-practices)
-- [Relationship to other proposals](#relationship-to-other-proposals)
 - [Design considerations](#design-considerations)
   - [Principles](#principles)
   - [Open questions for discussion](#open-questions-for-discussion)
@@ -168,27 +161,14 @@ IP protection for shared digital assets comes down to a tension between
 two parties:
 
 - **The data owner** (vendor, manufacturer, content creator) wants to
-  share a digital representation of their product, but needs to control
-  what information is accessible and to whom.
+  share a digital representation of their product -- it helps sell the
+  physical product and reduces support costs -- but needs to control
+  what information is accessible and to whom (competitive advantage,
+  regulatory restrictions, liability for unauthorized configurations).
 - **The data consumer** (customer, integrator, simulation engineer) needs
   a usable asset for their workflow -- layout, simulation, visualization,
-  procurement -- and the richer the asset, the more useful it is.
-
-The data owner's incentives to share:
-- A good digital asset helps sell the physical product.
-- Better integration reduces support costs.
-- Richer data makes the vendor's equipment easier to specify and deploy.
-
-The data owner's reasons to withhold:
-- Competitive advantage -- internal construction, control strategies,
-  supplier relationships.
-- Regulatory restrictions -- ITAR, classification levels, export controls.
-- Liability -- unauthorized configurations that appear to work but are
-  not supported.
-
-Consumers, meanwhile, need enough data to build useful simulations. If
-the data is too locked down or too hard to get, people fall back to
-manual workflows.
+  procurement -- and the richer the asset, the more useful it is. If
+  the data is too locked down, people fall back to manual workflows.
 
 This tension is inherent to the domain. This proposal does not try to
 resolve it, but provides a framework for understanding where different
@@ -206,15 +186,7 @@ consistently used as a single label for at least four separate things:
 | **Copyright** | Content used without attribution; ownership claims lost through processing | Metadata that travels with the data | Relates to how metadata travels through composition (see [Open questions](#open-questions-for-discussion)) |
 | **Provenance** | Recombined components presented as supplier-sanctioned configurations | Origin tracking that invalidates on unauthorized recomposition | Relationship to source identifiers; approaches from other domains (digital signatures, watermarking) may inform solutions |
 
-Separating these matters because what works for one may be useless for
-another. Omission handles dissemination well but does nothing for
-copyright. Watermarking helps with provenance but not dissemination.
-Streaming helps with ephemeral data but needs infrastructure that is
-not always available.
-
 ### Why this matters now
-
-Why now:
 
 1. **Cross-industry adoption is accelerating.** Manufacturing,
    infrastructure, and energy companies are evaluating USD for digital
@@ -223,23 +195,16 @@ Why now:
    organizations have strict IP protection requirements that must be
    addressed before they will commit to USD-based workflows.
 
-2. **The composition model invites collaboration.** USD's strength in
-   composing data from multiple sources is precisely what makes IP
-   protection necessary. The more powerful the collaboration, the more
-   critical the protection.
-
-3. **Expectations exceed reality.** People sometimes assume USD
+2. **Expectations exceed reality.** People sometimes assume USD
    will "magically" handle IP protection. Setting clear expectations
    about what USD can and cannot do -- and what data owners need to do
    themselves -- is important for building trust.
 
-4. **The source identifiers proposal provides a foundation.** The
+3. **The source identifiers proposal provides a foundation.** The
    [Separation of Concerns for Identifiers](https://github.com/PixarAnimationStudios/OpenUSD-proposals/pull/105)
    proposal establishes a framework for carrying external system
-   identifiers on USD prims. Provenance, copyright, and access control
-   all depend on the ability to identify the source and lineage of
-   content -- making standardized source identifiers a useful
-   foundation for IP protection workflows.
+   identifiers on USD prims -- a useful foundation for provenance,
+   copyright, and access control workflows.
 
 ## Industry use cases
 
@@ -281,11 +246,9 @@ sharing digital representations of their products:
   supplier.
 
 PLM systems (PTC Windchill, Siemens Teamcenter, Dassault 3DEXPERIENCE)
-handle much of this through access-controlled data management:
-- Different users accessing the same part get different representations
-  based on their authorization level.
-- The challenge: when data "escapes" the PLM environment -- exported as
-  USD files -- the access control context is lost.
+handle this through access-controlled data management -- different users
+get different representations. The challenge: when data escapes the PLM
+environment as exported USD files, the access control context is lost.
 
 ### Data center infrastructure
 
@@ -378,12 +341,10 @@ worries:
   preserve it.
 
 - **Licensing enforcement.** Different licensing terms may apply to
-  different uses of the same asset (evaluation vs. production,
-  single-user vs. enterprise). USD has no built-in mechanism for
-  expressing or enforcing licensing terms, and this is likely outside
-  the scope of what a data format should do -- but the format can
-  facilitate external enforcement by providing standard places for
-  licensing metadata.
+  different uses of the same asset. USD has no built-in mechanism for
+  expressing or enforcing licensing terms -- but it can facilitate
+  external enforcement by providing standard places for licensing
+  metadata.
 
 ## Concern 1: Protection against dissemination
 
@@ -581,17 +542,13 @@ complete data to anyone.
 
 ### Secure asset resolution
 
-Asset resolvers are the main integration point for external access
-control. A custom resolver can:
-
-- **Require authentication** before resolving any asset path, ensuring
-  that only authorized users receive the data.
-- **Return different representations** based on the requesting user's
-  authorization level (delivering a simplified shell to one user and full
-  geometry to another, from the same reference).
-- **Log access** for audit and compliance purposes.
-- **Enforce session-scoped access** where resolved data is valid only for
-  the current session and cannot be cached or persisted.
+USD's [`ArResolver`](https://openusd.org/dev/api/class_ar_resolver.html)
+plugin interface is the main integration point for external access
+control. A custom resolver can require authentication, return different
+representations based on authorization level, log access for audit,
+and enforce session-scoped access. The OpenUSD repository includes a
+[resolver example](https://github.com/PixarAnimationStudios/OpenUSD/tree/dev/extras/usd/examples/usdResolverExample)
+demonstrating the plugin interface.
 
 Resolvers work because they sit at the boundary where external data
 enters the USD stage. But they cannot prevent a user from saving the
@@ -696,34 +653,11 @@ matters for getting people to participate in shared asset ecosystems.
 If you invest in building a high-quality digital asset and put it in a
 library, you want to know your name stays on it.
 
-To illustrate the requirement, one approach that has come up in
-discussion is a standardized copyright field in the USD layer header:
-
-> **Note:** The syntax below is illustrative -- it shows what the
-> requirement *looks like*, not what USD should implement. The
-> specifics of any metadata schema would be the subject of a
-> separate proposal.
-
-```usda
-# Illustrative syntax -- NOT a proposal
-#usda 1.0
-(
-    upAxis = "Y"
-    defaultPrim = "World"
-    metersPerUnit = 1.0
-    copyright = "© ACME Corp. 2026"
-)
-```
-
-If copyright metadata were an array, it could accommodate
-composition:
-
-```usda
-    # Illustrative
-    copyright = ["© ACME Corp. 2026", "© WidgetWorks Inc. 2026"]
-```
-
-Key considerations regardless of the specific mechanism:
+To illustrate the requirement, one approach discussed is a standardized
+copyright field in the USD layer header (e.g., `copyright = "© ACME
+Corp. 2026"`, or an array for composed assets). The specifics of any
+metadata schema would be the subject of a separate proposal, but the
+key considerations are independent of the mechanism:
 
 - **Persistence through flattening.** Copyright metadata needs to
   survive `Flatten` operations. Whether this requires explicit
@@ -843,137 +777,30 @@ Provenance ties into the source identifiers work:
 
 ## Existing mechanisms in USD
 
-### Asset resolvers
+Three USD features are directly relevant to IP protection:
 
-USD's
-[`ArResolver`](https://openusd.org/dev/api/class_ar_resolver.html)
-provides a plugin interface for resolving asset paths to concrete data.
-Custom resolvers can implement authentication, access control, and
-content-dependent resolution -- making this the main extension point
-for IP protection in USD today.
-
-The OpenUSD repository includes a
-[resolver example](https://github.com/PixarAnimationStudios/OpenUSD/tree/dev/extras/usd/examples/usdResolverExample)
-that demonstrates the plugin interface. Each stakeholder implements
-their own resolver to integrate with their specific access control
-infrastructure.
-
-Pluggable authentication is a well-established pattern: OAuth 2.0,
-web server auth modules (Apache `mod_authn_*`, Nginx
-`auth_request`), PAM, and Java JAAS all define a plugin interface
-that each deployment wires to its own infrastructure. Those systems
-go further than `ArResolver` by also standardizing authorization
-rules (token formats, module types, principal semantics).
-`ArResolver` intentionally stops at the extension point -- it
-defines *where* to plug in but says nothing about *how*
-authorization should work, leaving that to the external systems
-where it belongs.
-
-### Composition arcs and layering
-
-USD's composition arcs (references, payloads, inherits, variants,
-specializes) provide natural boundaries for access control:
-- **Payloads** are particularly useful because they are deferred -- a
-  tool can open a stage without loading payloads, then selectively load
-  only those the user is authorized to access.
-- **Layer separation** supports protection through omission: proprietary
-  metadata can be authored in layers that are never distributed, while
-  shared layers contain only what is appropriate for the recipient.
-
-### customData and customLayerData
-
-`customData` (on prims and properties) and `customLayerData` (on layers)
-can carry arbitrary key-value metadata. Copyright, provenance, and
-protection policy could be stored here today, but:
-- Every pipeline must agree on key names independently.
-- Tools have no way to discover or interpret the metadata without prior
-  knowledge of the convention used.
-- `customLayerData` does not survive `Flatten` -- it is per-layer
-  metadata that is discarded when layers are composed into one
-  (see [Revise Use of Layer Metadata](https://github.com/PixarAnimationStudios/OpenUSD-proposals/tree/main/proposals/revise_use_of_layer_metadata)).
-  Any metadata that must persist through flattening (e.g.,
-  copyright) cannot rely on `customLayerData` alone.
+- **Asset resolvers** ([`ArResolver`](https://openusd.org/dev/api/class_ar_resolver.html)) --
+  the main extension point for authentication, access control, and
+  tiered delivery. See [Secure asset resolution](#secure-asset-resolution).
+- **Composition arcs and layering** -- natural privilege boundaries;
+  payloads are especially useful because they are deferred by default.
+  See [Relationship to asset structure and composition](#relationship-to-asset-structure-and-composition).
+- **`customData` and `customLayerData`** -- can carry copyright,
+  provenance, or policy metadata today, but `customLayerData` does not
+  survive `Flatten` (see
+  [Revise Use of Layer Metadata](https://github.com/PixarAnimationStudios/OpenUSD-proposals/tree/main/proposals/revise_use_of_layer_metadata)).
 
 ## Separation of concerns
 
-Part of the value of this proposal is being explicit about what belongs
-where: what can be addressed in USD, what needs external systems, and
-what is really about guidance and best practices.
+| Area | Responsibility | Examples |
+|---|---|---|
+| **USD can address** | Metadata standards, extension points, structural conventions | Copyright metadata schema; advisory flatten-protection annotations; source identifier infrastructure ([Identifiers proposal](https://github.com/PixarAnimationStudios/OpenUSD-proposals/pull/105)) |
+| **External systems** | Access control, content filtering, runtime enforcement | PLM/DAM access control; tiered delivery; streaming; DRM and encryption |
+| **Guidance** | Asset structuring, metadata hygiene, expectation setting | Organizing layers/payloads for protectability; ensuring proprietary metadata does not leak; communicating that USD is not a security boundary |
 
-### What USD can address
-
-- **Copyright and attribution metadata.** Copyright metadata is one
-  area where a standardized field *might* reduce fragmentation
-  across toolchains. The specifics -- schema design, composition
-  semantics, whether this belongs in core USD or in an applied
-  schema convention -- would be the subject of a separate, focused
-  proposal informed by community discussion.
-
-- **Statement-of-intent annotations on composition arcs.** An
-  advisory annotation signaling producer intent regarding
-  flattening has been discussed as an illustration of the
-  requirement (see [Language-level protection concepts](#language-level-protection-concepts-illustrative-not-proposed)).
-  Whether this belongs in USD, in external tooling conventions, or
-  nowhere at all is an open question.
-
-- **Source identifier infrastructure.** The
-  [Separation of Concerns for Identifiers](https://github.com/PixarAnimationStudios/OpenUSD-proposals/pull/105)
-  proposal provides the foundation for provenance tracking by
-  standardizing how source identifiers are carried on prims.
-
-### What requires external systems
-
-- **Access control.** Per-user, per-role, or per-organization access
-  control is the responsibility of asset management systems (PLM, DAM),
-  delivery infrastructure, and custom asset resolvers. USD is a data
-  format, not an access control system.
-
-- **Content filtering and tiered delivery.** Generating different
-  representations for different audiences is a content management
-  function. PLM systems already do this; the guidance in this proposal
-  helps USD asset authors structure their data to support it.
-
-- **Streaming and ephemeral rendering.** Pixel-streaming solutions that
-  prevent client-side data access are infrastructure concerns, not data
-  format concerns.
-
-- **DRM and encryption.** Full DRM schemes require runtime enforcement
-  infrastructure that is outside the scope of a data format
-  specification.
-
-### What requires guidance and best practices
-
-- **Asset structuring for protectability.** How to organize layers,
-  payloads, and sub-assemblies so that external access control systems
-  can serve appropriate content to each user.
-
-- **Metadata hygiene.** Practices for ensuring that proprietary metadata
-  does not inadvertently leak into exported assets.
-
-- **Tiered representation creation.** Guidelines for creating simplified
-  representations that are useful for downstream workflows while omitting
-  sensitive detail.
-
-- **Expectation setting.** Clear communication that USD is not a security
-  boundary and that robust IP protection requires external systems,
-  informed by decades of industry experience.
-
-## Relationship to other proposals
-
-- **[Separation of Concerns for Identifiers](https://github.com/PixarAnimationStudios/OpenUSD-proposals/pull/105)**
-  -- Source identifiers are a prerequisite for provenance and copyright
-  tracking. IP protection builds on the ability to identify the origin
-  and lineage of components.
-
-- **[Revise Use of Layer Metadata](../revise_use_of_layer_metadata/README.md)**
-  -- Proposes migrating stage metadata to applied schemas. Copyright and
-  licensing metadata would follow the conventions established by this
-  proposal.
-
-- **[UI Hints in USD](../ui-hints/README.md)** -- The migration of
-  `displayName` to a presentation-only concern parallels the
-  distinction here between what metadata is for display vs. what is for
-  identification and protection.
+Related proposals:
+[Separation of Concerns for Identifiers](https://github.com/PixarAnimationStudios/OpenUSD-proposals/pull/105) (source identifiers as foundation for provenance and copyright),
+[Revise Use of Layer Metadata](../revise_use_of_layer_metadata/README.md) (migration of stage metadata to applied schemas).
 
 ## Design considerations
 
@@ -999,18 +826,14 @@ what is really about guidance and best practices.
    protection entirely at the data format level risks repeating the
    challenges that DRM schemes have encountered in other domains.
 
-5. **Vendor extensibility.** Different organizations and industries have
-   different IP protection policies. The mechanisms should allow vendors
-   to implement their own protection strategies through asset resolvers
-   and metadata conventions, without requiring changes to core USD for
-   each new policy.
+5. **Extensibility and industry agnosticism.** Different organizations
+   and industries have different IP protection policies. The framework
+   should apply equally to M&E, manufacturing, AECO, data center
+   infrastructure, and domains not yet envisioned -- with domain-specific
+   policies implemented through extension points (asset resolvers,
+   metadata conventions), not hard-coded into USD.
 
-6. **Industry agnosticism.** The framework should apply equally to
-   M&E, manufacturing, AECO, data center infrastructure, and domains
-   not yet envisioned. Domain-specific policies are implemented through
-   the extension points, not hard-coded into the framework.
-
-7. **Pragmatism over perfection.** Perfect IP protection for digital
+6. **Pragmatism over perfection.** Perfect IP protection for digital
    data is an unsolved problem. Practical guidance that addresses the
    majority of real-world concerns is more valuable than a theoretically
    complete solution that is too complex to implement.
@@ -1047,9 +870,13 @@ what is really about guidance and best practices.
      recombination problem?
 
 5. **Flatten-protection semantics.**
-   - Is there value in a `final` or `protected` annotation on
-     composition arcs?
-   - Purely advisory, or enforced by conforming tools?
+   - Is flatten protection even enforceable? Once data is resolved and
+     visible on the composed stage, it is capturable -- the same way a
+     password-protected web page cannot prevent a screenshot once the
+     HTML renders in a browser. Community alignment that this is not
+     enforceable would itself be a useful outcome, allowing effort to
+     shift toward approaches that do work (omission, tiered delivery,
+     streaming).
    - `final` is not currently a keyword in USD. Would introducing it
      create ambiguity or conflict with future USD features?
 
@@ -1061,32 +888,23 @@ what is really about guidance and best practices.
 
 ## Next steps
 
-1. **Submit as pull request.** Post this proposal to the OpenUSD-proposals
-   repository for community discussion and feedback.
+1. **Align on the problem statement and separation of concerns.** Confirm
+   that the four-concern framing resonates and that the separation of
+   what USD can vs. should address is agreed upon.
 
-2. **Align on the problem statement and separation of concerns.** Confirm
-   among stakeholders that the four-concern framing resonates and that the
-   separation of what USD can vs. should address is agreed upon.
-
-3. **Develop asset structuring guidelines.** Create practical guidance --
-   with examples -- for structuring USD assets to support tiered delivery
-   and protection through omission. This is the most immediately
+2. **Develop asset structuring guidelines** with examples for tiered
+   delivery and protection through omission. This is the most immediately
    actionable outcome.
 
-4. **Draft focused follow-up proposals if warranted.** If community
-   discussion identifies concerns that would benefit from USD
-   enhancements, draft targeted proposals with concrete schemas and
-   semantics.
+3. **Draft focused follow-up proposals** for any concerns that warrant
+   USD enhancements (copyright metadata, flatten-protection annotations).
 
-5. **Prototype asset resolver patterns.** Develop reference
-   implementations demonstrating access-controlled resolution with tiered
-   delivery, building on the existing
-   [resolver example](https://github.com/PixarAnimationStudios/OpenUSD/tree/dev/extras/usd/examples/usdResolverExample)
-   in the OpenUSD repository.
+4. **Prototype asset resolver patterns** demonstrating access-controlled
+   resolution with tiered delivery, building on the existing
+   [resolver example](https://github.com/PixarAnimationStudios/OpenUSD/tree/dev/extras/usd/examples/usdResolverExample).
 
-Contributors are welcome on any of these steps. IP protection is a
-cross-organization problem -- no single vendor can define the solution,
-and the guidance will be better for having more perspectives in the room.
+Contributors are welcome. IP protection is a cross-organization problem
+-- no single vendor can define the solution.
 
 ---
 
