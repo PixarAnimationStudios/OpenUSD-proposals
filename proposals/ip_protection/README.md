@@ -102,13 +102,13 @@ a digital representation for simulation, someone exports files, curates
 them, and hands them off.
 
 ```
-┌─────────────────────────────────┐                  ┌──────────────┐
-│        Vendor / Manufacturer    │                  │   Customer   │
-│  ┌──────────┐    ┌──────────┐  │   manual work    │              │
-│  │  Design   │───▶│   CAD    │──┼─────────────────▶│   Simulate   │
-│  └──────────┘    └──────────┘  │                  │  (Digital    │
-│           ISV                   │                  │    Twin)     │
-└─────────────────────────────────┘                  └──────────────┘
++---------------------------------+                  +--------------+
+|       Vendor / Manufacturer     |                  |   Customer   |
+|  +----------+    +----------+   |   manual work    |              |
+|  |  Design  |--->|   CAD    |---+----------------->|   Simulate   |
+|  +----------+    +----------+   |                  |  (Digital    |
+|          ISV                    |                  |    Twin)     |
++---------------------------------+                  +--------------+
 ```
 
 That manual handoff is slow, but it does give the vendor control over
