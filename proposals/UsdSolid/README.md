@@ -13,9 +13,8 @@ It is designed to complement existing USD geometry types, bringing exact-geometr
 - [0. Preamble](#0-preamble)
 - [1. Purpose and scope](#1-purpose-and-scope)
   - [1.1 Problem statement](#11-problem-statement)
-  - [1.2 Why not STEP or opaque data?](#12-why-not-use-existing-formats-like-step-or-treat-breps-as-opaque-data)
-  - [1.3 Proposed approach](#13-proposed-approach)
-  - [1.4 Glossary](#14-glossary)
+  - [1.2 Proposed approach](#12-proposed-approach)
+  - [1.3 Glossary](#13-glossary)
 - [2. Overall design concerns](#2-overall-design-concerns)
   - [2.1 Shape](#21-shape)
   - [2.2 Topology and "use"](#22-topology-and-use)
@@ -47,17 +46,14 @@ The schema is intended to complement and enhance existing USD geometry types, en
 This draft schema is published to engage the broader OpenUSD and CAD/CAE communities.
 Community feedback, exploratory datasets, and downstream integration experiments are encouraged.
 A collection of potential use cases is maintained separately (contact the Geometry WG for access).
-See also the [Frequently Asked Questions](FAQ/Brep%20Schema%20proposal%20FAQ.md) for common questions about this proposal.
 
 > **Note:** The diagrams referenced in this document (`images/`) need to be committed to the repository for them to render correctly. If the images are not displaying, please contact the Geometry WG for the source files.
 
 Adding Breps to OpenUSD creates questions with answers outside the scope of this proposal.
 For example, Breps and Meshes are a source-and-derived data pair that do not have a natural connectivity in OpenUSD.
-A Brep prim should know if it has a Mesh on the stage, so it does not have to be tessellated.
-A Mesh prim should know if there is an associated Brep on the stage when picked.
-Further, a Brep could have multiple meshes in the stage (e.g., LoDs).
 These relationships are important but are not prerequisites for deploying the core Brep schema.
-They will be addressed in follow-up proposals once the base representation is available for experimentation (see [Open Questions, A.5](#a5-add-an-open-questions-section)).
+The companion [problem statement](../cad_geometry/README.md) discusses the "derive on demand" pattern-where the mesh is a runtime cache rather than a persisted prim-which reduces the urgency of formalizing this correlation.
+Brep↔Mesh relationships will be addressed in follow-up work once the base representation is available for experimentation.
 
 
 
@@ -65,42 +61,20 @@ They will be addressed in follow-up proposals once the base representation is av
 
 ## **1.1 Problem statement**
 
-Industrial workflows in manufacturing, robotics, architecture, engineering, and construction increasingly require digital content that is not met by the current USD standard.
-Mesh and subdivision surface representations are approximations: they cannot preserve the mathematical exactness that CAD/CAM/CAE workflows depend on.
-This creates concrete problems:
+The companion [problem statement](../cad_geometry/README.md) establishes why OpenUSD needs native Brep support: industrial workflows in manufacturing, robotics, AEC, and simulation depend on exact geometry that mesh and subdivision surface representations cannot preserve. It documents the gap, surveys existing USD mechanisms, and explains why opaque formats like STEP do not solve the problem.
 
-- **Tolerancing and measurement** -- Machining tolerances, interference checks, and dimensional inspection require exact surface geometry. Meshes introduce approximation error that compounds across these operations.
-- **Simulation fidelity** -- Finite element analysis (FEA), computational fluid dynamics (CFD), and other physics simulations need exact boundary geometry to produce reliable results. Mesh-based approximations require re-tessellation per analysis, losing the authoritative geometry.
-- **Lossless round-tripping** -- When CAD data passes through a mesh-only pipeline, the exact geometry is lost. Returning modified data to the CAD tool requires expensive reconstruction or manual rework.
-- **Authoritative source geometry** -- A Brep can serve as the single source of truth from which meshes at multiple levels of detail are derived on demand, rather than storing pre-tessellated approximations.
-
-OpenUSD is increasingly adopted in industrial contexts -- digital twins, factory simulation, robotics, and AEC -- where these problems are blockers.
-The absence of exact geometry support forces workarounds that undermine USD’s value as a universal scene description.
+This proposal takes that motivation as given and presents a concrete schema design.
 
 Note that this proposal does not impose new requirements on OpenUSD stakeholders who do not work with Brep data.
 Applications that do not need Brep support would not be affected.
 The broader question of how applications declare and discover which USD capabilities they support is being explored in the [USD Profiles](https://github.com/PixarAnimationStudios/OpenUSD-proposals/tree/main/proposals/profiles) proposal.
 
-## **1.2 Why not use existing formats like STEP, or treat Breps as opaque data?**
-
-Two natural questions arise: why not simply reference STEP files from USD, and why not treat Brep data as a black box (similar to how USD handles Volumes)?
-
-- **Why not STEP or another existing format?** STEP is an established ISO standard for CAD data exchange, but like other existing Brep formats, it is a serialization format designed for file interchange on disk. It lacks the in-memory data model needed for scene composition, and cannot participate in USD’s layering, referencing, or override mechanisms. For USD to deliver its core value on Brep data, that data must be expressed natively in USD. Beyond this fundamental issue, STEP has additional limitations:
-  - **No non-manifold support** – STEP cannot represent non-manifold models (also called general bodies or irregular space partitions), which are common in simulation and analysis workflows.
-  - **No flexible annotation** – STEP cannot be annotated with domain-specific metadata. There is no mechanism for attaching per-face material properties, per-region physical properties, or other cross-domain data.
-
-- **Why not a black box?** Treating Breps as opaque file references (similar to how USD handles Volumes) would reduce the implementation to a file path and require an external geometry kernel to extract any information. This forfeits the capabilities that make USD valuable:
-  - **Loss of composition and overrides** – USD’s core strengths (layering, sparse overrides, metadata annotation, scene-level queries) would not apply to the Brep data.
-  - **No direct measurement or simulation** – Applications could not perform measurement, interference checking, or simulation with exact geometry without an external round-trip through a geometry kernel.
-  - **No per-element property assignment** – CAD tools could not assign per-face properties (tolerances, material textures) or per-region properties (material densities) using standard USD mechanisms like GeomSubsets.
-  - **No data aggregation** – USD’s ability to aggregate data from various sources into homogeneous scenes would not extend to Brep data; users would remain dependent on CAD vendor tessellation for visual quality.
-
-## **1.3 Proposed approach**
+## **1.2 Proposed approach**
 
 We propose the adoption of a solid model boundary representation (Brep) schema to USD.
 The proposed schema is an implementation of the Radial Edge Data Model, as first published by Kevin Weiler in 1986.
 In the last 35+ years, this model has proven itself to be flexible and robust, supporting myriad industries via commercial geometry kernels.
-Kevin Weiler’s thesis is available here: [https://webserver2.tecgraf.puc-rio.br/~lfm/teses/KevinWeiler-Doutorado-1986.pdf](http://webserver2.tecgraf.puc-rio.br/~lfm/teses/KevinWeiler-Doutorado-1986.pdf)
+Kevin Weiler's thesis is available here: [https://webserver2.tecgraf.puc-rio.br/~lfm/teses/KevinWeiler-Doutorado-1986.pdf](http://webserver2.tecgraf.puc-rio.br/~lfm/teses/KevinWeiler-Doutorado-1986.pdf)
 
 In support of this model we propose to also add many new curve, surface, and volume geometry types.
 The set of shapes was derived from the Product Representation Compact (PRC) format, a well known ISO standard used in, e.g., 3D models in PDFs.
@@ -108,7 +82,7 @@ The set of shapes was derived from the Product Representation Compact (PRC) form
 Section 2.1 contains a catalog of curve and surface primitives that we propose _UsdSolid_ supports to match the capabilities of PRC.
 The current document does not yet include detailed designs of all geometry types, but we intend to add them soon.
 
-# **1.4 Glossary**
+# **1.3 Glossary**
 
 The following terms are used throughout this proposal.
 
@@ -144,39 +118,39 @@ The following terms are used throughout this proposal.
 
 # **2. Overall design concerns**
 
-Solid models rigorously partition space into regions by connecting sets of surfaces into region boundaries.  
-Regions are the set of points that can be connected by curves of any shape that don't cross boundaries.  
-The boundaries between regions must be watertight to prevent the points of each region from being connectable to one another.  
+Solid models rigorously partition space into regions by connecting sets of surfaces into region boundaries.
+Regions are the set of points that can be connected by curves of any shape that don't cross boundaries.
+The boundaries between regions must be watertight to prevent the points of each region from being connectable to one another.
 Manifold solid objects partition space into one solid and one or more void regions, classifying every point in space as either inside or outside the solid.
 A solid is manifold if for all points on the boundary there exists a neighborhood that is homeomorphic to a two-dimensional disk.
 A Brep that isn't manifold is called "non-manifold."
-Non-manifold objects can partition space from one to any number of regions, where every point in space classifies to one of the model's regions. 
+Non-manifold objects can partition space from one to any number of regions, where every point in space classifies to one of the model's regions.
 
-In the world of geometric modeling, where mathematical approximations of shape are rife, gaps between adjacent surfaces are common. 
+In the world of geometric modeling, where mathematical approximations of shape are rife, gaps between adjacent surfaces are common.
 In the Radial Edge Data Model, the connections of adjacent surfaces are explicit objects that can fill the gaps and create the necessary partition of space.
 
-Several Brep models were considered as options to serve as the base of the _UsdSolid_ schema. 
+Several Brep models were considered as options to serve as the base of the _UsdSolid_ schema.
 The radial edge data model was chosen because in addition to standard manifold modeling, it offers a robust representation of non-manifold modeling.
 In fact, Weiler's model was the first complete non-manifold Brep to explicitly represent topological adjacencies (Lee, 1999).
-The topology models in PRC, STEP, Parasolid, et al map into the proposed radial edge data model. 
-Concepts from both PRC and STEP are used in this proposal, including all of the Brep geometry types in PRC and the volumes concept from STEP. 
+The topology models in PRC, STEP, Parasolid, et al map into the proposed radial edge data model.
+Concepts from both PRC and STEP are used in this proposal, including all of the Brep geometry types in PRC and the volumes concept from STEP.
 As in PRC and STEP, this design supports wire frame models.
 
 The proposed model is composed of 3 parts: shapes, topology objects, and special connectivity objects called "uses."
-Because limiting _UsdPrim_ count is a good practice in general and a must in large scale scenes, the _UsdSolid_ design utilizes a _UsdSolidBrepAPI_ multiple-apply schema that can be applied to a _UsdSolidBrepArray_ IsA schema. 
+Because limiting _UsdPrim_ count is a good practice in general and a must in large scale scenes, the _UsdSolid_ design utilizes a _UsdSolidBrepAPI_ multiple-apply schema that can be applied to a _UsdSolidBrepArray_ IsA schema.
 Each instance of the _UsdSolidBrepAPI_ contains all the shape, topology, and connectivity data of a single Brep, plus metadata such as material bindings and a local transform.
 
 ## **2.1 Shape**
 
-In practice, Breps are a large class of shape functions built on parametric mappings. 
-Today, this includes NURBs curves and surfaces, analytics, and is extendable to helices, offsets and more. 
-USD currently supports the standard NURBS curves, _UsdGeomNurbsCurves_, and NURBS surfaces, _UsdGeomNurbsPatch_. 
+In practice, Breps are a large class of shape functions built on parametric mappings.
+Today, this includes NURBs curves and surfaces, analytics, and is extendable to helices, offsets and more.
+USD currently supports the standard NURBS curves, _UsdGeomNurbsCurves_, and NURBS surfaces, _UsdGeomNurbsPatch_.
 Further, USD has analytic surfaces _UsdGeomCone, UsdGeomCylinder, UsdGeomPlane, UsdGeomSphere_.
 
-The existing USD surface primitives have some issues relative to their use with Breps. 
+The existing USD surface primitives have some issues relative to their use with Breps.
 First, the NURBS curves and surfaces do not support double precision control vertices.
-This is necessary for USD to be accepted as a reference CAD format, so the proposed schema includes double precision geometry. 
-Second, the _UsdGeomCylinder_ surface includes its end caps. 
+This is necessary for USD to be accepted as a reference CAD format, so the proposed schema includes double precision geometry.
+Second, the _UsdGeomCylinder_ surface includes its end caps.
 Also the _UsdGeomCone_ surface often includes an end cap in practice, but does not address caps in the documentation.
 For full flexibility, solid models require that the analytics do not include end caps.
 Third, the parameterization of the sphere, cone, cylinder, plane and volume are currently unspecified.
@@ -190,9 +164,9 @@ Analytic geometry data will include both the analytic definition and the paramet
 We recommend using the PRC parameterizations for analytic geometries.
 Trimming curves are also a part of the _UsdSolidBrepAPI_ schema, packed as the 3D curves are.
 
-For a complete set of geometry, we recommend meeting the PRC standard, certified by the International Organization for Standardization (ISO 14739-1:2014). 
+For a complete set of geometry, we recommend meeting the PRC standard, certified by the International Organization for Standardization (ISO 14739-1:2014).
 To achieve this will require an extensive list of attributes for the _UsdSolidBrepAPI_.
-To match the PRC specification it will be necessary to add the following curves and surfaces. 
+To match the PRC specification it will be necessary to add the following curves and surfaces.
 We also suggest adding _Volume_, _CurveInVolume_, and _SurfInVolume_ types for anticipated future uses.
 New geometry will be added to the _UsdSolidBrepAPI_ schema.
 
@@ -221,42 +195,42 @@ New geometry will be added to the _UsdSolidBrepAPI_ schema.
 ## **2.2 Topology and "use"**
 
 
-When a closed set of curves lay on a surface, it can be used to trim the surface to that set of boundary curves and this results in a trimmed surface. 
-If two surfaces share the same segment of a boundary, this is called an edge and the two surfaces are neighbors. 
+When a closed set of curves lay on a surface, it can be used to trim the surface to that set of boundary curves and this results in a trimmed surface.
+If two surfaces share the same segment of a boundary, this is called an edge and the two surfaces are neighbors.
 If one has a way to keep track of which surfaces share an edge, then they have added a topology to our modeling system.
 
 
-A trimmed surface, together with the information about its neighbors is referred to as a face. 
-A face must have an outer boundary and it may have many inner boundaries or “holes.” 
+A trimmed surface, together with the information about its neighbors is referred to as a face.
+A face must have an outer boundary and it may have many inner boundaries or "holes."
 A shell is a collection of connected faces.
 
 
-If a shell is closed then you have a solid. 
-A solid has an outer closed shell and possibly many inner shells that define cavities in the solid. 
-A “region” encloses space from a closed outer shell or between two closed shells (one inside the other) and has volume. 
-The outer region is the infinite region, so a closed box is represented by two regions – the outer infinite region, and the region within the box. 
-If there is a box within the box ( a ‘thick’ box) then there are 3 regions. 
-The inner box may ‘float in space’ without being attached to the outer box; it may not be physically possible, but it is topologically acceptable.
+If a shell is closed then you have a solid.
+A solid has an outer closed shell and possibly many inner shells that define cavities in the solid.
+A "region" encloses space from a closed outer shell or between two closed shells (one inside the other) and has volume.
+The outer region is the infinite region, so a closed box is represented by two regions - the outer infinite region, and the region within the box.
+If there is a box within the box ( a 'thick' box) then there are 3 regions.
+The inner box may 'float in space' without being attached to the outer box; it may not be physically possible, but it is topologically acceptable.
 
 
-In a closed solid each boundary edge is shared by two neighboring faces (or connected to one face twice, called a seam edge), so this is referred to as a boundary representation or “Brep”. 
-The first implementations of a Brep model were manifold, that is they allowed for only two faces to share an edge, hence the name “twin-edge boundary representation” or Brep. 
+In a closed solid each boundary edge is shared by two neighboring faces (or connected to one face twice, called a seam edge), so this is referred to as a boundary representation or "Brep".
+The first implementations of a Brep model were manifold, that is they allowed for only two faces to share an edge, hence the name "twin-edge boundary representation" or Brep.
 If more than two faces can share an Edge, the topology is non-manifold.
 
 
-It turns out that the manifold restriction that an edge may have only two neighbors is very limiting. 
-Any time you intersect two surfaces, if you look in the neighborhood of a point on the intersection curve, there appear to be four neighboring surfaces at that point. 
-That’s what is meant by being “non-manifold”. 
+It turns out that the manifold restriction that an edge may have only two neighbors is very limiting.
+Any time you intersect two surfaces, if you look in the neighborhood of a point on the intersection curve, there appear to be four neighboring surfaces at that point.
+That's what is meant by being "non-manifold".
 A manifold edge is restricted to having two neighboring surfaces and a non-manifold edge may have more than two surfaces that share that edge.
 
 
-Each boundary of a face consists of a closed loop of edges. 
-In the topology structure each loop has a list of edges, and the same edge may be used by two or more faces and that’s what “EdgeUse” refers to. 
+Each boundary of a face consists of a closed loop of edges.
+In the topology structure each loop has a list of edges, and the same edge may be used by two or more faces and that's what "EdgeUse" refers to.
 The term edgeuse has real importance since there could be many uses of an edge.
 
 
-If one constructs a box (it defines a region) and then adds another box right next to it, then they have another region. 
-Since they share the same face, you can see why “FaceUses” are necessary. 
+If one constructs a box (it defines a region) and then adds another box right next to it, then they have another region.
+Since they share the same face, you can see why "FaceUses" are necessary.
 The face is used on one region, and the face is also used in the other region.
 
 
@@ -265,28 +239,28 @@ The face is used on one region, and the face is also used in the other region.
 The key idea of Brep modeling is that simple trimmed-shapes connect together through their boundaries to form complex geometry models just as a set of small glass pieces welded together along their edges form a stain glass window.
 
 
-Shapes are points, curves, and surfaces each of which is a simply connected point set within a 3D space. 
-Shapes can be infinite (planes, cylinders, lines and such) or finite (Bspline curves and surfaces) but have no sense of boundaries. 
-For every shape there is a simple topology object that adds trimming to the shape so that it can be connected into a Brep model. 
-The simple topology objects are vertices, edges, faces, and regions. 
+Shapes are points, curves, and surfaces each of which is a simply connected point set within a 3D space.
+Shapes can be infinite (planes, cylinders, lines and such) or finite (Bspline curves and surfaces) but have no sense of boundaries.
+For every shape there is a simple topology object that adds trimming to the shape so that it can be connected into a Brep model.
+The simple topology objects are vertices, edges, faces, and regions.
 Important combinations of simple topology objects forming key boundaries within a geometry model are also represented explicitly; a loop is any closed sequence of connected edges used to bound a face and a shell is any set of faces connected edge-to-edge to bound a region.
 
 
-A topology object is “used” each time it connects to the geometry model to form a boundary. 
+A topology object is "used" each time it connects to the geometry model to form a boundary.
 In general, all of the simple topology objects participate in a hierarchy of boundaries: regions are bounded by faces (gathered into connected shells), faces are bounded by edges (gathered into connected loops), and edges are bounded by vertices.
 
 
-Boundaries are used to establish neighbor relations. 
-Topology objects don’t connect directly to their neighbors; rather neighbor relationships are created when two topology objects both use a common boundary.
+Boundaries are used to establish neighbor relations.
+Topology objects don't connect directly to their neighbors; rather neighbor relationships are created when two topology objects both use a common boundary.
 
 
-A geometry model represented as a hierarchy of boundary connections is referred to as a boundary representation or “Brep” model.
+A geometry model represented as a hierarchy of boundary connections is referred to as a boundary representation or "Brep" model.
 
 
-Each use of a topology object (that can be used more than one time in one model) is represented by a specialized use object. 
-Each use of a face to bound a region is represented by a Faceuse. 
-Each use of a loop to bound a face is represented by a Loopuse. 
-Each use of an edge to bound a face is represented by an Edgeuse, and each use of a vertex to bound an edge is represented by a Vertexuse. 
+Each use of a topology object (that can be used more than one time in one model) is represented by a specialized use object.
+Each use of a face to bound a region is represented by a Faceuse.
+Each use of a loop to bound a face is represented by a Loopuse.
+Each use of an edge to bound a face is represented by an Edgeuse, and each use of a vertex to bound an edge is represented by a Vertexuse.
 There are no Shelluse objects because shells are used just once per model to bound one region and the shell object can act as its own Shelluse object.
 
 
@@ -303,7 +277,7 @@ The following diagram shows the Brep object model.
 
 To make the USD implementation as lightweight as possible, yet fully featured, we propose using a single concrete IsA schema as an array of Breps and single apply APIs to add geometry to the array.
 The _UsdSolidBrepArray_ is a flattened format that describes all the necessary connectivity to build the Brep directed graph, with topology and "use" objects; and standardizes the application of select metadata.
-Each geometry type, e.g. _NURBS_ curves or surfaces, are singly apply API schemas. 
+Each geometry type, e.g. _NURBS_ curves or surfaces, are singly apply API schemas.
 Since each type of geometry is optional (a given Brep may have only _NURBS_ and no analytics), this will minimize the number of default valued attributes.
 
 In solid modeling a Brep is not a monolithic object; each object within the Brep has its own instance and may have unique properties.
@@ -340,7 +314,7 @@ In this proposal, whole _UsdSolidBrepArray_ can be referenced to create multiple
 There are 4 types of geometry stored along with the _UsdSolidBrepArray_.
 The simplest is the vertex location, which is stored as a point3d.
 An edge needs a curve and a face needs a surface to have shape, so curves and surfaces are applied APIs, where owning Edges and Faces indicate which geometry gives them shape.
-UVTrimCurves are the fourth geometry object, also an applied API. 
+UVTrimCurves are the fourth geometry object, also an applied API.
 They are the projection of the edge curves onto the face surfaces.
 
 ### **2.4.4 Geometry type extensions**
@@ -357,14 +331,20 @@ The attributes will be compact definitions of the parameterized shape, allowing 
 Efficient modeling or editing a Brep directly on a UsdStage is not a feature of the current schema, but there are clear steps to take to support this.
 Creating schemas for the 11 topology and use objects in the Brep model will allow the entire directed graph structure of the Brep to be represented in USD, which will be well-suited for live editing.
 
-### **2.4.6 Trimming Curves** 
+### **2.4.6 Trimming Curves**
 
 Optional trim curves can be included similarly to curve and surface geometry.
 The edgeuse defines the connection between a given edge and face; the edgeuse stores an index for the associated trimming curve applied API.
-Trim curves are optional in this Brep model because the edge curve defines the model truth, but trim curves are useful for, e.g., speeding up tessellation algorithms.  
+Trim curves are optional in this Brep model because the edge curve defines the model truth, but trim curves are useful for, e.g., speeding up tessellation algorithms.
 
 
 ## **2.5 Flexible design possibilities**
+
+<!-- TODO: Weave in BrepArray rationale from FAQ: BrepArray is not an assembly
+     or scenegraph hierarchy; it is a flexible list of parts. Most users will
+     use 1:1 prim-to-Brep mapping; the array design allows packing of rigidly
+     connected bodies with uniform material properties when prim count matters.
+     Also note sparse overrides for Brep variants as future work. -->
 
 The _UsdSolidBrepArray_ enables many possible design paradigms. 
 We enumerate some of the choices here.
@@ -383,16 +363,16 @@ When constraints are applied throughout this model, the hierarchy is not as usef
 ### **2.5.2 One Assembly per BrepArray**
 
 Next, one might consider a design where each _UsdSolidBrepArray_ contains a set of Breps forming a rigidly connected CAD assembly.
-Consider a car model represented in this way, where an entire door is packed into one _UsdSolidBrepArray_. 
+Consider a car model represented in this way, where an entire door is packed into one _UsdSolidBrepArray_.
 Adding constraints to the door hinge enables simulation or modeling of the door opening and closing.
 
 This simplified model reduces the number of constraints that need to be simulated.
 
 ### **2.5.3 One Model per BrepArray**
 
-Last, a user could pack an entire model into a single _UsdSolidBrepArray_ _UsdPrim_.  
+Last, a user could pack an entire model into a single _UsdSolidBrepArray_ _UsdPrim_.
 This design is well suited to content delivery due to its highly packed nature.
-The single _UsdPrim_ design minimizes the cost of stage traversal. 
+The single _UsdPrim_ design minimizes the cost of stage traversal.
 
 ## **2.6 Other implementations considered**
 
@@ -400,6 +380,11 @@ Several designs were implemented prior to the one presented.
 We discuss them below.
 
 ### **2.6.1 One _UsdPrim_ per geometry object**
+
+<!-- TODO: Weave in FAQ framing: the aim is to support the *use* of designs
+     created in CAD modelers, not CAD *authoring* in USD. Without a strong use
+     case for live CAD design on a UsdStage, the proliferation of prims cannot
+     be justified. -->
 
 The first design attempted created individual prims for each brep and its curves and surfaces.
 This design followed the _UsdGeom_ schema design where _UsdGeomNurbsPatch_ exists for individual surfaces.
@@ -413,9 +398,9 @@ Representing each model with 50,000 _UsdPrim_ is not practical, so a new design 
 
 ### **2.6.2 One _UsdPrim_ per Brep**
 
-The second design eliminated the surface and curve prims. 
+The second design eliminated the surface and curve prims.
 Instead, all of the geometry information was moved into the _Usd_ Brep schema, packing geometry based on type.
-This design improved performance and shrunk file size by 1/3. 
+This design improved performance and shrunk file size by 1/3.
 
 The proposed design is capable of everything the one-_UsdPrim_-per-Brep design is, but adds the capability of packing multiple Breps into a single _UsdPrim_.
 
@@ -426,7 +411,7 @@ Each Brep was added to the _BrepArray_ through an application of a multiple appl
 This design had an advantage over the proposed design in instancing of individual Breps.
 Utilizing _Connections_, a single Brep in this _BrepArray_ could be referenced in another _BrepArray_.
 
-What this design lacked was coherence with USD's style.  
+What this design lacked was coherence with USD's style.
 Using _Connections_ to instance a Brep could be considered an abuse.
 Effective instancing required unique _XformOps_ for each Brep applied to the _BrepArray_, forcing a new means to apply _XformOps_ to subsets of a _UsdPrim_.
 Further, _GeomSubset_ wasn't an option for applying material properties to Breps or Faces, so a new material binding scheme was required.
@@ -460,11 +445,11 @@ Last, the CAD assembly structure should work with constraints imposed by externa
 
 ## **2.8 Tolerance**
 
-A valid Brep will have a single tolerance number that it conforms to.  
-Any two topologically connected geometric entities will have a maximum gap size less than the given tolerance. 
-This includes trim curves, which must be within tolerance to both the surface and projected curve.  
-Degenerate geometry is not allowed, where degeneracy is measured against tolerance.  
-All unconnected topologic entities must have a minimum  gap greater than tolerance. 
+A valid Brep will have a single tolerance number that it conforms to.
+Any two topologically connected geometric entities will have a maximum gap size less than the given tolerance.
+This includes trim curves, which must be within tolerance to both the surface and projected curve.
+Degenerate geometry is not allowed, where degeneracy is measured against tolerance.
+All unconnected topologic entities must have a minimum  gap greater than tolerance.
 The specific rules are enumerated in section 2.9.1.
 
 
@@ -495,7 +480,7 @@ These rules will be included in the schema prior to publishing.
         1. Any edge-edge intersections have a vertex
 1. Regions
     1. All regions are separated by closed shells
-1. Shells   
+1. Shells
     1. A shell may contain either
         1. A vertex
         1. WireEdges and vertices
@@ -503,7 +488,7 @@ These rules will be included in the schema prior to publishing.
 1. Faceuses
     1. The "same" orientated faceuse is on the positive-normal side of the associated surface
 1. Faces
-    1. The face range must be a subset of the surface range 
+    1. The face range must be a subset of the surface range
     1. No sliver faces (a face is a sliver if it is contained in a pipe with radius = tolerance)
     1. No faces with area less than tolerance^2
     1. A face has a single outer loop (seam edges are required)
@@ -514,17 +499,17 @@ These rules will be included in the schema prior to publishing.
         1. or one or more edgeuses
 1. Edges
     1. The edge range must be a subset of the curve range
-    1. No edges contained in a sphere of radius = tolerance 
+    1. No edges contained in a sphere of radius = tolerance
     1. The orientation of the edge is the same as its curve
     1. The curve runs from the start vertex to the end vertex (possibly through either vertex)
 1. Surfaces
     1. No sliver surfaces (a surface is a sliver if it is contained in a pipe with radius = tolerance)
     1. No surface with area less than tolerance^2
 1. Curves
-    1. No edges contained in a sphere of radius = tolerance 
+    1. No edges contained in a sphere of radius = tolerance
     1. Curve orientation is with the parameterization
-1. Trim Curves 
-    1. An edge or wireedge type edgeuse must be represented with NURBS 
+1. Trim Curves
+    1. An edge or wireedge type edgeuse must be represented with NURBS
     1. The control points need not be constrained to lie on the surface, but the curve must
 1. Range
     1. For any range _[a, b]_ it must be that _b > a_
@@ -541,8 +526,8 @@ These rules will be included in the schema prior to publishing.
 #usda 1.0
 (
     subLayers = [
-        @usd/schema.usda@,    
-        @usdGeom/schema.usda@ 
+        @usd/schema.usda@,
+        @usdGeom/schema.usda@
     ]
 )
 
@@ -552,7 +537,7 @@ over "GLOBAL" (
         string libraryPath   = "./"
         string libraryPrefix = "PrelimUsdSolid"
         string tokensPrefix  = "PrelimUsdSolid"
-        bool skipCodeGeneration = true 
+        bool skipCodeGeneration = true
     }
 ) {
 }
@@ -560,60 +545,60 @@ over "GLOBAL" (
 #************************************************************************************
 class BrepArray  "BrepArray" (
     inherits = </Gprim>
-    doc = """ Solid boundary representation models (Breps) rigorously partition space into regions by connecting sets of surfaces into region boundaries.  Regions are the set of points that can be connected by curves of any shape that don't cross boundaries.  
-              The boundaries between regions must be watertight to prevent the points of each region from being connectable to one another.  Manifold solid objects partition space into one solid region and one or more void regions. 
-              Non-manifold objects can partition space from one to any number of regions, where every point in space classifies to one of the model's regions.  
-              In the world of geometric modeling, where mathematical approximations of shape are rife, gaps between adjacent surfaces are common. 
+    doc = """ Solid boundary representation models (Breps) rigorously partition space into regions by connecting sets of surfaces into region boundaries.  Regions are the set of points that can be connected by curves of any shape that don't cross boundaries.
+              The boundaries between regions must be watertight to prevent the points of each region from being connectable to one another.  Manifold solid objects partition space into one solid region and one or more void regions.
+              Non-manifold objects can partition space from one to any number of regions, where every point in space classifies to one of the model's regions.
+              In the world of geometric modeling, where mathematical approximations of shape are rife, gaps between adjacent surfaces are common.
               In this model, the connections of adjacent surfaces are explicit objects that can fill the gaps and create the necessary partition of space.
 
               This model is comprised of 3 parts: shapes, topology objects, and special connectivity objects called "uses." For a thorough description of this model, see the Solid Models USD Proposal.
-    
+
               Rules and restrictions on topology and geometry are listed in the proposal. They will be migrated to this schema when the AOUSD Geometry WG is aligned on a design.
-    
-              For compact storage of the radial edge data model redundant elements are removed from the flattened representation.  There are no attributes for Vertexuses and Loopuses.  
+
+              For compact storage of the radial edge data model redundant elements are removed from the flattened representation.  There are no attributes for Vertexuses and Loopuses.
               The lists of Edgeuses represents pairs, so the arrays size() are half the number of Edgeuses in the Brep model.
 
-              Objects related to a single Brep must be consecutive in the BrepArray. For example, if Brep_1 has a total of 3 shells, the Brep_2 startShellIndx for its first region would be the number 3.  
-              Another example, the Edges of Brep_i are the brep:edgeCount[ii] consecutive Edges starting at SUM(brep:edgeCount[n]), for n in [0,ii).  """ 
+              Objects related to a single Brep must be consecutive in the BrepArray. For example, if Brep_1 has a total of 3 shells, the Brep_2 startShellIndx for its first region would be the number 3.
+              Another example, the Edges of Brep_i are the brep:edgeCount[ii] consecutive Edges starting at SUM(brep:edgeCount[n]), for n in [0,ii).  """
 ) {
     uniform int[]     brep:userId                ( doc = """ optional User applied ID. size() = Number of Breps. """ )
     uniform double[]  brep:intersectTol3d        ( doc = """ Max distance at which two objects intersect and min distance at which two points are distinct. size() = number of Breps. """ )
     uniform double3[] brep:extent                ( doc = """ Brep_ii's bounding box corner pts {XYZmin, XYZmax}. size() = 2 * number of Breps. """ )
     uniform uint[]    brep:regionCount           ( doc = """ Number of Regions in this Brep. size() = Number of Breps """ )
-    
+
     uniform int[]     region:userId              ( doc = """ optional User applied ID for region_ii. size() = number of regions. """ )
     uniform uint[]    region:shellCount          ( doc = """ Region_ii's number of Shells.  1st shell = outerShell, subsequent shells = innerShells. size() = number of regions. """ )
     uniform token[]   region:type                ( allowedTokens = ["solidRegion", "voidRegion"]
                                                    doc = """ solidRegion = region_ii points are in the Brep. voidRegion = region_ii points are out of the Brep. size() = number of regions. """ )
-    
+
     uniform int[]     shell:userId               ( doc = """ optional User applied ID for Shell_ii. size() = number of Shells. """ )
     uniform uint[]    shell:faceuseCount         ( doc = """Shell_ii's number of faceuses. size() = number of Shells """ )
     uniform uint[]    shell:wireEdgeCount        ( doc = """Shell_ii's number of connected wireEdges. size() = number of Shells """ )
     uniform token[]   shell:pointType            ( allowedTokens = ["BrepPointAPI", "none"]
                                                              # in the future add ["BrepMultiPointAPI"]
-                                                   doc = """ Shell_ii's point type when shell:facuseCount[ii] and shell:wireEdgeCount[ii] are 0, else ignored. 
-                                                             BrepPointAPI = Shell_ii's shape is a point in the ShellPoint array. 
+                                                   doc = """ Shell_ii's point type when shell:facuseCount[ii] and shell:wireEdgeCount[ii] are 0, else ignored.
+                                                             BrepPointAPI = Shell_ii's shape is a point in the ShellPoint array.
                                                              size() = number of Shells. """ )
-                                                                                                  
+
     uniform uint[]    faceuse:faceIndex         ( doc = """ Faceuse_ii's face index into face arrays. size() = number of faceuses = 2 x number of faces.""" )
     uniform token[]   faceuse:orientationType   ( allowedTokens = ["same", "opposite"]
                                                   doc = """ same     = the side of the face in the direction pointed to by the face's surface normal.
                                                             opposite = the opposite side of the face. size() = number of faceuses = 2 x number of faces.""" )
-                                                 
-    uniform int[]     face:userId               ( doc = """ optional User applied ID for face_ii. size() = number of faces. """ )  
+
+    uniform int[]     face:userId               ( doc = """ optional User applied ID for face_ii. size() = number of faces. """ )
     uniform uint[]    face:loopCount            ( doc = """ face_ii's number of Loops.  1st loop = outerLoop, subsequent loops = innerLoops. size() = number of faces. """ )
     uniform token[]   face:surfaceType          ( allowedTokens = ["BrepSurfaceNurbAPI"]
-                                                  doc = """ BrepSurfaceNurbAPI = face_ii's shape is a NURB function in the associated surfaceType array. Currently only NURB surfaces allowed. In the future analytics will be added. 
+                                                  doc = """ BrepSurfaceNurbAPI = face_ii's shape is a NURB function in the associated surfaceType array. Currently only NURB surfaces allowed. In the future analytics will be added.
                                                             size() = number of faces. """ )
     uniform token[]   face:trimType             ( allowedTokens = ["rectangular", "general"]
-                                                  doc = """ rectangular = face_ii's outerLoop is a rectangle in the face's parameter space consisting of 4 isoparameter UVTrimCurves. 
+                                                  doc = """ rectangular = face_ii's outerLoop is a rectangle in the face's parameter space consisting of 4 isoparameter UVTrimCurves.
                                                             general     = face_ii's outerLoop is any other shape. size() = number of faces. """ )
     uniform double2[] face:range                ( doc = """ face_ii's domain range corner pts {UVmin, UVmax}. size() = 2 * number of faces. """ )
-                                                
+
     uniform int[]     loop:userId               ( doc = """ optional User applied ID for vertexLoop_ii.  size() = number of vertexLoops. """ )
     uniform uint[]    loop:edgeuseCount         ( doc = """ Loop_ii's number of head-to-tail connected edgeuses. size() = number of Loops. """ )
-    uniform uint[]    loop:vertexIndex          ( doc = """ Loop_ii's vertex index when loop:edgeuseCount[ii] == 0, else ignored.  
-                                                            loop:vertexIndex is required because vertex can be shared with EdgeVertices and wireEdgeVertices. 
+    uniform uint[]    loop:vertexIndex          ( doc = """ Loop_ii's vertex index when loop:edgeuseCount[ii] == 0, else ignored.
+                                                            loop:vertexIndex is required because vertex can be shared with EdgeVertices and wireEdgeVertices.
                                                             size() = number of Loops.""" )
 
     uniform uint[]    edgeuse:edgeIndex         ( doc = """ Edgeuse_ii's edge index into edge arrays. size() = Number of one-sided edge_to_face connections. """ )
@@ -629,8 +614,8 @@ class BrepArray  "BrepArray" (
                                                               - Edges bounding faces mostly connect to the face on just one side of the edge and are represented by just one BrepArray edgeuse, but
                                                                 seam edges that connect closed surfaces and strut edges representing cracks in a face connect to the same face twice and have two BrepArray edgeuses.
                                                               - A right-hand-rule traversal around this edgeuse's edge, orders the edge-face connetions into a series of {face entry side, face exit side} pairs
-                                                                represented as a set of {entryEdgeuse, exitEdgeuse} pairs as: 
-                                                                      RadialEdgeList = { edgeuse[1st]:{entryTopOrBotEdgeuse, exitBotOrTopEdgeuse}, ..., edgeuse[nth]:{entryTopOrBotEdgeuse, exitBotOrTopEdgeuse} } 
+                                                                represented as a set of {entryEdgeuse, exitEdgeuse} pairs as:
+                                                                      RadialEdgeList = { edgeuse[1st]:{entryTopOrBotEdgeuse, exitBotOrTopEdgeuse}, ..., edgeuse[nth]:{entryTopOrBotEdgeuse, exitBotOrTopEdgeuse} }
                                                               - topEntry    = The radial edge traversal enters this edgeuse's face from the top and exits from the bottom as:{ edgeuse[this]:{entryTopEdgeuse, exitBotEdgeuse} }.
                                                                 bottomEntry = The radial edge traversal enters and exits this edgeuse's face in the opposite direction as:{ edgeuse[this]:{entryBotEdgeuse, exitTopEdgeuse} }.
                                                               - size() = Number of one-sided edge_to_face connections. """)
@@ -638,8 +623,8 @@ class BrepArray  "BrepArray" (
     uniform int[]     edge:userId                ( doc = """ optional User applied ID for edge_ii. size() = number of Edges. """ )
     uniform token[]   edge:curveType             ( allowedTokens = ["BrepCurve3dNurbAPI"]
                                                          # in the future add ["BrepCircle3dAPI", "BrepLine3dAPI", and more]
-                                                   doc = """ BrepEdgeCurveNurbAPI = shape for edge_ii is a NURB function in the associated curveType array. 
-                                                             Currently only NURB curves are allowed. In the future analytics will be added. 
+                                                   doc = """ BrepEdgeCurveNurbAPI = shape for edge_ii is a NURB function in the associated curveType array.
+                                                             Currently only NURB curves are allowed. In the future analytics will be added.
                                                              size() = Number of edges. """ )
     uniform double[]  edge:range                 ( doc = """ Edge_ii's domain interval bounds {paramMin, paramMax}. size() = 2 * number of Edges. """ )
     uniform int2[]    edge:vertexIndices         ( doc = """ Edge_ii's vertexIndices = {startVertexIndex, endVertexIndex}.
@@ -648,12 +633,12 @@ class BrepArray  "BrepArray" (
                                                               edge:vertexIndices are required because vertices can be shared with loopVertices and wireEdgeVertices.
                                                               (note: edge:vertexIndices is defined as int2 because uint2 is not defined.  These should be uint values.)
                                                               size() = number of Edges. """ )
-                                                 
+
     uniform int[]     wireEdge:userId            ( doc = """ optional User applied ID for edge_ii. size() = number of wireEdges. """ )
     uniform token[]   wireEdge:curveType         ( allowedTokens = ["BrepCurve3dNurbAPI"]
                                                          # in the future add ["BrepCircle3dAPI", "BrepLine3dAPI", and more]
-                                                   doc = """ BrepCurve3dNurbAPI = shape for wireEdge_ii is a NURB function in the associated curveType array. 
-                                                             Currently only NURB curves are allowed. In the future analytics will be added. 
+                                                   doc = """ BrepCurve3dNurbAPI = shape for wireEdge_ii is a NURB function in the associated curveType array.
+                                                             Currently only NURB curves are allowed. In the future analytics will be added.
                                                              size() = Number of wireEdges. """ )
     uniform double[]  wireEdge:range             ( doc = """ WireEdge_ii's domain interval bounds {paramMin, paramMax}. size() = 2 * number of WireEdges. """ )
     uniform int2[]    wireEdge:vertexIndices     ( doc = """ WireEdge_ii's vertexIndices = {startVertexIndex, EndVertexIndex}.
@@ -662,19 +647,19 @@ class BrepArray  "BrepArray" (
                                                               wireEdge:vertexIndices are required because vertices can be shared with loopVertices and edgeVertices.
                                                               (note: wireEdge:vertexIndices is defined as int2 because uint2 is not defined.  These should be uint values.)
                                                               size() = number of Edges. """ )
-                                                 
+
     uniform int[]     vertex:userId              ( doc = """ optional User applied ID for vertex_ii. size() = number of Vertices. """ )
     uniform token[]   vertex:pointType           ( allowedTokens = ["BrepPointAPI"]
                                                          # in the future add ["BrepMultiPointAPI"]
                                                    doc = """ BrepPointAPI = shape for vertex_ii is a point in the pointType array. size() = number of Vertices. """ )
-} # end class BrepArray "BrepArray"              
+} # end class BrepArray "BrepArray"
 
 #************************************************************************************
 # purpose: point geometry apis for BrepArrays
 # note   :  BrepPointAPI: multipleApply API = associated geometrty of vertices defined by 3d Points
 #             Instance name = vertexPoint  => associated geometry of vertex objects defined by 3d points
 #             Instance name = shellPoint   => associated geometry of vertexShell objects defined by 3d points
-#           
+#
 #          To be added:
 #           BrepMultiPointAPI: multipleApply API = associated geomtery of vertices defined by 3d MultiPoints
 #             Instance name = vertexMultiPoint  => associated geometry of vertex objects defined by 3d multiPoints
@@ -700,9 +685,9 @@ class "BrepPointAPI" (
 } # end class "BrepPointAPI"
 
 #************************************************************************************
-# purpose: curve geometry apis for BrepArrays 
+# purpose: curve geometry apis for BrepArrays
 # note   :  BrepCurveUvNurbAPI: singleApply API = associated geometry of edgeuse objects defined by 2d BSpline curves
-#           
+#
 #           BrepCurve3dNurbAPI  : multipleApply API = associated geometry of edges defined by 3d BSpline curves
 #             Instance name = edgeCurve3dNurb   => associated 3d NURB curve geometry of edge objects
 #             Instance name = wireEdgeCurveNurb => associated 3d NURB curve geometry of wireEdge objects
@@ -721,8 +706,8 @@ class "BrepCurve3dNurbAPI" (
     inherits = </APISchemaBase>
     doc = """ Associated and packed NURB curve descriptions of brep:edges and brep:wireEdges defined by 3d BSpline curves.
 
-    This class varies from the UsdGeomNurbCurves primarily in having double precision control vertices. 
-    
+    This class varies from the UsdGeomNurbCurves primarily in having double precision control vertices.
+
     This schema is analagous to NURB Curves in packages like Maya and Houdini, often used for interchange of rigging
     and modeling curves. We require 'numSegments + 2 * degree + 1' knots (2 more than maya does). This is to be more
     consistent with RenderMan's NURB patch specification. """
@@ -739,8 +724,8 @@ class "BrepCurve3dNurbAPI" (
         customData = {
             string apiName = "curve3dControlVertices"
         }
-    ) 
-    
+    )
+
     uniform uint[] curve3d:nurb:vertexCount (
         doc = """ Curve3d_ii's number of control vertices.
         size() = number of this instance's 3dNURB curves. """
@@ -748,7 +733,7 @@ class "BrepCurve3dNurbAPI" (
             string apiName = "curve3dVertexCount"
         }
     )
-    
+
     uniform uint[] curve3d:nurb:order (
         doc = """ Curve3d_ii's order. Where, Order = Degree + 1.
         Order must be positive and is equal to the degree of the polynomial basis to be evaluated, plus 1.
@@ -758,7 +743,7 @@ class "BrepCurve3dNurbAPI" (
             string apiName = "curve3dOrder"
         }
     )
-    
+
     uniform double[] curve3d:nurb:knots (
         doc = """ Curve3d_ii's knot vector providing curve parameterization.
         The length of the slice of the array for the iith curve must be ( vertexCount[ii] + order[ii] ), and its entries
@@ -767,11 +752,11 @@ class "BrepCurve3dNurbAPI" (
             string apiName = "curve3dKnots"
         }
     )
-    
+
     uniform double[] curve3d:nurb:weights (
-        doc = """ Curve3d_ii's "w" weight components for each control vertex. 
-        Must be the same length as the curveControlVertices attribute. Weights must be positive, w>0. 
-        \\note Some DCC's pre-weight the \\em points, but in this schema, \\em points are not pre-weighted.        
+        doc = """ Curve3d_ii's "w" weight components for each control vertex.
+        Must be the same length as the curveControlVertices attribute. Weights must be positive, w>0.
+        \\note Some DCC's pre-weight the \\em points, but in this schema, \\em points are not pre-weighted.
         size() = curve3dControlVertices.size() """
         customData = {
             string apiName = "Curve3dWeights"
@@ -794,8 +779,8 @@ class "BrepCurveUvNurbAPI" (
         customData = {
             string apiName = "curveUvControlVertices"
         }
-    ) 
-    
+    )
+
     uniform uint[] brep:curveUv:nurb:vertexCount (
         doc = """ CurveUv_ii's number of control vertices.
         size() = number of UV NURB curves. """
@@ -803,7 +788,7 @@ class "BrepCurveUvNurbAPI" (
             string apiName = "curveUvVertexCount"
         }
     )
-    
+
     uniform uint[] brep:curveUv:nurb:order (
         doc = """ CurveUv_ii's order. Where, Order = Degree + 1.
         Order must be positive and is equal to the degree of the polynomial basis to be evaluated, plus 1.
@@ -813,7 +798,7 @@ class "BrepCurveUvNurbAPI" (
             string apiName = "curveUvOrder"
         }
     )
-    
+
     uniform double[] brep:curveUv:nurb:knots (
         doc = """ CurveUv_ii's knot vector providing curve parameterization.
         The length of the slice of the array for the iith curve must be ( vertexCount[ii] + order[ii] ), and its entries
@@ -822,11 +807,11 @@ class "BrepCurveUvNurbAPI" (
             string apiName = "curveUvKnots"
         }
     )
-    
+
     uniform double[] brep:curveUv:nurb:weights (
-        doc = """ CurveUv_ii's "w" weight components for each control vertex. 
-        Must be the same length as the edgeCurveControlVertices attribute. Weights must be positive, w>0. 
-        \\note Some DCC's pre-weight the \\em points, but in this schema, \\em points are not pre-weighted.        
+        doc = """ CurveUv_ii's "w" weight components for each control vertex.
+        Must be the same length as the edgeCurveControlVertices attribute. Weights must be positive, w>0.
+        \\note Some DCC's pre-weight the \\em points, but in this schema, \\em points are not pre-weighted.
         size() = CurveUvControlVertices.size() """
         customData = {
             string apiName = "curveUvWeights"
@@ -835,7 +820,7 @@ class "BrepCurveUvNurbAPI" (
 } # end class "BrepCurveUvNurbAPI"
 
 #************************************************************************************
-# purpose: surface geometry apis for BrepArrays 
+# purpose: surface geometry apis for BrepArrays
 # note   :  BrepSurfaceNurbAPI    : singleApply API = associated geometry of face objects defined by 3d BSpline surfaces
 #          To be added:
 #           BrepSurfacePlaneAPI   : singleApply API = associated geometry of face objects defined by 3d BSpline planes
@@ -849,7 +834,7 @@ class "BrepSurfaceNurbAPI" (
     inherits = </APISchemaBase>
     doc = """ Associated and packed 3d NURBs Surface descriptions of brep:faces defined by 3d BSpline surfaces.
 
-    These attributes vary from the UsdGeomNurbPatch primarily in having double precision control vertices. 
+    These attributes vary from the UsdGeomNurbPatch primarily in having double precision control vertices.
 
     The encoding mostly follows that of RiNuPatch and RiTrimCurve:
     https://renderman.pixar.com/resources/current/RenderMan/geometricPrimitives.html#rinupatch , with some minor
@@ -888,7 +873,7 @@ class "BrepSurfaceNurbAPI" (
             string apiName = "surfaceVVertexCount"
         }
     )
-    
+
     uniform uint[] brep:surface:nurb:uOrder (
         doc = """Order in the U direction.
         Order must be positive and is equal to the degree of the polynomial basis to be evaluated, plus 1.
@@ -897,7 +882,7 @@ class "BrepSurfaceNurbAPI" (
             string apiName = "surfaceUOrder"
         }
     )
-    
+
     uniform uint[] brep:surface:nurb:vOrder (
         doc = """Order in the V direction.
         Order must be positive and is equal to the degree of the polynomial basis to be evaluated, plus 1.
@@ -906,7 +891,7 @@ class "BrepSurfaceNurbAPI" (
             string apiName = "surfaceVOrder"
         }
     )
-    
+
     uniform double[] brep:surface:nurb:uKnots (
         doc = """surface_ii's knot vector in U direction providing U parameterization.
         The length of the slice of the array for the iith surface must be ( uVertexCount[ii] + uOrder[ii] ), and its entries
@@ -928,15 +913,15 @@ class "BrepSurfaceNurbAPI" (
     )
 
     uniform double[] brep:surface:nurb:weights (
-        doc = """ surface_ii's "w" weight components for each control vertex. Must be the same length as the surfaceControlVertices attribute. 
-        All weights must be positive, w>0. 
-        \\note Some DCC's pre-weight the \\em points, but in this schema, \\em points are not pre-weighted. """ 
+        doc = """ surface_ii's "w" weight components for each control vertex. Must be the same length as the surfaceControlVertices attribute.
+        All weights must be positive, w>0.
+        \\note Some DCC's pre-weight the \\em points, but in this schema, \\em points are not pre-weighted. """
         customData = {
             string apiName = "surfaceWeights"
         }
     )
 
-} # end class "BrepSurfaceNurbAPI" 
+} # end class "BrepSurfaceNurbAPI"
 ```
 </details>
 
@@ -1022,7 +1007,7 @@ def Xform "World"
 }
 ```
 </details>
- 
+
 
 ## **4.2. Non-manifold cubes**
 
@@ -1106,7 +1091,7 @@ def Xform "World"
 ```
 
 </details>
- 
+
 
 ## **4.3. Cube With Internal Void**
 
