@@ -611,6 +611,8 @@ of fragmented workarounds.
        properties)
      - IETF internet standards (Experimental → Proposed Standard →
        Internet Standard)
+     - W3C RDF (simple interpretation → RDF vocabulary → RDFS →
+       OWL / domain ontologies)
 
      The underlying pattern is the same across bodies, though the
      terminology differs: Khronos formalizes "vendor extensions" with
@@ -930,7 +932,22 @@ accommodated.
 
 ## Relationship to other proposals
 
-This proposal is conceptually upstream of several related efforts:
+The distinction between a name's role as a structural address within a
+system and its role as an identifier for an external entity is
+well-established in the knowledge representation literature. The
+[W3C RDF 1.1 Semantics](https://www.w3.org/TR/rdf11-mt/) specification
+formalizes this as the difference between *denotation* (the mapping from
+a name to a resource within an interpretation) and *identification* (an
+externally-defined naming relationship). This proposal addresses the same
+separation of concerns in a domain-specific context: USD namespace paths
+are the denotation mechanism; source identifiers are the identification
+mechanism. The design does not seek to reimplement RDF semantics -- USD's
+composition engine, real-time performance requirements, and
+scene-description data model impose fundamentally different constraints --
+but the conceptual alignment is intentional.
+
+This proposal is also conceptually upstream of several related efforts
+within the USD ecosystem:
 
 - **[Unicode Identifiers in USD](../tf_utf8_identifiers/README.md)**
   (Implemented, v24.03) -- Expanded USD's prim name grammar to support Unicode
@@ -1143,6 +1160,16 @@ The following materials were provided as input context for drafting:
     (`sourceId:` attributes). Exercises the `sourceId:<system>:<field>`
     naming pattern and identification/presentation distinction.
 
+14. **[W3C RDF 1.1 Semantics](https://www.w3.org/TR/rdf11-mt/)** --
+    The RDF Model Theory formalizes the distinction between *denotation*
+    (a name's mapping to a resource within an interpretation) and
+    *identification* (an externally-defined naming relationship). The
+    proposal's separation of USD namespace paths from source identifiers
+    is a domain-specific instance of this established knowledge
+    representation principle. RDF's layered semantics (simple
+    interpretation → RDF vocabulary → RDFS → OWL / domain ontologies)
+    also informed the vendor extensibility lifecycle model.
+
 ### Review and refinement
 
 The draft was refined through multiple rounds of internal review. Key
@@ -1205,5 +1232,12 @@ editorial decisions included:
   compliance, and sustainability information beyond identity alone.
   Acknowledged in Emerging Consensus as a dependent but out-of-scope
   concern; named in Scope Creep risk.
+- **RDF 1.1 Model Theory cross-reference** -- cited the W3C RDF 1.1
+  Semantics specification as formal precedent for the
+  denotation/identification distinction. Added to "Relationship to
+  other proposals" and to the vendor extensibility precedent list
+  (RDF's layered semantics as a fourth example alongside Khronos, W3C
+  web platform, and IETF). Explicit disclaimer against reimplementation
+  of RDF semantics.
 
 A prompt-level drafting log has been archived separately.
