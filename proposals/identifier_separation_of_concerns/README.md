@@ -590,7 +590,8 @@ of fragmented workarounds.
 2. **Industry agnosticism.** The mechanism should not be specific to any one
    industry's identifier scheme. It should be flexible enough to carry IFC
    GUIDs, PLM part numbers, M&E asset database IDs, and schemes not yet
-   envisioned.
+   envisioned. This follows from the open world assumption: the set of
+   external systems that may need to identify a prim is not closed.
 
 3. **Vendor extensibility.**
    - Any vendor, standards body, or consortium -- from a single company to
@@ -944,7 +945,12 @@ are the denotation mechanism; source identifiers are the identification
 mechanism. The design does not seek to reimplement RDF semantics -- USD's
 composition engine, real-time performance requirements, and
 scene-description data model impose fundamentally different constraints --
-but the conceptual alignment is intentional.
+but the conceptual alignment is intentional. The Semantic Web's
+[open world assumption](https://www.w3.org/TR/sw-oosd-primer/) --
+that the absence of a statement does not imply its negation -- also
+underpins several design principles here: the mechanism cannot assume
+a closed set of identifier systems, and a prim's lack of a source
+identifier does not mean no external identity exists.
 
 This proposal is also conceptually upstream of several related efforts
 within the USD ecosystem:
@@ -1170,6 +1176,17 @@ The following materials were provided as input context for drafting:
     interpretation → RDF vocabulary → RDFS → OWL / domain ontologies)
     also informed the vendor extensibility lifecycle model.
 
+15. **[A Semantic Web Primer for Object-Oriented Software
+    Developers](https://www.w3.org/TR/sw-oosd-primer/)** (W3C Working
+    Group Note) -- Defines the *open world assumption* (OWA): "if
+    there is not enough information to prove a statement true, then it
+    may be true or false," contrasted with the *closed world assumption*
+    (CWA) of object-oriented and relational systems. The OWA underpins
+    this proposal's industry agnosticism and vendor extensibility
+    principles: the set of external identifier systems is not closed,
+    and the absence of a source identifier on a prim does not imply
+    the absence of external identity.
+
 ### Review and refinement
 
 The draft was refined through multiple rounds of internal review. Key
@@ -1239,5 +1256,10 @@ editorial decisions included:
   (RDF's layered semantics as a fourth example alongside Khronos, W3C
   web platform, and IETF). Explicit disclaimer against reimplementation
   of RDF semantics.
+- **Open world assumption** -- cited the W3C Semantic Web Primer for
+  Object-Oriented Software Developers. Added OWA as theoretical basis
+  for the industry agnosticism and vendor extensibility principles:
+  the set of external identifier systems is not closed, and absence
+  of a source identifier does not imply absence of external identity.
 
 A prompt-level drafting log has been archived separately.
