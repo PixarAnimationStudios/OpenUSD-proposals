@@ -8,6 +8,7 @@ Stephen Prideaux-Ghee (PTC), Steve Blackwell (Vertiv), Aaron Luk (NVIDIA)
 
 - [Introduction](#introduction)
 - [Motivation](#motivation)
+  - [The ecosystem trust problem](#the-ecosystem-trust-problem)
   - [The data sharing gap](#the-data-sharing-gap)
   - [Why USD amplifies the problem](#why-usd-amplifies-the-problem)
 - [Problem statement](#problem-statement)
@@ -93,6 +94,28 @@ coordination across data formats, content management systems, access
 control infrastructure, and industry-specific policies.
 
 ## Motivation
+
+### The ecosystem trust problem
+
+As USD expands into industrial domains, its value increasingly depends
+on vendors contributing content into shared pools -- equipment libraries,
+SimReady repositories, multi-vendor digital twin environments. But
+vendors will not contribute valuable content without confidence that
+their IP is protected. Without that assurance, the rational choice is
+not to participate, and USD's promise of live, composable, multi-vendor
+collaboration does not materialize for the industries where it could
+have the most impact.
+
+**For the industrial USD ecosystem to grow, contributors must trust
+that the IP they feed into it is protected.** The four concerns in this
+proposal -- dissemination, ephemeral data, copyright, and provenance --
+are what that trust requires when you unpack it.
+
+This dynamic is specific to industrial use cases where USD serves as a
+content exchange format. In M&E, studios are largely self-sufficient
+and use USD as a pipeline tool; their IP concerns (multi-vendor VFX,
+pre-release confidentiality) are about protecting existing collaboration,
+not incentivizing contribution to a shared ecosystem.
 
 ### The data sharing gap
 
