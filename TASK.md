@@ -172,6 +172,24 @@ Legend: **KEEP** · **REWRITE** · **CUT** · **DEFER** · **VERIFY**
 
 ---
 
+## Phase 2 execution log (2026-04-26)
+
+- ✅ **Step 1** (commit `229908f`): Cut editorial appendix (110 lines) and its TOC entry.
+- ✅ **Step 2** (commit `5490e14`): Resolved §2.5 and §2.6.1 TODOs by weaving in FAQ rationale. Deleted FAQ file + directory.
+- ✅ **Step 3** (commit `5cc3c4f`): Added §2.10 Risks and §2.11 Open questions (with Steve Ghee attribution). Fixed `# 3 Schema` → `# 3. Schema`.
+- ✅ **Step 4** (commit `00244be`): Dropped dangling image note + private-gdoc reference in Preamble. Normalized Weiler URL. Replaced broken §2.6.4 anchor with link to Proposal 1. Expanded §5 References (Lee, Weiler, PRC ISO, STEP ISO, Hertel/Fuchs use-cases).
+
+**Current file:** 1444 lines (was 1534). Main body before §3 Schema: ~536 lines (well under 1200 target).
+
+## Outstanding before PR (Phase 3)
+
+- [ ] **Prelim prefix**: confirm `prelimUsdSolid` / `PrelimUsdSolidBrepArray` disposition with Aaron.
+- [ ] **Proposal 1 use-case absorption** (PR #11 branch `aluk/exact-geometry-problem-statement`): add MFG + BIM use cases from the Hertel/Fuchs PDF; wait for Steve Ghee's additional case before this commit.
+- [ ] **Schema syntactic spot-check** on §3 `schema.usda` block (low risk; inherited from WG).
+- [ ] **Final read-through** and light line-edit pass.
+
+---
+
 ## Aaron's answers (2026-04-26) — decisions locked
 
 1. **FAQ file**: all relevant content must land in Proposal 1 or Proposal 2; delete the FAQ file after absorption.
