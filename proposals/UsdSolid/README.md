@@ -46,9 +46,7 @@ The schema is intended to complement and enhance existing USD geometry types, en
 
 This draft schema is published to engage the broader OpenUSD and CAD/CAE communities.
 Community feedback, exploratory datasets, and downstream integration experiments are encouraged.
-A collection of potential use cases is maintained separately (contact the Geometry WG for access).
-
-> **Note:** The diagrams referenced in this document (`images/`) need to be committed to the repository for them to render correctly. If the images are not displaying, please contact the Geometry WG for the source files.
+Representative industrial use cases that motivate this work are enumerated in the companion [problem statement](../cad_geometry/README.md).
 
 Adding Breps to OpenUSD creates questions with answers outside the scope of this proposal.
 For example, Breps and Meshes are a source-and-derived data pair that do not have a natural connectivity in OpenUSD.
@@ -75,7 +73,7 @@ The broader question of how applications declare and discover which USD capabili
 We propose the adoption of a solid model boundary representation (Brep) schema to USD.
 The proposed schema is an implementation of the Radial Edge Data Model, as first published by Kevin Weiler in 1986.
 In the last 35+ years, this model has proven itself to be flexible and robust, supporting myriad industries via commercial geometry kernels.
-Kevin Weiler's thesis is available here: [https://webserver2.tecgraf.puc-rio.br/~lfm/teses/KevinWeiler-Doutorado-1986.pdf](http://webserver2.tecgraf.puc-rio.br/~lfm/teses/KevinWeiler-Doutorado-1986.pdf)
+Kevin Weiler's thesis is available here: [https://webserver2.tecgraf.puc-rio.br/~lfm/teses/KevinWeiler-Doutorado-1986.pdf](https://webserver2.tecgraf.puc-rio.br/~lfm/teses/KevinWeiler-Doutorado-1986.pdf)
 
 In support of this model we propose to also add many new curve, surface, and volume geometry types.
 The set of shapes was derived from the Product Representation Compact (PRC) format, a well known ISO standard used in, e.g., 3D models in PDFs.
@@ -424,7 +422,7 @@ The advantage here lies in the common use case of tessellation.
 It is possible to reuse existing standards and technology, such as STEP and open geometry kernels, to reduce the OpenUSD Brep implementation to a file reference, then import to OpenUSD mesh representations of Breps ad hoc.
 
 The AOUSD Geometry Working Group found this design too limiting.
-The rationale for rejecting this approach -- and for not simply adopting STEP -- is discussed in detail in [Section 1.2](#12-why-not-use-existing-formats-like-step-or-treat-breps-as-opaque-data).
+The rationale for rejecting this approach -- and for not simply adopting STEP -- is discussed in detail in the companion [problem statement](../cad_geometry/README.md).
 In summary: including the whole Brep model topology and geometry allows for per-face and per-region property assignment, USD-native composition and overrides, and future assembly design where constraints are assigned between different Brep bodies.
 
 
@@ -1438,6 +1436,9 @@ def Xform "World"
 
 # **5. References**
 
-Lee, K., 1999. Principles of CAD/CAM/CAE Systems. Addison-Wesley Longman Publishing
-Co., Inc., 582 pp.
+- Lee, K., 1999. _Principles of CAD/CAM/CAE Systems._ Addison-Wesley Longman Publishing Co., Inc., 582 pp.
+- Weiler, K., 1986. _Topological Structures for Geometric Modeling._ PhD thesis, Rensselaer Polytechnic Institute. [Full text](https://webserver2.tecgraf.puc-rio.br/~lfm/teses/KevinWeiler-Doutorado-1986.pdf).
+- ISO 14739-1:2014. _Document management — 3D use of Product Representation Compact (PRC) format — Part 1: PRC 10001._ International Organization for Standardization.
+- ISO 10303 (STEP). _Industrial automation systems and integration — Product data representation and exchange._ International Organization for Standardization.
+- Hertel, T., and Fuchs, A., 2024. _AOUSD Geometry WG CAD and BIM use cases_ (v0.2, internal working document). AOUSD Geometry Working Group.
 
