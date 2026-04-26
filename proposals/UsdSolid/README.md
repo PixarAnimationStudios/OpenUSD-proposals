@@ -339,13 +339,13 @@ Trim curves are optional in this Brep model because the edge curve defines the m
 
 ## **2.5 Flexible design possibilities**
 
-<!-- TODO: Weave in BrepArray rationale from FAQ: BrepArray is not an assembly
-     or scenegraph hierarchy; it is a flexible list of parts. Most users will
-     use 1:1 prim-to-Brep mapping; the array design allows packing of rigidly
-     connected bodies with uniform material properties when prim count matters.
-     Also note sparse overrides for Brep variants as future work. -->
+The _UsdSolidBrepArray_ is deliberately an _array_ of Breps rather than a single Brep, but this does not imply it is an assembly or a scenegraph hierarchy. A _UsdSolidBrepArray_ is a flexible list of Brep parts; the semantics of CAD assembly relationships (mates, joints, kinematic constraints) are intentionally out of scope for this proposal (see §2.7).
 
-The _UsdSolidBrepArray_ enables many possible design paradigms. 
+The array form supports a range of authoring paradigms. For most users, a 1:1 mapping between _UsdPrim_ and Brep is the natural choice and leverages OpenUSD's referencing, instancing, and layering directly. When prim-count reduction or uniform material treatment matters, packing a set of rigidly connected Breps into a single _UsdSolidBrepArray_ is also valid. These are not competing designs; they are endpoints on a spectrum the schema permits.
+
+Sparse overrides over Brep variants are a promising avenue for future work: an override layer could represent the delta between a source Brep and a variant without reserializing the full topology. This is not pursued in the current proposal but is preserved as a design possibility (see Open Questions).
+
+The UsdSolidBrepArray enables many possible design paradigms.
 We enumerate some of the choices here.
 
 ### **2.5.1 One Brep per BrepArray**
@@ -380,10 +380,7 @@ We discuss them below.
 
 ### **2.6.1 One _UsdPrim_ per geometry object**
 
-<!-- TODO: Weave in FAQ framing: the aim is to support the *use* of designs
-     created in CAD modelers, not CAD *authoring* in USD. Without a strong use
-     case for live CAD design on a UsdStage, the proliferation of prims cannot
-     be justified. -->
+The central design question in this section — whether to further decompose the Brep across prims — hinges on what OpenUSD is being asked to do with CAD data. The aim of this proposal is to support the _use_ of designs authored in CAD modelers (visualization, clash detection, simulation, measurement, downstream tessellation), not CAD _authoring_ in USD itself. Without a compelling use case for live CAD design on a _UsdStage_, the proliferation of prims that per-geometry-object decomposition would require cannot be justified.
 
 The first design attempted created individual prims for each brep and its curves and surfaces.
 This design followed the _UsdGeom_ schema design where _UsdGeomNurbsPatch_ exists for individual surfaces.
