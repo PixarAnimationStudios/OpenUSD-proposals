@@ -25,6 +25,8 @@ It is designed to complement existing USD geometry types, bringing exact-geometr
   - [2.7 Assemblies](#27-assemblies)
   - [2.8 Tolerance](#28-tolerance)
   - [2.9 Validation](#29-validation)
+  - [2.10 Risks](#210-risks)
+  - [2.11 Open questions](#211-open-questions)
 - [3. Schema](#3-schema)
 - [4. Examples](#4-examples)
   - [4.1 Cube](#41-cube)
@@ -513,7 +515,27 @@ These rules will be included in the schema prior to publishing.
 
 
 
-# **3 Schema**
+## **2.10 Risks**
+
+Several risks warrant attention as this schema moves toward adoption:
+
+- **Validation complexity.** Full geometric validation — for example self-intersection detection, tangency checks, and tolerance enforcement across a Brep — requires a geometry kernel and is outside the scope of OpenUSD. The core representation can be validated topologically (§2.9), but geometric validity will depend on third-party libraries. Producers authoring invalid Breps risk silent downstream failures.
+- **Geometry kernel dependencies for rendering.** Tessellation of Breps for rendering requires a geometry engine. OpenUSD itself does not ship one. A successful deployment depends on an ecosystem path where kernels (open source or commercial) consume UsdSolid data, which introduces a supply-chain consideration for adopters.
+- **Performance at scale.** Large industrial assemblies may contain thousands of Breps and tens of thousands of faces. The packed _UsdSolidBrepArray_ design is motivated in part by prim-count concerns, but composition, layering, and instancing performance at scale remain to be characterized with real datasets.
+- **Ecosystem readiness.** DCCs, viewers, and engines will need to add Brep support before the schema delivers end-user value. The schema's early success will depend on coordinated adoption rather than any single implementation.
+- **Data quality dependence on exporters.** Because Brep authoring happens outside OpenUSD, the quality of UsdSolid data will track the quality of the exporter. Consumers should expect variance until exporters mature, and the WG should consider publishing reference datasets and a conformance suite.
+
+## **2.11 Open questions**
+
+The following design and deployment questions remain open. They are recorded here to support discussion during review and to inform follow-up proposals; they are not blockers to landing the core schema.
+
+- **CAD assembly representation.** Assemblies are out of scope for this proposal (§2.7). Whether they warrant a new schema or a best-practices guide built on existing instancing and constraint tools is open. Interaction with the existing _kind_ metadata — already used for model-hierarchy roles such as `assembly` and `component` — needs careful treatment to avoid overloading terminology.
+- **Brep↔Mesh correlation.** Relating a Brep to its tessellated derivatives is deferred (see §0 Preamble and the companion problem statement). One candidate approach raised by Steve Ghee: because gprims are generally derived from Breps in an N:1 relationship, a gprim could back-reference its source Brep(s) by identifier or path via an applied API schema. At runtime, these cross-references would let a Brep discover which gprims represent it (avoiding redundant tessellation) and let a picked gprim trace back to its source. Supporting an array of references would handle the case where a single gprim is derived from multiple Breps. This mechanism is best designed as a follow-up once the core schema is deployed and real-world datasets are available.
+- **Constraint systems for assembly simulation.** Mates, joints, and kinematic constraints are foundational to industrial simulation and digital-twin workflows. Whether constraints belong in UsdSolid, in a separate schema, or in an OpenUSD-wide constraint proposal is unresolved.
+- **Migration from STEP, PRC, and Parasolid.** Detailed mappings from widely used Brep interchange formats into UsdSolid are needed. The radial edge data model is general enough to accommodate them, but practical exporters will surface decisions about tolerance propagation, PMI (product manufacturing information) carriage, and metadata preservation.
+- **Sparse overrides for Brep variants.** As noted in §2.5, sparse overrides that represent the delta between a source Brep and a variant are an appealing avenue but not pursued here.
+
+# **3. Schema**
 **schema.usda**
 <details>
   <summary>  Click to expand </summary>
