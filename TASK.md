@@ -172,10 +172,40 @@ Legend: **KEEP** · **REWRITE** · **CUT** · **DEFER** · **VERIFY**
 
 ---
 
-## Open questions for Aaron before Phase 2
+## Aaron's answers (2026-04-26) — decisions locked
 
-1. **FAQ file**: delete outright, or leave with a one-line redirect?
-2. **Steve Ghee attribution**: keep by name in Open Questions, or anonymize ("one WG member raised...")?
-3. **Prelim prefix** in schema (`prelimUsdSolid` / `PrelimUsdSolidBrepArray`): keep as preliminary marker for the draft proposal, or strip before PR?
-4. **Use case doc (private Google Doc)**: cut the dangling reference, or ask the WG to make a public summary first?
-5. **Images**: can we confirm `images/image0.png`, `cube.png`, `cube2.png`, `cubevoid.png`, `BrepArray.png`, `FaceMaterials.png` exist in the repo? (Not yet verified in this audit.)
+1. **FAQ file**: all relevant content must land in Proposal 1 or Proposal 2; delete the FAQ file after absorption.
+2. **Steve Ghee**: attribute by name in Open Questions.
+3. **Private Google Doc (`AOUSD Geometry WG CAD and BIM use cases (WIP)`)**: do not reference. Inline the needed content. **Local PDF confirmed present** at `/home/horde/.openclaw/media/inbound/AOUSD_Geometry_WG_CAD_and_BIM_use_cases_WIP_.pdf---*.pdf` (v0.2, 5 Dec 2024, authors: Thorsten Hertel + Alex Fuchs). Extracted to `/tmp/usecases.txt`.
+4. **Prelim prefix** in schema (`prelimUsdSolid` / `PrelimUsdSolidBrepArray`): still open — confirm before final PR. Not blocking Phase 2.
+5. ~~Images verification~~ — **confirmed**: `image0.png`, `cube.png`, `cube2.png`, `cubevoid.png`, `BrepArray.png`, `FaceMaterials.png` all present in `proposals/UsdSolid/images/`. Preamble note about images not being committed can be cut during Phase 2.
+
+## Use case doc — absorption plan
+
+The PDF contains 13 use cases across BIM/AEC and MFG. Most of the MFG cases (which argue specifically for Brep over tessellation) are perfect for Proposal 1; the BIM/AEC cases mostly argue for USD-as-interchange and are broader than Brep-specific motivation.
+
+**Into Proposal 1 (`proposals/cad_geometry/README.md`)** — strengthen the industry use cases section:
+- MFG: Exact collision check after detecting soft clashes (Brep intersection vs mesh approximation)
+- MFG: Access to precise measurement (center of a hole doesn't exist in polygonal rep)
+- MFG: General LOD Handling (re-mesh Brep surfaces with control over feature tolerances)
+- MFG: Re-tesselate to skip unwanted details (reversibility without data loss)
+- MFG: PMI data (exact thread geometry vs cosmetic texture map)
+- BIM: Clash detection across multi-trade projects (loses IP in proprietary formats today)
+- Attribute v0.2, 5 Dec 2024, authors Thorsten Hertel + Alex Fuchs (AOUSD Geometry WG).
+
+**Into Proposal 2 (`proposals/UsdSolid/README.md`)** — lighter touch; Proposal 2 is schema-focused:
+- MFG: Access to constraint data — belongs in §2.7 Assemblies or Open Questions (motivates the mates/constraints transfer and reinforces why assemblies are future work).
+- Cross-reference: §0 Preamble mentions `[collection of potential use cases maintained separately]` — **replace** with a single line pointing to Proposal 1's expanded use cases section (once added). Drop the dangling "contact the Geometry WG for access" sentence.
+
+**Important:** since absorption touches Proposal 1, that's either (a) a separate commit on `aluk/exact-geometry-problem-statement` (already PR #11) or (b) folded into this branch with a separate PR conversation. Need Aaron's call before touching Proposal 1 — PR #11 is already under review. **Lean:** hold Proposal 1 edits until Phase 2 of Proposal 2 is done, then batch the use-case additions into a single follow-up commit to #11 (or a fresh PR on top).
+
+## FAQ absorption — explicit mapping
+
+| FAQ question | Destination |
+| --- | --- |
+| Why not represent Breps as black box? | Already in Proposal 1 (`existing-mechanisms` section). Nothing new to add. Delete FAQ entry. |
+| BrepArray as array / scenegraph conflation | Proposal 2 §2.5 intro — resolves the existing TODO comment. |
+| Can BrepArray be separated into smaller prims? | Proposal 2 §2.6.1 — resolves the existing TODO comment. |
+| Why not STEP? | Already in Proposal 1. Delete FAQ entry. |
+| Sparse overrides for Brep variants (buried in Q1 answer) | Proposal 2 Open Questions section. |
+| Per-BrepArray/per-Brep/per-topology cross-domain annotation (buried in Q1 answer) | Already covered in Proposal 2 §2.4 opening. Verify and skip. |
