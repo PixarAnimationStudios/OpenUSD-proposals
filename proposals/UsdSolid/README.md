@@ -11,7 +11,6 @@ It is designed to complement existing USD geometry types, bringing exact-geometr
 ## Contents
 
 - [Introduction](#introduction)
-  - [Problem statement](#problem-statement)
   - [Proposed approach](#proposed-approach)
 - [Glossary](#glossary)
 - [Design](#design)
@@ -53,25 +52,15 @@ It is designed to complement existing USD geometry types, bringing exact-geometr
 
 ## Introduction
 
-Boundary Representations (Breps) are a fundamental tool for CAD/CAE workflows. This proposal presents a robust and flexible Brep schema for OpenUSD, designed by the AOUSD Geometry Working Group. The schema complements existing USD geometry types and enables aggregation and simulation of data that mesh and subdivision-surface primitives cannot preserve.
-
-This draft is published to engage the broader OpenUSD and CAD/CAE communities. Community feedback, exploratory datasets, and downstream integration experiments are encouraged. Representative industrial use cases that motivate this work are enumerated in the companion [problem statement](../cad_geometry/README.md).
-
-Adding Breps to OpenUSD surfaces questions whose answers are outside the scope of this proposal. The most prominent is the relationship between a Brep and its tessellated derivatives: Breps and meshes are a source-and-derived data pair that does not have a natural connectivity in OpenUSD. These relationships are important but are not prerequisites for deploying the core Brep schema. The companion problem statement discusses the "derive on demand" pattern — where the mesh is a runtime cache rather than a persisted prim — which reduces the urgency of formalizing this correlation. Brep↔Mesh relationships will be addressed in follow-up work once the base representation is available for experimentation.
-
-
-
-### Problem statement
-
-The companion [problem statement](../cad_geometry/README.md) establishes why OpenUSD needs native Brep support: industrial workflows in manufacturing, robotics, AEC, and simulation depend on exact geometry that mesh and subdivision-surface representations cannot preserve. It documents the gap, surveys existing USD mechanisms, and explains why opaque formats like STEP do not solve the problem. This proposal takes that motivation as given and presents a concrete schema design.
+The companion [problem statement](../cad_geometry/README.md) establishes why OpenUSD needs native Brep support and what design principles should guide the schema work. This proposal presents the concrete schema design: a robust and flexible Brep representation for OpenUSD, developed by the AOUSD Geometry Working Group. Community feedback, exploratory datasets, and downstream integration experiments are encouraged.
 
 This proposal does not impose new requirements on OpenUSD stakeholders who do not work with Brep data; applications that do not need Brep support are unaffected. The broader question of how applications declare and discover which USD capabilities they support is being explored in the [USD Profiles](https://github.com/PixarAnimationStudios/OpenUSD-proposals/tree/main/proposals/profiles) proposal.
 
 ### Proposed approach
 
-This proposal adopts a solid-model Boundary Representation (Brep) schema for OpenUSD, implementing the Radial Edge Data Model first published by [Kevin Weiler in 1986](https://webserver2.tecgraf.puc-rio.br/~lfm/teses/KevinWeiler-Doutorado-1986.pdf). Over 35+ years this model has proven flexible and robust, supporting many industries via commercial geometry kernels.
+The schema implements a solid-model Boundary Representation (Brep) built on the Radial Edge Data Model ([Weiler, 1986](https://webserver2.tecgraf.puc-rio.br/~lfm/teses/KevinWeiler-Doutorado-1986.pdf)). For background on why this model was chosen over alternatives, see the companion problem statement's [design principles](../cad_geometry/README.md#principles).
 
-In support of the model, this proposal also introduces additional curve, surface, and volume geometry types. The set of shapes is derived from the Product Representation Compact (PRC) format, an ISO standard widely used for 3D content (including models embedded in PDFs). The [Shape](#shape) section below catalogs the curve and surface primitives _UsdSolid_ is intended to support to match PRC's capabilities. Detailed designs of the additional geometry types are not yet included in this document and will be added in a subsequent revision.
+In support of the model, this proposal also introduces additional curve, surface, and volume geometry types derived from the Product Representation Compact (PRC) format (ISO 14739-1:2014). The [Shape](#shape) section below catalogs the curve and surface primitives _UsdSolid_ is intended to support. Detailed designs of the additional geometry types are not yet included in this document and will be added in a subsequent revision.
 
 ## Glossary
 
@@ -82,6 +71,8 @@ For definitions of BRep, Curve, Edge, Edgeuse, Face, Faceuse, Geometry, Loop, Ma
 **Wire edge** -- A `wireEdge` is a topologically standalone edge that is not part of any face loop. Wire edges carry the same curve geometry as loop-bounding edges but exist independently as one-dimensional features within a shell. They are represented in the schema by `wireEdge:*` arrays.
 
 ## Design
+
+The following subsections introduce the Brep data model concepts that inform the schema design. Readers already familiar with Brep topology from the companion [problem statement](../cad_geometry/README.md) may wish to skip to [USD implementation](#usd-implementation).
 
 Solid models rigorously partition space into regions by connecting sets of surfaces into region boundaries. Regions are the set of points that can be connected by curves of any shape that do not cross boundaries. The boundaries between regions must be watertight to prevent the points of each region from being connectable to one another. Manifold solid objects partition space into one solid and one or more void regions, classifying every point in space as either inside or outside the solid. A solid is manifold if for all points on the boundary there exists a neighborhood that is homeomorphic to a two-dimensional disk. A Brep that is not manifold is called "non-manifold." Non-manifold objects can partition space into one to any number of regions, where every point in space classifies to one of the model's regions.
 
@@ -466,12 +457,14 @@ Several risks warrant attention as this schema moves toward adoption:
 - **Ecosystem readiness.** DCCs, viewers, and engines will need to add Brep support before the schema delivers end-user value. The schema's early success will depend on coordinated adoption rather than any single implementation.
 - **Data quality dependence on exporters.** Because Brep authoring happens outside OpenUSD, the quality of UsdSolid data will track the quality of the exporter. Consumers should expect variance until exporters mature, and the WG should consider publishing reference datasets and a conformance suite.
 
+The companion problem statement identifies additional ecosystem-level risks including adoption sequencing and core-team alignment.
+
 ### Open questions
 
 The following design and deployment questions remain open. They are recorded here to support discussion during review and to inform follow-up proposals; they are not blockers to landing the core schema.
 
 - **CAD assembly representation.** Assemblies are out of scope for this proposal (see [Assemblies](#assemblies)). Whether they warrant a new schema or a best-practices guide built on existing instancing and constraint tools is open. Interaction with the existing _kind_ metadata — already used for model-hierarchy roles such as `assembly` and `component` — needs careful treatment to avoid overloading terminology.
-- **Brep↔Mesh correlation.** Relating a Brep to its tessellated derivatives is deferred (see [Introduction](#introduction) and the companion problem statement). One candidate approach raised by Steve Ghee: because gprims are generally derived from Breps in an N:1 relationship, a gprim could back-reference its source Brep(s) by identifier or path via an applied API schema. At runtime, these cross-references would let a Brep discover which gprims represent it (avoiding redundant tessellation) and let a picked gprim trace back to its source. Supporting an array of references would handle the case where a single gprim is derived from multiple Breps. This mechanism is best designed as a follow-up once the core schema is deployed and real-world datasets are available.
+- **Brep↔Mesh correlation.** Relating a Brep to its tessellated derivatives is deferred (see the companion [problem statement](../cad_geometry/README.md)). One candidate approach raised by Steve Ghee: because gprims are generally derived from Breps in an N:1 relationship, a gprim could back-reference its source Brep(s) by identifier or path via an applied API schema. At runtime, these cross-references would let a Brep discover which gprims represent it (avoiding redundant tessellation) and let a picked gprim trace back to its source. Supporting an array of references would handle the case where a single gprim is derived from multiple Breps. This mechanism is best designed as a follow-up once the core schema is deployed and real-world datasets are available.
 - **Constraint systems for assembly simulation.** Mates, joints, and kinematic constraints are foundational to industrial simulation and digital-twin workflows. Whether constraints belong in UsdSolid, in a separate schema, or in an OpenUSD-wide constraint proposal is unresolved.
 - **Migration from STEP, PRC, and Parasolid.** Detailed mappings from widely used Brep interchange formats into UsdSolid are needed. The radial edge data model is general enough to accommodate them, but practical exporters will surface decisions about tolerance propagation, PMI (product manufacturing information) carriage, and metadata preservation.
 - **Sparse overrides for Brep variants.** As noted in [Flexible design possibilities](#flexible-design-possibilities), sparse overrides that represent the delta between a source Brep and a variant are an appealing avenue but not pursued here.
