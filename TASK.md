@@ -227,3 +227,59 @@ The PDF contains 13 use cases across BIM/AEC and MFG. Most of the MFG cases (whi
 | Why not STEP? | Already in Proposal 1. Delete FAQ entry. |
 | Sparse overrides for Brep variants (buried in Q1 answer) | Proposal 2 Open Questions section. |
 | Per-BrepArray/per-Brep/per-topology cross-domain annotation (buried in Q1 answer) | Already covered in Proposal 2 §2.4 opening. Verify and skip. |
+
+## Phase 3 execution log (2026-04-27)
+
+### Phase 3A — Schema spot-check (2026-04-26, prior session)
+- ✅ (commit `8828e78`): `PHASE3A-FINDINGS.md` created and committed.
+  - Cat A: 9 typos in schema doc strings.
+  - Cat B: `44fb3c1` (Joe, 2026-04-03) changed schema from split-per-axis to packed form; examples were never updated. All 5 examples are stale.
+  - Cat C: "binormal" wording in doc strings — needs Joe/Martin preferred phrasing.
+  - **Aaron shared findings doc with Martin Watt and Joe Umhoefer on 2026-04-27.** Awaiting their response.
+
+### Phase 3B — Glossary reconcile + editorial pass
+- ✅ (commit `12b3679`): Added `Vertex` and `Wire edge` to §1.3 glossary; added cross-reference sentence to Proposal 1's BRep Glossary in Appendix A.
+- ✅ (commit `4c52538`): Editorial pass on §§0–2:
+  - §0 Preamble: consolidated paragraph structure; explicit Brep↔Mesh naming; fixed `pattern-where` → `pattern — where`.
+  - §1.1: merged paragraphs; `would not be affected` → `are unaffected`.
+  - §1.2: eliminated "We propose" opener and "we intend to add them soon"; reframed as "This proposal adopts…"; inlined Weiler thesis citation as hyperlink.
+  - §2 intro: capitalized "Radial Edge Data Model" consistently; removed contractions; smoothed sentence flow.
+  - §2.1: fixed "that currently supported" → "than currently supported"; replaced "We recommend" / "We also suggest" with impersonal forms.
+- ✅ (commit `3c4939d`): Fixed §1.3 Glossary header level (h1 → h2).
+
+### Phase 3 — TOC + anchor sanity
+- ✅ Verified all TOC anchors resolve to actual headers. Only issue was §1.3 header level (fixed above). No drift.
+
+### Phase 3 — Prelim prefix implementer note
+- ✅ (commit `497025a`): Added blockquote note above schema block explaining `prelimUsdSolid` / `PrelimUsdSolid` prefix + `skipCodeGeneration = true`, citing `UsdRenderGaussian` precedent.
+
+### Phase 3 — Schema syntactic smoke test
+- ✅ Bracket/brace balance verified (balanced when doc strings excluded). Triple-quote pairing correct (118, even). No structural issues found. No commit needed.
+
+### Phase 3 — Final read-through
+- ✅ No residual TODO/FIXME/TBD markers. §§0–2 editorial consistent. §§2.10, 2.11, 5 clean.
+- File now at 1423 lines (was 1534 at start, 1444 after Phase 2).
+
+---
+
+## Current status summary
+
+### Completed (non-blocked work)
+- [x] Phase 1: Full audit
+- [x] Phase 2: Appendix cut, FAQ absorption, Risks/Open Questions, broken links, editorial fixes, references expansion
+- [x] Phase 3A: Schema spot-check → PHASE3A-FINDINGS.md
+- [x] Phase 3B: Glossary reconcile + editorial pass §§0–2
+- [x] Phase 3C: Example narration (5 examples)
+- [x] TOC + anchor sanity
+- [x] Prelim prefix note
+- [x] Schema syntactic smoke test
+- [x] Final read-through
+
+### Blocked on Joe/Martin (shared 2026-04-27)
+- [ ] Cat A: 9 typo fixes in schema doc strings
+- [ ] Cat B: Rewrite all 5 examples to match packed schema form (`44fb3c1`)
+- [ ] Cat C: "binormal" wording in doc strings
+
+### Blocked on external input
+- [ ] Proposal 1 use-case absorption (PR #11) — waiting on Steve Ghee's additional case from Aaron
+- [ ] Opening a PR for Proposal 2 — Aaron's call on timing
