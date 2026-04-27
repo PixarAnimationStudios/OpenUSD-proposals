@@ -40,19 +40,11 @@ It is designed to complement existing USD geometry types, bringing exact-geometr
 
 # **0. Preamble**
 
-Boundary Representations (Breps) are a fundamental tool for CAD/CAE workflows.
-This proposal presents a robust and flexible Brep schema for OpenUSD, designed by the AOUSD Geometry Working Group.
-The schema is intended to complement and enhance existing USD geometry types, enabling aggregation and simulation of data unique to the capabilities of OpenUSD.
+Boundary Representations (Breps) are a fundamental tool for CAD/CAE workflows. This proposal presents a robust and flexible Brep schema for OpenUSD, designed by the AOUSD Geometry Working Group. The schema complements existing USD geometry types and enables aggregation and simulation of data that mesh and subdivision-surface primitives cannot preserve.
 
-This draft schema is published to engage the broader OpenUSD and CAD/CAE communities.
-Community feedback, exploratory datasets, and downstream integration experiments are encouraged.
-Representative industrial use cases that motivate this work are enumerated in the companion [problem statement](../cad_geometry/README.md).
+This draft is published to engage the broader OpenUSD and CAD/CAE communities. Community feedback, exploratory datasets, and downstream integration experiments are encouraged. Representative industrial use cases that motivate this work are enumerated in the companion [problem statement](../cad_geometry/README.md).
 
-Adding Breps to OpenUSD creates questions with answers outside the scope of this proposal.
-For example, Breps and Meshes are a source-and-derived data pair that do not have a natural connectivity in OpenUSD.
-These relationships are important but are not prerequisites for deploying the core Brep schema.
-The companion [problem statement](../cad_geometry/README.md) discusses the "derive on demand" pattern-where the mesh is a runtime cache rather than a persisted prim-which reduces the urgency of formalizing this correlation.
-Brep↔Mesh relationships will be addressed in follow-up work once the base representation is available for experimentation.
+Adding Breps to OpenUSD surfaces questions whose answers are outside the scope of this proposal. The most prominent is the relationship between a Brep and its tessellated derivatives: Breps and meshes are a source-and-derived data pair that does not have a natural connectivity in OpenUSD. These relationships are important but are not prerequisites for deploying the core Brep schema. The companion problem statement discusses the "derive on demand" pattern — where the mesh is a runtime cache rather than a persisted prim — which reduces the urgency of formalizing this correlation. Brep↔Mesh relationships will be addressed in follow-up work once the base representation is available for experimentation.
 
 
 
@@ -60,26 +52,15 @@ Brep↔Mesh relationships will be addressed in follow-up work once the base repr
 
 ## **1.1 Problem statement**
 
-The companion [problem statement](../cad_geometry/README.md) establishes why OpenUSD needs native Brep support: industrial workflows in manufacturing, robotics, AEC, and simulation depend on exact geometry that mesh and subdivision surface representations cannot preserve. It documents the gap, surveys existing USD mechanisms, and explains why opaque formats like STEP do not solve the problem.
+The companion [problem statement](../cad_geometry/README.md) establishes why OpenUSD needs native Brep support: industrial workflows in manufacturing, robotics, AEC, and simulation depend on exact geometry that mesh and subdivision-surface representations cannot preserve. It documents the gap, surveys existing USD mechanisms, and explains why opaque formats like STEP do not solve the problem. This proposal takes that motivation as given and presents a concrete schema design.
 
-This proposal takes that motivation as given and presents a concrete schema design.
-
-Note that this proposal does not impose new requirements on OpenUSD stakeholders who do not work with Brep data.
-Applications that do not need Brep support would not be affected.
-The broader question of how applications declare and discover which USD capabilities they support is being explored in the [USD Profiles](https://github.com/PixarAnimationStudios/OpenUSD-proposals/tree/main/proposals/profiles) proposal.
+This proposal does not impose new requirements on OpenUSD stakeholders who do not work with Brep data; applications that do not need Brep support are unaffected. The broader question of how applications declare and discover which USD capabilities they support is being explored in the [USD Profiles](https://github.com/PixarAnimationStudios/OpenUSD-proposals/tree/main/proposals/profiles) proposal.
 
 ## **1.2 Proposed approach**
 
-We propose the adoption of a solid model boundary representation (Brep) schema to USD.
-The proposed schema is an implementation of the Radial Edge Data Model, as first published by Kevin Weiler in 1986.
-In the last 35+ years, this model has proven itself to be flexible and robust, supporting myriad industries via commercial geometry kernels.
-Kevin Weiler's thesis is available here: [https://webserver2.tecgraf.puc-rio.br/~lfm/teses/KevinWeiler-Doutorado-1986.pdf](https://webserver2.tecgraf.puc-rio.br/~lfm/teses/KevinWeiler-Doutorado-1986.pdf)
+This proposal adopts a solid-model Boundary Representation (Brep) schema for OpenUSD, implementing the Radial Edge Data Model first published by [Kevin Weiler in 1986](https://webserver2.tecgraf.puc-rio.br/~lfm/teses/KevinWeiler-Doutorado-1986.pdf). Over 35+ years this model has proven flexible and robust, supporting many industries via commercial geometry kernels.
 
-In support of this model we propose to also add many new curve, surface, and volume geometry types.
-The set of shapes was derived from the Product Representation Compact (PRC) format, a well known ISO standard used in, e.g., 3D models in PDFs.
-
-Section 2.1 contains a catalog of curve and surface primitives that we propose _UsdSolid_ supports to match the capabilities of PRC.
-The current document does not yet include detailed designs of all geometry types, but we intend to add them soon.
+In support of the model, this proposal also introduces additional curve, surface, and volume geometry types. The set of shapes is derived from the Product Representation Compact (PRC) format, an ISO standard widely used for 3D content (including models embedded in PDFs). Section 2.1 catalogs the curve and surface primitives _UsdSolid_ is intended to support to match PRC's capabilities. Detailed designs of the additional geometry types are not yet included in this document and will be added in a subsequent revision.
 
 # **1.3 Glossary**
 
@@ -121,27 +102,13 @@ The following terms are used throughout this proposal. Reviewers approaching fro
 
 # **2. Overall design concerns**
 
-Solid models rigorously partition space into regions by connecting sets of surfaces into region boundaries.
-Regions are the set of points that can be connected by curves of any shape that don't cross boundaries.
-The boundaries between regions must be watertight to prevent the points of each region from being connectable to one another.
-Manifold solid objects partition space into one solid and one or more void regions, classifying every point in space as either inside or outside the solid.
-A solid is manifold if for all points on the boundary there exists a neighborhood that is homeomorphic to a two-dimensional disk.
-A Brep that isn't manifold is called "non-manifold."
-Non-manifold objects can partition space from one to any number of regions, where every point in space classifies to one of the model's regions.
+Solid models rigorously partition space into regions by connecting sets of surfaces into region boundaries. Regions are the set of points that can be connected by curves of any shape that do not cross boundaries. The boundaries between regions must be watertight to prevent the points of each region from being connectable to one another. Manifold solid objects partition space into one solid and one or more void regions, classifying every point in space as either inside or outside the solid. A solid is manifold if for all points on the boundary there exists a neighborhood that is homeomorphic to a two-dimensional disk. A Brep that is not manifold is called "non-manifold." Non-manifold objects can partition space into one to any number of regions, where every point in space classifies to one of the model's regions.
 
-In the world of geometric modeling, where mathematical approximations of shape are rife, gaps between adjacent surfaces are common.
-In the Radial Edge Data Model, the connections of adjacent surfaces are explicit objects that can fill the gaps and create the necessary partition of space.
+In geometric modeling, where mathematical approximations of shape are common, gaps between adjacent surfaces are unavoidable. In the Radial Edge Data Model, the connections of adjacent surfaces are explicit objects that can fill these gaps and create the necessary partition of space.
 
-Several Brep models were considered as options to serve as the base of the _UsdSolid_ schema.
-The radial edge data model was chosen because in addition to standard manifold modeling, it offers a robust representation of non-manifold modeling.
-In fact, Weiler's model was the first complete non-manifold Brep to explicitly represent topological adjacencies (Lee, 1999).
-The topology models in PRC, STEP, Parasolid, et al map into the proposed radial edge data model.
-Concepts from both PRC and STEP are used in this proposal, including all of the Brep geometry types in PRC and the volumes concept from STEP.
-As in PRC and STEP, this design supports wire frame models.
+Several Brep models were considered as options for the base of the _UsdSolid_ schema. The Radial Edge Data Model was chosen because, in addition to standard manifold modeling, it offers a robust representation of non-manifold modeling. Weiler's model was the first complete non-manifold Brep to explicitly represent topological adjacencies (Lee, 1999). The topology models in PRC, STEP, Parasolid, and others map into the proposed Radial Edge Data Model. Concepts from both PRC and STEP are used in this proposal, including all of the Brep geometry types in PRC and the volumes concept from STEP. As in PRC and STEP, this design supports wire-frame models.
 
-The proposed model is composed of 3 parts: shapes, topology objects, and special connectivity objects called "uses."
-Because limiting _UsdPrim_ count is a good practice in general and a must in large scale scenes, the _UsdSolid_ design utilizes a _UsdSolidBrepAPI_ multiple-apply schema that can be applied to a _UsdSolidBrepArray_ IsA schema.
-Each instance of the _UsdSolidBrepAPI_ contains all the shape, topology, and connectivity data of a single Brep, plus metadata such as material bindings and a local transform.
+The proposed model is composed of three parts: shapes, topology objects, and special connectivity objects called "uses." Because limiting _UsdPrim_ count is good practice in general and essential in large-scale scenes, the _UsdSolid_ design utilizes a _UsdSolidBrepAPI_ multiple-apply schema that can be applied to a _UsdSolidBrepArray_ IsA schema. Each instance of the _UsdSolidBrepAPI_ contains all the shape, topology, and connectivity data of a single Brep, plus metadata such as material bindings and a local transform.
 
 ## **2.1 Shape**
 
@@ -158,20 +125,11 @@ Also the _UsdGeomCone_ surface often includes an end cap in practice, but does n
 For full flexibility, solid models require that the analytics do not include end caps.
 Third, the parameterization of the sphere, cone, cylinder, plane and volume are currently unspecified.
 In order to trim them properly for solid modeling the analytics will need parameterizations and double precision.
-Last, the CAD community uses a larger set of analytic surfaces that currently supported in USD.
+Last, the CAD community uses a larger set of analytic surfaces than currently supported in USD.
 
-In this proposal each geometry type is defined by a set of attributes that reside within the _UsdSolidBrepAPI_ schema.
-The geometry is packed within like types, as in the _UsdGeomNurbsCurves_ class.
-Where necessary, the geometry will have double precision attributes, e.g., NURBS curves have double precision control vertices, weights, and knots.
-Analytic geometry data will include both the analytic definition and the parameterization, e.g., a sphere will have a radius and also a frame of reference that defines the parameterized surface origin, orientation, beginning, and end.
-We recommend using the PRC parameterizations for analytic geometries.
-Trimming curves are also a part of the _UsdSolidBrepAPI_ schema, packed as the 3D curves are.
+In this proposal, each geometry type is defined by a set of attributes that reside within the _UsdSolidBrepAPI_ schema. The geometry is packed within like types, as in the _UsdGeomNurbsCurves_ class. Where necessary, the geometry will have double-precision attributes — for example, NURBS curves have double-precision control vertices, weights, and knots. Analytic geometry data will include both the analytic definition and the parameterization — for example, a sphere will have a radius and also a frame of reference that defines the parameterized surface origin, orientation, beginning, and end. The PRC parameterizations are recommended for analytic geometries. Trimming curves are also part of the _UsdSolidBrepAPI_ schema, packed as the 3D curves are.
 
-For a complete set of geometry, we recommend meeting the PRC standard, certified by the International Organization for Standardization (ISO 14739-1:2014).
-To achieve this will require an extensive list of attributes for the _UsdSolidBrepAPI_.
-To match the PRC specification it will be necessary to add the following curves and surfaces.
-We also suggest adding _Volume_, _CurveInVolume_, and _SurfInVolume_ types for anticipated future uses.
-New geometry will be added to the _UsdSolidBrepAPI_ schema.
+For a complete set of geometry, the target is to meet the PRC standard (ISO 14739-1:2014). Achieving this will require an extensive list of attributes for the _UsdSolidBrepAPI_. The following curves and surfaces are needed to match the PRC specification. _Volume_, _CurveInVolume_, and _SurfInVolume_ types are also included for anticipated future uses. New geometry will be added to the _UsdSolidBrepAPI_ schema.
 
 
 | Curves | Surfaces | Volumes |
