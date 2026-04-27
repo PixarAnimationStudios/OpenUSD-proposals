@@ -282,6 +282,19 @@ re-tessellation:
   these requirements; shipping exact geometry eliminates the
   round-trip through the source CAD system.
 
+- **Cross-domain — wireframe visualization and IP protection.** Not
+  every review needs photorealistic rendering. Wireframe views
+  derived from Brep edges can present simplified representations,
+  emphasize structural features such as holes or fillets, or expose
+  internal detail that a shaded surface hides. Because wire edges
+  are first-class entities in the Brep topology, the wireframe is
+  already present—no extra tessellation step is required. This mode
+  also serves IP protection: stripping the analytic surfaces and
+  retaining only the wireframe is a common first step when CAD users
+  share geometry outside their organization. A Brep-aware USD stage
+  can support both full-fidelity and wireframe-only representations
+  of the same asset, controlled by the publisher.
+
 ## Existing mechanisms in USD
 
 A natural question is whether USD's existing geometry types can be
