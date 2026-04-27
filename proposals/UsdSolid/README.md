@@ -62,7 +62,7 @@ This proposal adopts a solid-model Boundary Representation (Brep) schema for Ope
 
 In support of the model, this proposal also introduces additional curve, surface, and volume geometry types. The set of shapes is derived from the Product Representation Compact (PRC) format, an ISO standard widely used for 3D content (including models embedded in PDFs). Section 2.1 catalogs the curve and surface primitives _UsdSolid_ is intended to support to match PRC's capabilities. Detailed designs of the additional geometry types are not yet included in this document and will be added in a subsequent revision.
 
-# **1.3 Glossary**
+## **1.3 Glossary**
 
 The following terms are used throughout this proposal. Reviewers approaching from the problem-statement perspective may also find the companion [Appendix A: BRep Glossary](../cad_geometry/README.md#appendix-a-brep-glossary) in Proposal 1 useful; the two glossaries are aligned, with Proposal 1's entries geared toward concept-level review and Proposal 2's entries grounded in the schema.
 
