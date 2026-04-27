@@ -944,12 +944,19 @@ class "BrepSurfaceNurbAPI" (
 
 # **4. Examples**
 
-To exhibit this model we present 4 examples: a unit cube; a unit cube with IDs assigned to each topology object; a non-manifold brep consisting of 2 cubes sharing a face; and nested cubes, creating a void space in a manifold brep.
+This section presents five examples of increasing complexity, each intended to highlight a specific capability of the schema. The first three exercise the topology model — a manifold solid, a non-manifold joint between two solids, and a manifold solid with an internal void. The final two demonstrate how the schema composes with OpenUSD's material and composition features: packing multiple Breps into a single prim with per-Brep materials, and assigning materials per face within a single Brep.
+
+All examples use the NURBS curve and surface API (`BrepCurve3dNurbAPI`, `BrepSurfaceNurbAPI`) and the point API for vertex positions (`BrepPointAPI`). Analytic geometry primitives are out of scope for v1.
+
+> **Reading tip:** every top-level attribute on a _BrepArray_ corresponds directly to the schema in §3. The array sizes and index relationships follow the rules in the `doc` strings there; the commentary below highlights what each example is meant to demonstrate rather than restating the schema.
 
 ## **4.1. Cube**
 
-A simple cube, as shown in the following wireframe model.
-Each of the 36 topology object has a unique, integer ID tag. There are: 8 vertices, 12 edges, 6 loops, 6 faces, 2 shells, and 2 regions.
+The simplest possible manifold solid: a unit cube. Useful as a reference for the minimal attribute set a Brep must carry.
+
+The model contains 36 topology objects (8 vertices, 12 edges, 6 loops, 6 faces, 2 shells, 2 regions) and zero wire edges. There are two regions because every manifold solid partitions space into a _solidRegion_ (inside) and a _voidRegion_ (the infinite outside) — see `region:type`. The 2 shells carry the 6 face-uses that comprise each region's boundary; in this cube both shells are the same 6 faces traversed in opposite orientations, one per side.
+
+Each of the 36 topology objects has an integer ID tag in the `*:userId` arrays. These are optional in production data but are populated here to make the example easier to walk through.
 
 ![Cube](images/cube.png "Cube")
 
@@ -1027,10 +1034,11 @@ def Xform "World"
 
 ## **4.2. Non-manifold cubes**
 
-In this example, we show how each partition of space is explicitly represented with a Region. Two cubes sharing a face have 3 regions: the infinite region outside the Brep, and 1 region inside each cube.  The model contains 11 faces, as one is shared between the cubes.
+What changes vs. §4.1: two cubes that share a single face, producing a non-manifold Brep. This example demonstrates that the schema represents _every_ partition of space as an explicit _Region_, not just the inside/outside pair of a manifold solid.
 
-In the wireframe model image below, the non-manifold edges are shown in blue. An edge is non-manifold when it does not connect to exactly 2 faces (or 1 face twice for closed surfaces).
+Two cubes sharing a face induce three regions: the infinite region outside the Brep and one solid region inside each cube. The model has 11 faces (the shared face is counted once, not twice), and the shared face is a non-manifold edge source — an edge is non-manifold when it does not connect to exactly 2 faces (or 1 face twice for a closed surface).
 
+In the image below, non-manifold edges are drawn in blue. This is the first example where `edgeuse:thisRadialEntryType` carries information beyond the trivial manifold case: the radial-edge traversal around a non-manifold edge visits more than one pair of face-uses.
 
 ![NonManifold Cubes](images/cube2.png "Non-manifold cubes")
 
@@ -1111,7 +1119,11 @@ def Xform "World"
 
 ## **4.3. Cube With Internal Void**
 
-This example shows a manifold Brep with an internal void. The infinite region is partitioned from the solid region by the cube shell.  The solid region is partitioned from the internal void region by a shell consisting of a single spherical face.
+What changes vs. §4.1: a manifold cube that contains a spherical void — a hollow pocket inside the solid. This example demonstrates how the schema represents interior cavities using multiple shells on a region.
+
+The Brep has three regions: the infinite void outside, the solid cube, and the interior void. The solid region is bounded by _two_ shells: an outer shell of 6 cube faces and an inner shell of a single spherical face. `region:shellCount` encodes this as `[1, 2, 1]` — the two one-shell regions are the infinite void and the interior void, and the two-shell middle entry is the solid. Per §2, the outer shell of a region is listed first; any subsequent shells are inner shells defining cavities.
+
+This is the first example to use a non-trivial NURBS surface (the sphere), exercising `brep:surface:nurb:uOrder`, `vOrder`, and non-uniform knots.
 
 ![Cube With Internal Void](images/cubevoid.png "Cube With Internal Void")
 
@@ -1190,8 +1202,9 @@ def Xform "World"
 
 ## **4.4 BrepArray with multiple Breps, individual colors**
 
-This example shows a 2 Breps with distinct materials in a single BrepArray.
-The BrepArray assigns unique materials to the Breps with the GeomSubset property.
+What changes vs. §4.1–4.3: a single _BrepArray_ prim that packs two Breps, with distinct materials bound to each. This example demonstrates the array semantics of §2.5.1–2.5.2 — a prim can hold more than one Brep — and the use of _GeomSubset_ to bind materials to individual Breps within that prim.
+
+The two cubes are geometrically independent (they do not share topology, unlike §4.2). All per-Brep arrays (`brep:regionCount`, `brep:userId`, `brep:*Extent`) are length 2; the topology arrays concatenate the two Breps' objects in order, and the per-Brep counts (`brep:*Count`) describe the split.
 
 ![BrepArray](images/BrepArray.png "BrepArray with multiple Breps")
 
@@ -1312,8 +1325,9 @@ def Xform "World"
 
 ## **4.5 Brep with materials applied to faces**
 
-In this example material properties are applied to each face of the Brep.
-When tessellated and authored as a _UsdGeomMesh_, _UsdGeomSubset_ is used to assign appropriate material bindings.
+What changes vs. §4.4: material bindings are assigned _per face_ within a single Brep, rather than per Brep within a _BrepArray_. This demonstrates finer-grained material control: _UsdGeomSubset_ with `elementType = "face"` selects face indices on the Brep and binds a material to each subset.
+
+This is the same pattern consumers use with _UsdGeomMesh_. When a Brep is tessellated to a mesh for rendering, the face-indexed material bindings on the Brep carry through naturally via _UsdGeomSubset_ on the resulting mesh, so a downstream engine sees the same material assignments regardless of whether it renders the Brep directly or consumes a derived mesh.
 
 ![Brep Face Materials](images/FaceMaterials.png "Brep with materials per face")
 
