@@ -496,6 +496,9 @@ The following design and deployment questions remain open. They are recorded her
 - **Sparse overrides for Brep variants.** As noted in §2.5, sparse overrides that represent the delta between a source Brep and a variant are an appealing avenue but not pursued here.
 
 # **3. Schema**
+
+> **Implementation note:** The library and class names below use a `prelimUsdSolid` / `PrelimUsdSolid` prefix and set `skipCodeGeneration = true`. This follows the OpenUSD convention for work-in-progress schemas that are not yet built into the SDK. When the schema is accepted for inclusion in OpenUSD the prefix will be stripped and code generation enabled, following the same lifecycle used by other preliminary schemas (e.g., the Gaussian splat schema progressed from `prelimUsdRenderGaussian` to `UsdRenderGaussian`).
+
 **schema.usda**
 <details>
   <summary>  Click to expand </summary>
