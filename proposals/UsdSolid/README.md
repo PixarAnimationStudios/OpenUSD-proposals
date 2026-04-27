@@ -75,39 +75,9 @@ In support of the model, this proposal also introduces additional curve, surface
 
 ## Glossary
 
-The following terms are used throughout this proposal. Reviewers approaching from the problem-statement perspective may also find the companion [Appendix A: BRep Glossary](../cad_geometry/README.md#appendix-a-brep-glossary) in Proposal 1 useful; the two glossaries are aligned, with Proposal 1's entries geared toward concept-level review and Proposal 2's entries grounded in the schema.
+For definitions of BRep, Curve, Edge, Edgeuse, Face, Faceuse, Geometry, Loop, Manifold, Region, Shell, Solid, Surface, Topology, Trim Curve, Vertex, and Wire, see [Appendix A: BRep Glossary](../cad_geometry/README.md#appendix-a-brep-glossary) in the companion problem statement. The following additional terms are specific to this proposal's schema:
 
-**BRep** -- A Boundary Representation is a data model used to precisely represent 3D objects. These objects may be isolated points, wires, and solids. A BRep is composed of regions. A BRep is similar to a `Body` in some modelers.
-
-**Curve** -- A geometric entity that maps points on a closed interval of the real line (traditionally parameterized _t_) into 3D space.
-
-**Edge** -- A bounded portion of a curve representing the intersection between two faces or forming part of the boundary of a single face. Each edge references its underlying geometric curve and the parameter range that defines which portion of the curve is used. The curve subset defined by the edge may not be self-intersecting, and must be at least [G1 continuous](https://en.wikipedia.org/wiki/Smoothness#Geometric_continuity).
-
-**Edgeuse** -- A structure indicating how a loop uses each edge comprising a loop. Each edgeuse is owned by a loop and references a single edge. It also contains a flag indicating whether the edge is parameterized the same as its curve, or in the direction opposite of the curve. Edgeuses are conceptually related to entities such as "coedges", "fins", "links", or "winged edges" in various BRep implementations.
-
-**Face** -- A bounded and connected set of points on a single [G1 continuous](https://en.wikipedia.org/wiki/Smoothness#Geometric_continuity) surface. First order derivatives should not be 0 on the interior of the parametric region defined by a face.
-
-**Faceuse** -- A structure indicating a face used by a shell, and the orientation of the face's normal direction relative to the face's surface (if any).
-
-**Geometry** -- The points, curves, and surfaces that are used to define the boundary.
-
-**Loop** -- A single closed edge or a sequence of closed edges connected end-to-end. Each edge in the loop is referenced indirectly by an edgeuse.
-
-**Manifold** -- A topological property of a BRep where each point on the boundary has a neighborhood that is topologically equivalent to a standard geometric space. In a 2-manifold (typical for solid boundaries), every manifold point has a neighborhood that can be flattened to a disc without tearing.
-
-**Region** -- A connected subset of 3D space that classifies points as being either "in" or "out". Regions are connected in that for every two points in the region, there is a path between them comprised only of points in the region. Regions are composed of shells. Some BRep implementations refer to regions as `lumps`.
-
-**Shell** -- A maximal connected set of faces and wires. The set is "maximal" in the sense that if a face or wire is connected to another face or wire, then both must be in the same shell. A shell references its faces as an array of faceuses.
-
-**Solid** -- A region of 3D space with a well-defined interior, bounded by one or more closed shells. A solid represents a 3-dimensional object with volume, where every point in space can be classified as inside, outside, or on the boundary of the solid. The outermost shell defines the exterior boundary, while any inner shells represent voids or cavities within the solid.
-
-**Surface** -- A continuous mapping from 2D parameter space (sometimes called _u, v_ space) to 3D space (sometimes called _x, y, z_ space). The portion of a surface used by a face in a BRep prim must be C1 continuous. Some common surface types include planes, cones, spheres, Bezier surfaces, B-spline surfaces, and others.
-
-**Topology** -- In the context of BReps, topology refers to how subsets of geometry objects are connected.
-
-**Trim Curve** -- A trim curve maps points in 2D (the _x, y_ plane) to surface parameters (typically referenced as _u, v_). Trim curves are the geometry associated with edgeuses.
-
-**Vertex** -- A topological entity representing a point in 3D space. Vertices mark the endpoints of one or more edges and are represented in the schema by `vertex:*` arrays with associated point geometry (see `BrepPointAPI`).
+**BrepArray** -- A `UsdSolidBrepArray` prim that holds one or more Breps in a packed, flat representation. Each Brep's topology, geometry, and metadata are concatenated into shared arrays and delineated by per-Brep counts and offsets. See [USD implementation](#usd-implementation).
 
 **Wire edge** -- A `wireEdge` is a topologically standalone edge that is not part of any face loop. Wire edges carry the same curve geometry as loop-bounding edges but exist independently as one-dimensional features within a shell. They are represented in the schema by `wireEdge:*` arrays.
 
