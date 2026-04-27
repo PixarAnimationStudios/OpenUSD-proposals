@@ -83,7 +83,7 @@ The current document does not yet include detailed designs of all geometry types
 
 # **1.3 Glossary**
 
-The following terms are used throughout this proposal.
+The following terms are used throughout this proposal. Reviewers approaching from the problem-statement perspective may also find the companion [Appendix A: BRep Glossary](../cad_geometry/README.md#appendix-a-brep-glossary) in Proposal 1 useful; the two glossaries are aligned, with Proposal 1's entries geared toward concept-level review and Proposal 2's entries grounded in the schema.
 
 **BRep** -- A Boundary Representation is a data model used to precisely represent 3D objects. These objects may be isolated points, wires, and solids. A BRep is composed of regions. A BRep is similar to a `Body` in some modelers.
 
@@ -114,6 +114,10 @@ The following terms are used throughout this proposal.
 **Topology** -- In the context of BReps, topology refers to how subsets of geometry objects are connected.
 
 **Trim Curve** -- A trim curve maps points in 2D (the _x, y_ plane) to surface parameters (typically referenced as _u, v_). Trim curves are the geometry associated with edgeuses.
+
+**Vertex** -- A topological entity representing a point in 3D space. Vertices mark the endpoints of one or more edges and are represented in the schema by `vertex:*` arrays with associated point geometry (see `BrepPointAPI`).
+
+**Wire edge** -- A `wireEdge` is a topologically standalone edge that is not part of any face loop. Wire edges carry the same curve geometry as loop-bounding edges but exist independently as one-dimensional features within a shell. They are represented in the schema by `wireEdge:*` arrays.
 
 # **2. Overall design concerns**
 
