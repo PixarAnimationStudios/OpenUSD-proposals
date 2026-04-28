@@ -528,7 +528,7 @@ class BrepArray  "BrepArray" (
     uniform uint[]    shell:wireEdgeCount        ( doc = """Shell_ii's number of connected wireEdges. size() = number of Shells """ )
     uniform token[]   shell:pointType            ( allowedTokens = ["BrepPointAPI", "none"]
                                                              # in the future add ["BrepMultiPointAPI"]
-                                                   doc = """ Shell_ii's point type when shell:facuseCount[ii] and shell:wireEdgeCount[ii] are 0, else ignored. 
+                                                   doc = """ Shell_ii's point type when shell:faceuseCount[ii] and shell:wireEdgeCount[ii] are 0, else ignored. 
                                                              BrepPointAPI = Shell_ii's shape is a point in the ShellPoint array. 
                                                              size() = number of Shells. """ )
                                                                                                   
@@ -554,7 +554,7 @@ class BrepArray  "BrepArray" (
     uniform uint[]    edgeuse:edgeIndex         ( doc = """ Edgeuse_ii's edge index into edge arrays. size() = Number of one-sided edge_to_face connections. """ )
     uniform token[]   edgeuse:orientationType   ( allowedTokens = ["same", "opposite"]
                                                   doc = """ same     = edgeuse's UVTrimCurve runs in the same direction as the edge's curve and
-                                                                       represents the owning edge's binormal side connecting to a face..
+                                                                       represents the owning edge's positive-normal side connecting to a face.
                                                             opposite = edgeuse's UVTrimCurve runs in the opposite direction and
                                                                        represents the edge's other side connecting to a face.
                                                             size() = Number of one-sided edge_to_face connections. """ )
@@ -563,7 +563,7 @@ class BrepArray  "BrepArray" (
                                                     doc = """ - Each BrepArray edgeuse represents a {TopEdgeuse BotEdgeuse} mated pair connecting one side of an edge to the top and bottom sides of a face.
                                                               - Edges bounding faces mostly connect to the face on just one side of the edge and are represented by just one BrepArray edgeuse, but
                                                                 seam edges that connect closed surfaces and strut edges representing cracks in a face connect to the same face twice and have two BrepArray edgeuses.
-                                                              - A right-hand-rule traversal around this edgeuse's edge, orders the edge-face connetions into a series of {face entry side, face exit side} pairs
+                                                              - A right-hand-rule traversal around this edgeuse's edge, orders the edge-face connections into a series of {face entry side, face exit side} pairs
                                                                 represented as a set of {entryEdgeuse, exitEdgeuse} pairs as: 
                                                                       RadialEdgeList = { edgeuse[1st]:{entryTopOrBotEdgeuse, exitBotOrTopEdgeuse}, ..., edgeuse[nth]:{entryTopOrBotEdgeuse, exitBotOrTopEdgeuse} } 
                                                               - topEntry    = The radial edge traversal enters this edgeuse's face from the top and exits from the bottom as:{ edgeuse[this]:{entryTopEdgeuse, exitBotEdgeuse} }.
@@ -572,7 +572,7 @@ class BrepArray  "BrepArray" (
 
     uniform token[]   edge:curveType             ( allowedTokens = ["BrepCurve3dNurbAPI"]
                                                          # in the future add ["BrepCircle3dAPI", "BrepLine3dAPI", and more]
-                                                   doc = """ BrepEdgeCurveNurbAPI = shape for edge_ii is a NURB function in the associated curveType array. 
+                                                   doc = """ BrepCurve3dNurbAPI = shape for edge_ii is a NURB function in the associated curveType array. 
                                                              Currently only NURB curves are allowed. In the future analytics will be added. 
                                                              size() = Number of edges. """ )
     uniform double[]  edge:range                 ( doc = """ Edge_ii's domain interval bounds {paramMin, paramMax}. size() = 2 * number of Edges. """ )
@@ -590,11 +590,11 @@ class BrepArray  "BrepArray" (
                                                              size() = Number of wireEdges. """ )
     uniform double[]  wireEdge:range             ( doc = """ WireEdge_ii's domain interval bounds {paramMin, paramMax}. size() = 2 * number of WireEdges. """ )
     uniform int2[]    wireEdge:vertexIndices     ( doc = """ WireEdge_ii's vertexIndices = {startVertexIndex, EndVertexIndex}.
-                                                              where Vertex_startVertexIndex:position = Edge_ii:Curve(Edge:Range(0)).
-                                                                    Vertex_EndVertexIndex:position   = Edge_ii:Curve(Edge:Range(1)).
+                                                              where Vertex_startVertexIndex:position = WireEdge_ii:Curve(WireEdge:Range(0)).
+                                                                    Vertex_EndVertexIndex:position   = WireEdge_ii:Curve(WireEdge:Range(1)).
                                                               wireEdge:vertexIndices are required because vertices can be shared with loopVertices and edgeVertices.
                                                               (note: wireEdge:vertexIndices is defined as int2 because uint2 is not defined.  These should be uint values.)
-                                                              size() = number of Edges. """ )
+                                                              size() = number of WireEdges. """ )
                                                  
     uniform token[]   vertex:pointType           ( allowedTokens = ["BrepPointAPI"]
                                                          # in the future add ["BrepMultiPointAPI"]
@@ -603,12 +603,12 @@ class BrepArray  "BrepArray" (
 
 #************************************************************************************
 # purpose: point geometry apis for BrepArrays
-# note   :  BrepPointAPI: multipleApply API = associated geometrty of vertices defined by 3d Points
+# note   :  BrepPointAPI: multipleApply API = associated geometry of vertices defined by 3d Points
 #             Instance name = vertexPoint  => associated geometry of vertex objects defined by 3d points
 #             Instance name = shellPoint   => associated geometry of vertexShell objects defined by 3d points
 #           
 #          To be added:
-#           BrepMultiPointAPI: multipleApply API = associated geomtery of vertices defined by 3d MultiPoints
+#           BrepMultiPointAPI: multipleApply API = associated geometry of vertices defined by 3d MultiPoints
 #             Instance name = vertexMultiPoint  => associated geometry of vertex objects defined by 3d multiPoints
 #             Instance name = shellMultiPoint   => associated geometry of vertexShell objects defined by 3d multiPoints
 #************************************************************************************
@@ -655,7 +655,7 @@ class "BrepCurve3dNurbAPI" (
 
     This class varies from the UsdGeomNurbCurves primarily in having double precision control vertices. 
     
-    This schema is analagous to NURB Curves in packages like Maya and Houdini, often used for interchange of rigging
+    This schema is analogous to NURB Curves in packages like Maya and Houdini, often used for interchange of rigging
     and modeling curves. We require 'numSegments + 2 * degree + 1' knots (2 more than maya does). This is to be more
     consistent with RenderMan's NURB patch specification. """
     customData = { token apiSchemaType = "multipleApply"
