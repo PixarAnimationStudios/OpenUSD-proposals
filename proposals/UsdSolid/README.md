@@ -554,7 +554,7 @@ class BrepArray  "BrepArray" (
     uniform uint[]    edgeuse:edgeIndex         ( doc = """ Edgeuse_ii's edge index into edge arrays. size() = Number of one-sided edge_to_face connections. """ )
     uniform token[]   edgeuse:orientationType   ( allowedTokens = ["same", "opposite"]
                                                   doc = """ same     = edgeuse's UVTrimCurve runs in the same direction as the edge's curve and
-                                                                       represents the owning edge's positive-normal side connecting to a face.
+                                                                       represents the owning edge's binormal side connecting to a face.
                                                             opposite = edgeuse's UVTrimCurve runs in the opposite direction and
                                                                        represents the edge's other side connecting to a face.
                                                             size() = Number of one-sided edge_to_face connections. """ )
