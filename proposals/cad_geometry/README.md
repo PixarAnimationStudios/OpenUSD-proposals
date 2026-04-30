@@ -147,12 +147,11 @@ Several converging trends make this gap increasingly costly:
 
 1. **Industrial platforms are converging on USD—but only for
    visualization.** When CAD or BIM data enters USD today, it is
-   tessellated at the boundary: Brep geometry stays in native formats
-   and only mesh proxies reach the scene. NVIDIA Omniverse and
-   Siemens Xcelerator both operate this way. AOUSD membership now
-   spans CAD, AEC, and geospatial companies, yet none carry exact
-   geometry through USD—they need to see what Brep support could
-   enable before investing beyond visualization.
+   tessellated at the boundary: exact geometry stays in native
+   formats and only mesh proxies reach the scene. AOUSD membership
+   now spans CAD, AEC, and geospatial companies, yet none carry
+   exact geometry through USD—they need to see what Brep support
+   could enable before investing beyond visualization.
 
 2. **Cross-discipline collaboration demands geometric fidelity.** An
    architect's BIM model, a mechanical engineer's CAD assembly, and a
