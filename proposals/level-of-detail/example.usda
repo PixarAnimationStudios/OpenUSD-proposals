@@ -7,69 +7,44 @@ def Xform "ExampleModel" (
     kind = "component"
 )
 {
-    def LodGroup "LodGroup" (
-        lodMetric = "distance"
-        lodRanges = [10.0, 50.0, 200.0]
-        fadeTransitions = true
-        fadeTransitionWidth = 5.0
+    def Scope "Geom" (
+        apiSchemas = ["LODRootAPI"]
     )
     {
-        rel lodTargets = [
-            </ExampleModel/LodGroup/HighDetail>,
-            </ExampleModel/LodGroup/MediumDetail>,
-            </ExampleModel/LodGroup/LowDetail>,
-            </ExampleModel/LodGroup/VeryLowDetail>
-        ]
-        
-        def LodLevel "HighDetail" (
-            lodIndex = 0
-            complexity = 1.0
-        )
+        int lod:default:index = 1
+        rel lod:heuristics = </ExampleModel/Heuristics/Distance>
+
+        def Scope "HighDetail"
         {
-            def Mesh "Geometry"
-            {
-                # High detail mesh data would go here
-                int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
-                int[] faceVertexIndices = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]
-                point3f[] points = [(0, 0, 0), (1, 0, 0), (1, 1, 0), (0, 1, 0), (0, 0, 1), (1, 0, 1), (1, 1, 1), (0, 1, 1)]
-                # Additional high-detail attributes would be defined here
-            }
+            token visibility = "invisible"
+
+            # High detail geometry hierarchy goes here. It is invisible by
+            # default because it is not the default level of detail (see
+            # lod.default.index above).  Legacy renderers will not render it.
         }
-        
-        def LodLevel "MediumDetail" (
-            lodIndex = 1
-            complexity = 0.5
-        )
+        def Scope "MediumDetail"
         {
-            def Mesh "Geometry"
-            {
-                # Medium detail mesh data would go here
-                # Fewer polygons, simplified geometry
-            }
+            token visibility = "inherited"
+
+            # Medium detail geometry hierarchy goes here, visible because it is
+            # the default
         }
-        
-        def LodLevel "LowDetail" (
-            lodIndex = 2
-            complexity = 0.2
-        )
+        def Scope "LowDetail"
         {
-            def Mesh "Geometry"
-            {
-                # Low detail mesh data would go here
-                # Significantly reduced polygon count
-            }
+            token visibility = "invisible"
+
+            # low detail geometry hierarchy goes here
         }
-        
-        def LodLevel "VeryLowDetail" (
-            lodIndex = 3
-            complexity = 0.05
-        )
+    }
+
+    def Scope "Heuristics"
+    {
+        def LODDistanceHeuristic "Distance"
         {
-            def Mesh "Geometry"
-            {
-                # Very low detail mesh data would go here
-                # Minimal representation for distant viewing
-            }
+            # Center is in local object coordinates
+            point3f center = (0, 0, 0)
+            uniform float[] thresholds = [10, 35]
+            uniform float[] blendThresholds = [12, 40]
         }
     }
 }
@@ -89,7 +64,7 @@ def Xform "Scene" (
             double3 xformOp:translate = (0, 0, 0)
             uniform token[] xformOpOrder = ["xformOp:translate"]
         }
-        
+
         def "Building2" (
             references = </ExampleModel>
         )
@@ -97,7 +72,7 @@ def Xform "Scene" (
             double3 xformOp:translate = (20, 0, 0)
             uniform token[] xformOpOrder = ["xformOp:translate"]
         }
-        
+
         # Additional buildings would be defined here
     }
 }

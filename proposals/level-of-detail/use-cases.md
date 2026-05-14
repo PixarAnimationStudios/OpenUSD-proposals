@@ -1,5 +1,8 @@
 # LOD Schema Use Cases
 
+**NOTE:** This file is out of date and needs to be update to reflect the
+latest version of the proposal.
+
 ## Large-Scale Environments
 
 **Scenario**: City visualization with thousands of buildings  
