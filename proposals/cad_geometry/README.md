@@ -444,9 +444,14 @@ can be evaluated.
 
 ### Risks
 
-- **Scope creep.** The full scope of CAD geometry is vast. A NURBS-first
-  minimal-viable approach with a clear extension path is safer than a
-  comprehensive design that ships late.
+- **Scope creep.** Exact geometry covers a wide territory — Brep
+  topology and a broad catalog of curve, surface, and volume types
+  (analytic primitives, NURBS, blends, offsets, volumes, and more,
+  per standards such as PRC ISO 14739-1:2014). The companion schema
+  proposal targets the full catalog but presents detailed schema
+  designs incrementally, beginning with NURBS curves and surfaces in
+  the current revision and adding the remaining types in subsequent
+  revisions.
 
 - **Kernel dependency.** Tessellation, Booleans, and measurement require
   geometry kernels (Parasolid, ACIS, Open Cascade). The schema should
