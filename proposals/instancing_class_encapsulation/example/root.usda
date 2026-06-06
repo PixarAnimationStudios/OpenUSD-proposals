@@ -1,0 +1,13 @@
+#usda 1.0
+
+def "Set_1"  (
+   references = @./set_1.usda@</Set_1>
+)
+{
+}
+
+def "Set_2"  (
+   references = @./set_2.usda@</Set_2>
+)
+{
+}
