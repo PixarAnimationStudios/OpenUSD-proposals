@@ -1,0 +1,78 @@
+#usda 1.0
+(
+    "Example usage of the proposed LOD schema"
+)
+
+def Xform "ExampleModel" (
+    kind = "component"
+)
+{
+    def Scope "Geom" (
+        apiSchemas = ["LODRootAPI"]
+    )
+    {
+        int lod:default:index = 1
+        rel lod:heuristics = </ExampleModel/Heuristics/Distance>
+
+        def Scope "HighDetail"
+        {
+            token visibility = "invisible"
+
+            # High detail geometry hierarchy goes here. It is invisible by
+            # default because it is not the default level of detail (see
+            # lod.default.index above).  Legacy renderers will not render it.
+        }
+        def Scope "MediumDetail"
+        {
+            token visibility = "inherited"
+
+            # Medium detail geometry hierarchy goes here, visible because it is
+            # the default
+        }
+        def Scope "LowDetail"
+        {
+            token visibility = "invisible"
+
+            # low detail geometry hierarchy goes here
+        }
+    }
+
+    def Scope "Heuristics"
+    {
+        def LODDistanceHeuristic "Distance"
+        {
+            # Center is in local object coordinates
+            point3f center = (0, 0, 0)
+            uniform float[] thresholds = [10, 35]
+            uniform float[] blendThresholds = [12, 40]
+        }
+    }
+}
+
+def Xform "Scene" (
+    kind = "assembly"
+)
+{
+    def Xform "Buildings" (
+        kind = "group"
+    )
+    {
+        def "Building1" (
+            references = </ExampleModel>
+        )
+        {
+            double3 xformOp:translate = (0, 0, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+
+        def "Building2" (
+            references = </ExampleModel>
+        )
+        {
+            double3 xformOp:translate = (20, 0, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+
+        # Additional buildings would be defined here
+    }
+}
