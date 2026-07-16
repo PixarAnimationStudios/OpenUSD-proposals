@@ -1,3 +1,4 @@
+![Status:Implemented, 26.08](https://img.shields.io/badge/Implemented,%2026.08-blue)
 # USD Profiles and Capabilities
 
 **USD Profiles and Capabilities** are the mechanism by with prims within a *USD* composition declare what they need to function properly and what funcitonal contracts they fulfill. Profiles and Capabilities are organized into a single **Directed Acyclic Graph** (DAG) by which means it is possible to reason about the full capabilities of a prim by reasoning about the structure of the graph from the perspective of the prim's declarations.
