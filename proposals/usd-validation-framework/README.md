@@ -1,3 +1,4 @@
+![Status:Implemented, 24.11](https://img.shields.io/badge/Implemented,%2024.11-blue)
 # Contents
   - [USD Validation Framework](#usd-validation-framework)
   - [TL;DR](#story-in-a-nutsehll-tldr)
