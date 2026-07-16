@@ -1,3 +1,4 @@
+![Status:Implemented, 25.11](https://img.shields.io/badge/Implemented,%2025.11-blue)
 # UI Hints in USD
 
 ## Background
