@@ -1,4 +1,4 @@
-![Status:Draft](https://img.shields.io/badge/Draft-blue)
+![Status:Published](https://img.shields.io/badge/Published-green)
 ## Back Plate and Image Plane Support for USD
 
 ## Contents
