@@ -1,3 +1,4 @@
+![Status:Implemented, 26.08](https://img.shields.io/badge/Implemented,%2026.08-blue)
 # Level of Detail (LOD) API for USD
 
 ## Summary
