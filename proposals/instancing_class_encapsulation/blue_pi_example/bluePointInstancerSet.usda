@@ -1,0 +1,18 @@
+#usda 1.0
+
+def "Set"
+{
+    def "BluePointInstancer_1" (
+        references = @./bluePointInstancerAsset.usda@</BluePointInstancerAsset>
+        instanceable = True
+    )
+    {
+    }
+ 
+    def "BluePointInstancer_2" (
+        references = @./bluePointInstancerAsset.usda@</BluePointInstancerAsset>
+        instanceable = True
+    )
+    {
+    }      
+}
