@@ -60,6 +60,16 @@ and pulling it should cost the tractor some effort.
 Today this needs either a drive used as a brake, which creeps,
 or a simulator-specific attribute.
 
+The disc harrow below is described with UsdPhysics only,
+so its wheel joints have no friction.
+Set down on a gentle slope with nothing attached,
+it rolls about 3 m downhill and swings round before it stops,
+seen here from behind, from the side and from above.
+
+| Behind | Side | Above |
+|---|---|---|
+| ![Disc harrow rolling downhill, seen from behind](harrow_rolling_behind.gif) | ![Disc harrow rolling downhill, seen from the side](harrow_rolling_side.gif) | ![Disc harrow rolling downhill, seen from above](harrow_rolling_top.gif) |
+
 Robot gearboxes and harmonic drives have a lot of joint friction,
 and sim-to-real work identifies and authors it as a matter of course.
 URDF, SDFormat and MJCF robot descriptions already carry it,
