@@ -1,0 +1,1265 @@
+# Separation of Concerns for Identifiers in USD
+
+Copyright &copy; 2026, NVIDIA Corporation, version 0.1 (DRAFT)
+
+Aaron Luk
+
+## Contents
+
+- [Introduction](#introduction)
+- [Motivation](#motivation)
+  - [USD identifiers today](#usd-identifiers-today)
+  - [The expanding ecosystem](#the-expanding-ecosystem)
+- [Problem statement](#problem-statement)
+  - [Two distinct roles for identifiers](#two-distinct-roles-for-identifiers)
+  - [Why this matters now](#why-this-matters-now)
+- [Key questions](#key-questions)
+  - [Instance identity vs. source identity](#instance-identity-vs-source-identity)
+  - [Single value vs. metadata package](#single-value-vs-metadata-package)
+- [Existing mechanisms in USD](#existing-mechanisms-in-usd)
+  - [assetInfo, UsdModelAPI, and UsdMediaAssetPreviewsAPI](#assetinfo-usdmodelapi-and-usdmediaassetpreviewsapi)
+  - [displayName](#displayname)
+  - [customData and customLayerData](#customdata-and-customlayerdata)
+- [Industry use cases](#industry-use-cases)
+  - [Architecture, Engineering, Construction, and Operations (AECO)](#architecture-engineering-construction-and-operations-aeco)
+  - [Manufacturing, Product Lifecycle, and Digital Engineering](#manufacturing-product-lifecycle-and-digital-engineering)
+  - [Media and Entertainment (M&E)](#media-and-entertainment-me)
+  - [Robotics and Simulation](#robotics-and-simulation)
+- [Design considerations](#design-considerations)
+  - [Principles](#principles)
+  - [Open questions for discussion](#open-questions-for-discussion)
+  - [Likely direction](#likely-direction)
+  - [Risks](#risks)
+- [Relationship to other proposals](#relationship-to-other-proposals)
+- [Next steps](#next-steps)
+- [Appendix A: AI-Assisted Drafting](#appendix-a-ai-assisted-drafting)
+
+## Introduction
+
+As OpenUSD adoption grows across industries, a recurring tension has emerged
+between the identifiers that USD uses internally for scene composition and
+hierarchy navigation, and the identifiers that external systems use to track
+assets, components, and objects. These two kinds of identifiers serve
+fundamentally different purposes, yet there is no clear, standardized mechanism
+in USD to represent and manage external identifiers alongside USD's namespace
+paths.
+
+Discussions around this topic have revealed that two related but distinct
+problems are often conflated:
+
+1. **An unencumbered source identifier field** -- a standardized place to store
+   external identifiers verbatim, outside the prim name, free from USD grammar
+   constraints.
+2. **Improved ergonomics of path identifiers** -- extending USD's prim name
+   grammar to natively support constructs like leading digits and medial
+   hyphens, improving the usability of namespace paths themselves.
+
+Both are valuable. This proposal focuses on problem (1) because an
+unencumbered source identifier field addresses the broadest set of cross-industry
+use cases and can be pursued independently of grammar changes. Problem (2) --
+extending prim name grammar -- remains an important complementary effort and is
+not foreclosed by anything proposed here. By establishing consensus on the
+separation of concerns first, both problems can be pursued on their own merits
+without one blocking or distorting the other.
+
+**Expected outcome.** The likely result is a standardized mechanism for
+source identifiers in the OpenUSD codebase, accompanied by a baseline
+example that domains can follow. Two candidate approaches are under
+evaluation -- extending `assetInfo` with stratified sub-dictionaries, or
+leveraging USD's existing applied schema mechanism with typed properties -- each with
+distinct trade-offs (see [Likely direction](#likely-direction)). This
+proposal seeks consensus on the problem statement and design principles
+first, so that the resulting mechanism serves the full community.
+
+## Motivation
+
+### USD identifiers today
+
+In USD, every prim is addressed by a **namespace path** -- a hierarchical,
+textual identifier such as `/World/Building/Floor1/Room101`. These paths are
+the backbone of USD's composition engine: references, payloads, inherits,
+variants, and overrides all bind to prims by their namespace paths.
+
+USD's namespace paths are:
+
+- **Unique per instance** within a composed stage.
+- **Structural** -- they encode the scene hierarchy and are used for traversal,
+  queries, and composition arc targeting.
+- **Governed by grammar rules** -- identifiers must conform to syntactic
+  constraints (currently the XID specification as of OpenUSD v24.03).
+- **The primary key** for binding opinions across layers.
+
+A recurring community question is
+[why USD does not use GUIDs](https://openusd.org/release/intro.html#no-guids)
+as primary identifiers. While GUIDs would make rename and refactor workflows
+more ergonomic, they cannot replace namespace paths: composition depends on
+paths as **sort keys** for deterministic ordering of opinions across layers,
+and opaque GUIDs would destroy that ordering. USD addresses the rename
+problem through
+[relocates](https://openusd.org/release/glossary.html#usdglossary-relocates)
+instead.
+
+The GUID debate is itself an example of the conflation this proposal seeks
+to resolve. Much of the pressure for GUIDs-as-primary-identifiers comes not
+from a desire to replace namespace paths, but from the absence of any
+standardized place to carry stable external identifiers *alongside* them.
+A dedicated source identifier field would address that underlying need
+without disturbing the composition model.
+
+### The expanding ecosystem
+
+USD was born in the visual effects and animation industry, where scene
+hierarchies tend to originate from digital content creation (DCC) tools with
+naming conventions that align well with USD's identifier grammar. As USD
+expands into new industries, it increasingly encounters data originating from
+systems with their own identification schemes:
+
+- **AECO tools** (Revit, Archicad, IFC) use identifiers like GUIDs, room
+  numbers (`1001`), classification codes with slashes and hyphens
+  (`BB/500`), and revision-stamped names.
+- **Manufacturing and Product Lifecycle Management (PLM) systems**
+  (Teamcenter, Windchill, 3DEXPERIENCE) track parts by alphanumeric part
+  numbers (`A-0000-12345`), revision identifiers, component designators
+  with leading digits and medial hyphens (`1N4148`, `R-101`), and
+  multi-attribute metadata packages. The same assets increasingly
+  participate in digital engineering loops, where equipment tags and sensor
+  addresses bind USD scene objects to live telemetry streams.
+- **GIS and infrastructure tools** use identifiers tied to geospatial
+  coordinate systems or regulatory codes.
+- **Game engines and M&E pipelines** use asset management systems with their
+  own unique IDs, tags, and versioning metadata.
+
+In all these cases, the external identifier is *not* an alternative name for
+the same prim -- it identifies something conceptually different: the **source
+asset, component, or entity** in the originating system, which may be
+instantiated multiple times in a USD stage, or may carry metadata that has no
+equivalent in the USD namespace.
+
+## Problem statement
+
+### Two distinct roles for identifiers
+
+The core observation is that there are two fundamentally different roles an
+identifier can play in a USD-based workflow, and that conflating them has led
+to a single conversation trying to solve two distinct problems at once: the
+need for an unencumbered source identifier field, and the desire for improved
+prim name ergonomics. Separating these concerns allows each to be addressed on
+its own terms.
+
+| | **USD namespace identifier** | **Source / external identifier** |
+|---|---|---|
+| **Purpose** | Address a prim in the composed stage | Identify an asset, component, or entity in an external system |
+| **Uniqueness** | Unique per prim instance in the stage | <ul><li>Unique per source entity, not per prim instance.</li><li>May be shared across instances (e.g., multiple placements of the same part).</li><li>Must remain stable through state transitions, re-parenting, and assembly changes.</li></ul> |
+| **Governed by** | USD prim name grammar (XID rules) | External system conventions (may include characters invalid in USD namespace identifiers) |
+| **Used for** | Composition, hierarchy traversal, overrides | Asset tracking, classification, BOM generation, regulatory compliance, cross-system linking |
+| **Persistence** | Tied to the prim's position in the namespace | Tied to the source entity; should survive namespace edits |
+| **Multiplicity** | Exactly one per composed prim | Potentially many -- one per external system the entity participates in |
+
+Today, there is no standardized place in USD to express the right-hand column.
+Users work around this through ad-hoc conventions: encoding external
+identifiers in prim names (losing characters to grammar restrictions), storing
+them in `customData` (losing discoverability and interoperability), or using
+`displayName` (conflating display concerns with identification).
+
+### Why this matters now
+
+Without a clear separation of concerns:
+
+1. **Data loss on ingest.** External identifiers that contain characters
+   invalid in USD prim names (leading digits, hyphens, slashes, GUIDs) are
+   either altered or lost when data enters USD. Round-tripping back to the
+   source system becomes unreliable.
+
+2. **Ad-hoc solutions fragment the ecosystem.** Each integrator invents its own
+   convention for storing external identifiers, making cross-tool
+   interoperability difficult. A Revit-to-USD pipeline and a
+   Teamcenter-to-USD pipeline may store their source identifiers in
+   incompatible ways.
+
+3. **Conflation of concerns.** When prim names are forced to double as
+   external identifiers, the USD namespace becomes polluted with naming
+   constraints from external systems, or external systems lose fidelity when
+   their identifiers are forced into USD grammar. There is also a
+   fundamental **uniqueness incompatibility**: if multiple instances of the
+   same part share an external identifier (e.g., identical bolts in an
+   assembly), they must either have uniquified USD paths to coexist as
+   siblings, or be placed under artificial namespace structure -- regardless
+   of how rich USD's character set becomes.
+
+4. **Missed opportunities for tooling.** If source identifiers were
+   discoverable through a standard mechanism, tools could provide cross-system
+   linking, BOM generation, classification lookups, and regulatory compliance
+   checks without requiring knowledge of each pipeline's ad-hoc conventions.
+
+5. **The `displayName` migration is already underway.** The
+   [UI Hints](../ui-hints/README.md) work
+   ([implemented in OpenUSD](https://github.com/PixarAnimationStudios/OpenUSD/tree/dev/pxr/usd/usdUI))
+   has migrated `displayName` into a `uiHints` dictionary, cementing it as a
+   presentation-only concern. The old top-level accessors are on a deprecation
+   path. Pipelines using `displayName` to carry source identifiers now face
+   **deprecation-driven migration costs** -- and without a standardized
+   alternative, they will migrate to yet another ad-hoc convention that
+   will need to be migrated again later.
+
+## Key questions
+
+Before proposing a specific solution, the community should align on two
+foundational questions.
+
+### Instance identity vs. source identity
+
+Namespace paths already serve as instance identifiers -- they uniquely
+address a specific prim in a specific composition. The gap is in *source*
+identity: which external asset, component, or entity does this instance
+represent?
+
+Consider a building where the same door type is placed in 30 locations.
+Each placement has a unique namespace path, but they all share a source
+identity: the door type's catalog number or PLM part number. That source
+identity is independent of the namespace -- it should survive renames and
+be shared across instances.
+
+Some domains also assign external instance-level identifiers -- serial
+numbers for individual physical parts, or IFC GlobalIds that uniquely
+identify each placement rather than the shared type. A flexible mechanism
+should accommodate both source-level and instance-level external
+identifiers, but the primary gap today is source identity. (Note that
+instance-level external identifiers raise additional questions about
+behavior under reparenting and namespace edits -- constraints that would
+likely need to be enforced by DCCs and validators rather than by core
+namespace editing logic.)
+
+The Asset Administration Shell (AAS) standard addresses this same
+distinction: asset identity is structured into a `globalAssetId` and a
+list of `specificAssetIds`, with submodel templates (e.g., [Digital
+Nameplate, IDTA 02006](https://industrialdigitaltwin.org/en/content-hub/submodels))
+further separating type-level fields from instance-level fields. This
+suggests the schema may benefit from an explicit `kind` or `scope`
+qualifier on each identifier -- at minimum distinguishing type vs.
+instance -- rather than treating "source identifier" as a single
+undifferentiated concept.
+
+### Single value vs. metadata package
+
+Some external identification schemes are simple strings -- a GUID, a part
+number, a classification code. Others are richer: a dictionary of metadata
+that together constitutes the identity in the external system, potentially
+including identifiers from multiple systems simultaneously.
+
+For example, a single structural column in a building might carry:
+
+| System         | Identifier type | Value               |
+|----------------|----------------|---------------------|
+| IFC            | GlobalId       | `2O2Fr$t4X7Zf8NOew3FNr2` |
+| Revit          | ElementId      | `847562`            |
+| Uniclass 2015  | Classification | `Ss_25_10_30`       |
+| Revit          | Mark           | `C-14`              |
+
+<!-- 
+  - For Uniclass 2015 codes, see: [Uniclass 2015 - Table Ss: Structure](https://www.thenbs.com/our-tools/uniclass/ss_25_10_30) for example codes.
+  - The "Project"/"Mark" example was originally included to demonstrate a project-specific identifier. In AECO (Architecture, Engineering, Construction, and Operations) workflows, "Mark" is a commonly used parameter (e.g., in Autodesk Revit) for an instance or tag number. "Project" is not a standardized system like IFC or Revit, so "Revit / Mark" better reflects actual usage, where the "Mark" parameter is an identifier for individual elements.
+-->
+
+The need for multiple identifiers is not limited to design-time systems. In
+digital engineering workflows, the same physical asset may also carry
+operational bindings -- an equipment tag from a building management system, a
+sensor address from a telemetry platform, or a work-order ID from a
+maintenance system (see
+[Composable Bindings](https://aka.ms/ComposableBindings), Microsoft and
+NVIDIA, 2025). A single prim hierarchy representing a chiller unit might
+carry its PLM part number, its IFC GlobalId, *and* its OPC UA NodeId -- each
+serving a different system integration.
+
+This points toward a mechanism that can hold multiple identifiers from
+different systems, keyed by domain -- whether as a composed dictionary
+(extending `assetInfo`) or as typed properties on an applied schema (see
+[Likely direction](#likely-direction)). External feedback suggests that
+each identifier in the list should carry an explicit type label naming
+the source system or ontology it belongs to (e.g., PLM, IFC, ERP, CAD,
+ECLASS). Explicit typing would make round-tripping deterministic (a
+consuming tool knows which field to write back to), enable filtering
+across large scene graphs without parsing opaque strings, prevent
+collision when two systems use the same identifier format but different
+namespaces, and provide a foundation for future validation (e.g.,
+verifying that an IFC GlobalId conforms to the IFC GUID format).
+
+## Existing mechanisms in USD
+
+Several existing mechanisms partially address the need for external
+identifiers. Understanding their strengths and limitations informs the
+evaluation of candidate approaches (see [Likely direction](#likely-direction)).
+
+### assetInfo, UsdModelAPI, and UsdMediaAssetPreviewsAPI
+
+[`assetInfo`](https://openusd.org/dev/api/class_usd_model_a_p_i.html#Usd_Model_AssetInfo)
+is a composed dictionary that can technically live on any prim, though its
+convenience API is provided through
+[`UsdModelAPI`](https://openusd.org/dev/api/class_usd_model_a_p_i.html),
+which is designed for prims representing the root of a *model* (as defined
+by USD's `Kind` hierarchy). `UsdModelAPI` exposes a small set of well-known
+`assetInfo` keys:
+
+- **`identifier`** (`SdfAssetPath`) -- the asset's resolvable path.
+- **`name`** (`string`) -- the asset's name, suitable for database queries.
+- **`version`** (`string`) -- the asset's resolved version.
+- **`payloadAssetDependencies`** (`SdfAssetPath[]`) -- dependencies inside the
+  payload.
+
+`assetInfo` is composed element-wise and is nestable, which makes it
+well-suited for model-level asset management metadata.
+
+[`UsdMediaAssetPreviewsAPI`](https://openusd.org/dev/api/class_usd_media_asset_previews_a_p_i.html)
+demonstrates an extension of this pattern: it is an applied API schema that
+provides typed access to a nested sub-dictionary of `assetInfo`
+(`assetInfo["previews"]["thumbnails"]`). However, it is important to note
+that such applied schemas contribute nothing to a prim's *definition*
+(`UsdPrimDefinition`). They provide a described spec and a convenience API,
+but not defining data types that can be reasoned about independently of
+specific C++/Python API calls -- no fallback values, no automatic GUI
+presentation of unauthored properties, no schema-driven validation.
+
+Together, `UsdModelAPI` and `UsdMediaAssetPreviewsAPI` inform the design
+space but each has limitations:
+
+- `UsdModelAPI` is designed around USD's own concept of an asset (a
+  referenceable layer or package), not around external system identifiers.
+  While `assetInfo` itself is not restricted to model roots, the
+  `UsdModelAPI` convenience layer encourages use only on prims that
+  participate in the `Kind` hierarchy. (Note: `assetInfo` is registered
+  in `SdfSchema` for both prims and properties, suggesting it was
+  intended to be broadly applicable. The API's current limitation to
+  model roots appears to be an API gap rather than a design constraint,
+  and could potentially be addressed by migrating the `assetInfo` API
+  from `UsdModelAPI` to `UsdObject`.)
+- Many real-world objects that need source identifiers (individual rooms,
+  structural members, electrical components) are not model roots.
+- The existing `assetInfo` keys are oriented toward Pixar's asset management
+  model. Supporting arbitrary external identifiers from multiple systems
+  would require either new sub-dictionary conventions or applied schemas
+  with typed properties directed at this problem.
+
+These patterns inform two candidate approaches for source identifiers --
+extending `assetInfo` with stratified sub-dictionaries, or leveraging
+applied schemas with typed properties -- each with distinct trade-offs
+(see [Likely direction](#likely-direction)).
+
+### displayName
+
+`displayName` is metadata available on prim specs and property specs. It
+provides a human-readable name that can contain any UTF-8 string, including
+characters not valid in prim names.
+
+`displayName` is useful for presentation but is semantically a *display*
+concern, not an *identification* concern. Using it to carry source identifiers
+conflates two purposes: the name shown to a user in a UI may differ from the
+identifier used to link back to a source system. A structural column's display
+name might be "Column C-14 (Level 3)" while its source identifier is the
+IFC GlobalId `2O2Fr$t4X7Zf8NOew3FNr2`.
+
+The [UI Hints](../ui-hints/README.md) work, now
+[implemented in OpenUSD](https://github.com/PixarAnimationStudios/OpenUSD/tree/dev/pxr/usd/usdUI),
+has migrated `displayName` into a `uiHints` dictionary alongside other
+presentation-only metadata like `hidden` and `displayGroup`. This makes
+explicit what was always implicit: `displayName` is a UI concern. The new
+access API is
+[`UsdUIObjectHints`](https://openusd.org/dev/api/class_usd_u_i_object_hints.html),
+and the old top-level accessors are deprecated. Pipelines that have been using
+`displayName` as a carrier for source identifiers now face an active migration
+-- and the question is whether they migrate to yet another ad-hoc convention,
+or to a standardized source identifier mechanism.
+
+### customData and customLayerData
+
+`customData` is a freeform dictionary available on any prim or property.
+`customLayerData` is the layer-level equivalent. Both are intended for
+pipeline-specific or ad-hoc metadata.
+
+While `customData` can technically store external identifiers, it provides no
+standardization: every pipeline must agree on key names, and tools have no way
+to discover or interpret source identifiers without prior knowledge of the
+convention used. This is precisely the interoperability gap that a standardized
+mechanism would close.
+
+## Industry use cases
+
+The following examples illustrate the problem across industries. They are not
+exhaustive but are intended to show that the need for separating USD namespace
+identifiers from source identifiers is broad and cross-cutting.
+
+### Architecture, Engineering, Construction, and Operations (AECO)
+
+AECO data originates from tools like Autodesk Revit, Graphisoft Archicad,
+Bentley MicroStation, and the open IFC standard. Naming conventions in AECO
+frequently conflict with USD's prim name grammar:
+
+- **Room numbers** are often purely numeric (e.g., `1001`), which cannot serve
+  as a prim name starting character under pre-v24.03 rules and still cannot
+  serve as identifiers under current XID rules.
+- **Classification codes** use slashes, hyphens, spaces, and other delimiters
+  not valid in USD prim names (e.g., CI/SfB `BB/500`, OmniClass
+  `23-13 11 00`).
+- **IFC GlobalIds** are 22-character base64-encoded strings that uniquely identify
+  building elements across the lifecycle of a project.
+- **Revision workflows** produce new identifiers with each design iteration;
+  the ability to derive revision information from the identifier is a
+  requirement, not a convenience.
+
+The AOUSD AECO Interest Group has documented these requirements in detail. A key insight from that work is the distinction between the prim
+name (which may be a transcoded or generated valid identifier) and the
+**source name** from the originating system, which must be preserved exactly
+for round-trip fidelity.
+
+### Manufacturing, Product Lifecycle, and Digital Engineering
+
+PLM systems assign stable identifiers -- part numbers, revision codes,
+serial numbers -- that must persist across the lifecycle of a physical
+product and its digital twin. These identifiers are often composite, with
+distinct fields serving different roles:
+
+- A **part number** like `A-0000-12345` identifies the *design* of a
+  component as a generic reference. Multiple instances of that component
+  in an assembly share this identifier, and searching for a part number
+  may return multiple revisions.
+- A **revision** identifies a specific version of that design. Revisions
+  may take the form of a human-readable suffix (e.g., `Rev.C`) or an
+  opaque system handle (e.g., Windchill's `OR:wt.part.WTPart:4697800`,
+  which resolves to a specific revision internally).
+- A **serial number** like `SN-2025-00847` identifies a specific *physical
+  instance* of that component.
+- A **BOM (Bill of Materials)** is generated by traversing an assembly and
+  collecting part numbers -- a workflow that requires source identifiers to be
+  discoverable and unambiguous.
+- **Alternative and equivalent identifiers** are common: OEM part numbers,
+  replacement part numbers, and service part numbers may all refer to the
+  same form/fit/function item under different schemes. A single component
+  may legitimately carry multiple identifiers that coexist without conflict.
+  Individual numbering systems may also embed internal structure -- for
+  example, the [Mercedes-Benz part numbering
+  system](https://www.benzworld.org/threads/the-mercedes-benz-parts-numbering-system.1473937/)
+  uses a base part number with optional extension suffixes (`ES1`, `ES2`)
+  that encode color and variant information, governed by rules about which
+  combinations are valid.
+
+In complex configuration-managed systems, the identifier may not be a
+human-readable part number at all. PLM systems may use opaque system
+handles -- meaningful only to the originating system's resolver -- where a
+"part" is an abstract container whose concrete identity depends on
+configuration rules and context. These opaque, vendor-specific identifiers
+must survive a round-trip through USD without loss, just as human-readable
+strings do.
+
+The industrial automation community has addressed this same
+multi-identifier problem through the Asset Administration Shell (AAS)
+standard, where an asset may simultaneously carry identifiers from
+multiple systems (PLM, CAD, ERP, equipment management) as parallel
+entries in a `specificAssetIds` list -- each with an explicit type
+label -- without any one being privileged over the others.
+
+#### Configurable products and composite keys
+
+PLM systems also manage **configurable products** whose structure depends
+on context. A product's Bill of Materials may change dramatically based on
+**navigation criteria** -- the rules used to traverse and resolve the
+sub-structure for a specific configuration. Navigation criteria may
+themselves be opaque objects (e.g., Windchill's
+`OR:wt.filter.NavigationCriteria:7608531`) or encoded strings (URLs,
+JSON). The result is that a single primary identifier may not suffice to
+identify the specific item referenced in USD; the combination of part
+identifier and navigation criteria (or other context keys) forms a
+composite key. This reinforces the need for source identifier metadata
+that can carry multiple fields per system, not just a single value.
+
+If these identifiers are encoded into prim names, characters like hyphens and
+periods are lost or transcoded, making BOM generation from the USD stage
+unreliable without an additional decoding step.
+
+#### Identity continuity
+
+In aerospace and defense manufacturing, the stakes are especially high: a
+part moves through multiple suppliers, routings, and process steps --
+including destructive geometric changes like machining, heat treatment, and
+stress relief -- while its identity must remain stable for safety
+certification, fleet risk management, and root cause analysis.
+
+The Association for Manufacturing Technology (AMT) has identified this as
+**identity continuity**: source identifiers that survive state transitions,
+re-parenting, and assembly changes without relying on the prim's position
+in the namespace.
+
+Feature-level identifiers (individual holes, datum faces, tolerances) add a
+further dimension, since features may appear, disappear, or deform across
+manufacturing operations while remaining traceable.
+
+#### Operational telemetry and composable bindings
+
+Beyond design-time identification, the same assets increasingly participate
+in live operational loops. USD scenes representing real-world equipment
+(compute racks, robotic work cells, HVAC units) must bind to external
+systems streaming telemetry -- sensor readings, performance metrics, event
+logs -- where each event carries an **object identifier** (rack ID, sensor
+address, equipment tag) that must resolve to the correct prim hierarchy.
+
+The [Composable Bindings](https://aka.ms/ComposableBindings) whitepaper
+(Microsoft and NVIDIA, 2025) describes this pattern in the context of the
+digital engineering loop: standardized source identifiers on prims would
+replace today's brittle, ad-hoc integration code with declarative
+telemetry-to-scene mappings.
+
+### Media and Entertainment (M&E)
+
+Even in USD's original domain, asset management systems assign identifiers that
+differ from prim namespace paths:
+
+- **Asset management database IDs** track versions, approvals, and
+  dependencies at a granularity that may not align with USD's namespace
+  hierarchy.
+- **Shot and sequence identifiers** follow studio-specific conventions that may
+  include characters not valid in prim names.
+- **Published asset versions** are tracked by systems (e.g., Flow Production Tracking, ftrack)
+  that assign their own unique identifiers alongside the USD asset path.
+
+While `assetInfo` covers some of these cases at the model level, it does not
+address identification at finer granularities (individual props, lights,
+materials) or across multiple asset management systems.
+
+### Robotics and Simulation
+
+Robotics simulation assets are increasingly authored and exchanged as OpenUSD
+files. A community-driven effort to standardize these conventions -- the
+[OpenUSD Conventions for Simulation Asset Interoperability
+REP](https://github.com/RobotecAI/wip-openusd-interoperability-rep) -- is
+defining schemas for ROS interfaces, physics layering, and asset composition
+across simulators (Gazebo, Isaac Sim, MuJoCo, O3DE). The identifier gap
+surfaces in several concrete ways:
+
+- **Source format provenance.** Assets are converted from URDF, SDFormat, or
+  MJCF into OpenUSD. The original package URI (e.g.,
+  `package://my_robot/urdf/robot.urdf`) and model name are lost unless
+  stored in ad-hoc `customData`. Round-trip fidelity -- exporting back to
+  URDF/SDF without information loss -- requires a standardized place to
+  carry the source identifier.
+- **ROS package identity.** ROS assets reference dependencies via
+  `package://` URIs resolved by the host environment. The originating
+  package name and version are metadata that should travel with the asset
+  for dependency resolution and compliance checking, distinct from the USD
+  namespace path.
+- **Multi-robot fleet composition.** When the same robot asset is
+  instantiated multiple times in a stage (e.g., `robot_1`, `robot_2`), each
+  instance shares the same source design identifier (model, manufacturer,
+  firmware version) while differing in instance identity (fleet ID, station
+  assignment). Today there is no standardized way to carry the shared source
+  identifier alongside the per-instance namespace path.
+- **Sensor and actuator catalogs.** Simulation assets compose modular
+  sub-assets (LiDAR modules, camera units, grippers) from component
+  libraries. Each component carries a catalog identifier (manufacturer part
+  number, datasheet revision) that must survive composition into the parent
+  robot without being encoded into the prim name.
+- **Operational binding in digital twins.** When simulation assets represent
+  real-world equipment, sensor prims must bind to telemetry streams
+  identified by equipment tags, OPC UA NodeIds, or ROS topic names. These
+  operational identifiers coexist with the asset's design-time identifiers
+  and must be discoverable by runtime systems without prior knowledge of
+  pipeline-specific conventions.
+
+The REP currently lacks `assetInfo` or introspection guidance. The robotics
+community would benefit from a standardized identifier mechanism that supports
+a namespaced sub-dictionary (e.g., `assetInfo["ros"]`) for robotics-specific
+provenance, positioned as a domain convention that can be promoted through the
+vendor extensibility lifecycle as the broader identifier mechanism matures.
+
+Across all four domains, the common thread is **traceability**: the ability
+to follow an entity from its origin in an external system, through its
+representation in USD, and back again -- regardless of namespace edits,
+assembly changes, format conversions, or geometric mutations along the way.
+
+## Design considerations
+
+This section outlines principles and open questions to guide the community
+toward a solution. The goal of this proposal is to establish consensus on the
+problem statement and separation of concerns *before* committing to a specific
+mechanism -- not because a solution is distant, but because premature
+implementation without that consensus is what produced the current landscape
+of fragmented workarounds.
+
+### Principles
+
+1. **Separation of concerns.** USD namespace paths and external source
+   identifiers serve different purposes. They should be stored and accessed
+   through distinct mechanisms, even if they sometimes carry the same value.
+
+2. **Industry agnosticism.** The mechanism should not be specific to any one
+   industry's identifier scheme. It should be flexible enough to carry IFC
+   GUIDs, PLM part numbers, M&E asset database IDs, and schemes not yet
+   envisioned. This follows from the open world assumption: the set of
+   external systems that may need to identify a prim is not closed.
+
+3. **Vendor extensibility.**
+   - Any vendor, standards body, or consortium -- from a single company to
+     an industry standard like IFC -- should be able to declare its own
+     identifier scheme without central approval before deployment.
+   - Identifiers may be opaque -- meaningful only to the declaring system.
+     Support for such proprietary schemes is necessary; centralizing their
+     management is neither desirable nor required.
+   - When a vendor scheme matures to the point of requiring systems
+     interoperability, proven extensions can be promoted to multi-vendor or
+     core status over time. This tiered lifecycle -- ship independently,
+     converge when proven, standardize when mature -- recurs across
+     standards bodies:
+     - Khronos glTF (vendor prefix → `EXT_` → `KHR_`); Khronos
+       graphics APIs (OpenGL, Vulkan: vendor → `EXT_` → `ARB_` → core)
+     - W3C web platform (Community Group incubation → Working Group →
+       Recommendation; CSS vendor prefixes → unprefixed standard
+       properties)
+     - IETF internet standards (Experimental → Proposed Standard →
+       Internet Standard)
+     - W3C RDF (simple interpretation → RDF vocabulary → RDFS →
+       OWL / domain ontologies)
+
+     The underlying pattern is the same across bodies, though the
+     terminology differs: Khronos formalizes "vendor extensions" with
+     registered prefixes; the W3C frames the same lifecycle as
+     "incubation and staged maturity"; the IETF uses "experimental"
+     and "proposed standard" designations.
+
+     Two parallels are especially instructive. **Khronos glTF** is a
+     3D data interchange format whose extension model governs
+     *properties on objects* -- directly analogous to attaching
+     vendor-defined identifier metadata to USD prims. Its `extensions`
+     vs. `extras` distinction parallels schema-based metadata vs.
+     `customData` in USD. The **W3C web platform** stages features
+     from Community Group incubation (low barrier to entry) through
+     Working Group specification to Recommendation (demonstrated
+     interoperability) -- a consensus-driven maturity path well-suited
+     to the multi-industry AOUSD context. HTML's `data-*` attributes
+     similarly provide a freeform extension slot alongside governed
+     standard attributes, echoing the `customData` vs. schema
+     distinction.
+
+     The details of a vendor extension model for source identifiers --
+     prefix conventions, registration process, promotion criteria -- are
+     out of scope for this proposal and would be addressed in a follow-up.
+
+   - A vendor extension (a schema, identifier scheme, or set of
+     conventions) is not the same thing as an OpenUSD plugin -- the latter
+     is a runtime implementation detail. The AOUSD Core Specification 1.0
+     established this distinction by specifying schemas without prescribing
+     a plugin or schema registry. This proposal follows the same principle:
+     vendor identifier schemes are defined at the data model level,
+     independent of any particular plugin architecture.
+
+4. **Composability.** External identifiers should participate in USD's
+   composition model in a well-defined way. It should be clear how source
+   identifiers are resolved when a prim is referenced, inherited, or
+   specialized.
+
+5. **Discoverability.** Tools should be able to discover that a prim carries
+   source identifiers without prior knowledge of a pipeline-specific
+   convention. This argues for a schema-based approach rather than ad-hoc
+   `customData` usage.
+
+6. **External queryability.** Storing a source identifier on a prim is
+   necessary but not sufficient. Real-world workflows also need to resolve
+   the reverse question: *given an external identifier, which USD layers and
+   prims reference it?* The source identifier mechanism should make it
+   tractable for consumers to build external indexes over USD content.
+
+7. **Round-trip fidelity.** Source identifiers should survive a round-trip
+   through USD without loss, even if the characters they contain are not valid
+   in USD prim names.
+
+8. **Minimal disruption.** The solution should build on USD's existing
+   strengths. It should not require fundamental changes to the composition
+   engine or namespace path semantics.
+
+### Open questions for discussion
+
+1. **Cross-system resolution and indexing.**
+   Once source identifiers are stored in USD, consumers will need to
+   resolve the reverse question: "which layers and prims reference
+   identifier X?" Consumers are responsible for building their own indexes
+   and optimizing for their own access patterns (key-value lookups,
+   dependency graphs, search) on top of whatever identifier mechanism USD
+   provides. What characteristics of the mechanism make that tractable?
+
+2. **Dictionary metadata vs. applied schema?**
+   Should source identifiers live as sub-dictionaries within `assetInfo`,
+   or as typed properties on applied schemas that contribute to
+   `UsdPrimDefinition`? (These are labeled Approach A and Approach B
+   respectively in [Likely direction](#likely-direction).) Key trade-offs:
+   - **Discoverability and validation**:
+     - Applied schemas enable GUI presentation of unauthored properties,
+       schema versioning, and schema-driven validation; dictionaries do
+       not.
+     - Note that this refers to USD's *built-in* schema validation
+       (type checking, fallback values, conformance to a declared
+       schema). *Domain-specific* validation -- checking whether a
+       value is well-formed according to the source system's own rules
+       (e.g., that a Mercedes-Benz ES2 color code is exactly four
+       digits) -- can be implemented equally well against either
+       mechanism, since it is performed by external validators that
+       interpret the stored values regardless of how they are stored.
+     - The gap narrows if each organization or discipline provides a
+       fallback value for every field it introduces (even an empty string
+       or `assetPath`): an applied schema can then populate a
+       sub-dictionary of `assetInfo` whose entries appear in the
+       `UsdPrimDefinition` and are therefore discoverable by any
+       `assetInfo`-aware GUI, just as properties would be.
+     - Adopting that convention could also motivate `usdGenSchema` support
+       for generating getters and setters for metadata in the prim
+       definition.
+   - **Heterogeneous packages**: Different domains need different identifier
+     fields. A single multi-apply schema must either carry only the common
+     subset or accumulate rarely-used properties -- the more heterogeneous
+     the contents, the more this tension favors dictionaries or a family of
+     domain-specific schemas.
+   - **Adoption velocity**: Dictionaries let domains move independently;
+     schemas require agreement on property names before shipping.
+
+   See [Likely direction](#likely-direction) for a detailed comparison.
+
+3. **Stratification and governance.**
+   Under either approach, how should vendor and domain extensions be
+   structured and governed?
+   - The vendor extension principle implies a tiered lifecycle --
+     analogous to glTF's vendor → `EXT_` → `KHR_` promotion path,
+     OpenGL's `GL_NV_` → `GL_EXT_` → `GL_ARB_` → core, or the W3C's
+     Community Group → Working Group → Recommendation maturity stages
+     -- where vendor-specific conventions can ship immediately,
+     successful patterns are promoted to multi-vendor conventions, and
+     mature conventions become candidates for core standardization.
+   - The open question is what naming, namespacing, and registration
+     conventions ensure that extensions from different vendors and domains
+     (PLM systems, AECO standards, M&E pipelines, authorship tools)
+     remain discoverable, composable, and non-conflicting -- while
+     allowing vendors to ship without waiting for cross-industry
+     consensus.
+   - Concrete governance and registration mechanisms are deferred to the
+     follow-up solution proposal (see [Next steps](#next-steps)).
+
+4. **Scope: model roots only, or any prim?**
+   The `UsdModelAPI` convenience layer scopes `assetInfo` to model roots, but
+   `assetInfo` itself is registered in `SdfSchema` for both prims and
+   properties. Migrating the API from `UsdModelAPI` to `UsdObject` (an
+   independently worthwhile change) would eliminate this restriction.
+   Applied schemas naturally apply to any prim already. Either way,
+   external identifiers are needed on prims at all levels of the hierarchy
+   and the mechanism must not be artificially limited to model roots.
+
+   An asset may collapse internal structure for downstream use -- a
+   manufacturer simplifying a product assembly, a service team stripping
+   internals for lighter instruction models, or an M&E artist reducing
+   detail for layout. Even so, individual meshes still need to trace back
+   to the source parts they represent -- identifiers that differ from the
+   model root's own. An assembly (e.g., a rack) may contain components
+   (e.g., trays) whose visual prims carry their own source identifiers
+   even though they are not model roots.
+
+   However, broadening scope introduces a **discoverability cost**. Today,
+   the model hierarchy (via `Usd.PrimIsModel` and `Kind`) provides a cheap
+   way to find "things that have identity" -- you walk the model hierarchy
+   and stop. If any prim in a stage can carry source identifiers, "find me
+   all prims with identifiers" becomes a full stage traversal, which on
+   large scenes (millions of prims) is a meaningful performance difference.
+   The design should consider whether the model hierarchy remains the
+   primary discovery path (with sub-model identifiers accessed only when
+   drilling into a known subtree), or whether an additional indexing
+   mechanism is needed (e.g., a collection or relationship at the model
+   root that enumerates identified sub-prims).
+
+5. **Namespacing of identifiers.**
+   If a prim carries identifiers from multiple external systems, how should
+   they be organized? The namespacing convention must accommodate the full
+   spectrum of "vendors" -- from a single product (e.g., `windchill`,
+   `revit`) to an industry standard (e.g., `ifc`, `opcua`) to an internal
+   enterprise system. For dictionaries, this means sub-dictionary naming
+   conventions with vendor prefixes. For applied schemas, this means
+   choosing between multi-apply instance names (e.g., `sourceId:revit`,
+   `sourceId:ifc`) or a family of single-apply schemas that include a
+   common base.
+
+   An alternative model is to encode vendor identity *inside* the
+   identifier value itself (e.g., `"com.ptc.windchill:part:xyz"`) rather
+   than in the key or namespace. This is attractive for its simplicity --
+   a single "primary identifier" field can carry multi-system values if
+   it accepts an array -- and it enables non-destructive composition
+   (adding an identifier does not remove an existing one). However, it
+   trades schema enforceability for encoding flexibility: tooling must
+   parse a string convention rather than inspect typed schema fields, and
+   fallback values, GUI discoverability, and schema-driven validation
+   become unavailable for the structured portions of the identifier. The
+   tension between these approaches is a key design decision for the
+   solution proposal.
+
+6. **Relationship to `displayName`.**
+   `displayName` is a UX convenience; the source identifier is the
+   authoritative link to the originating system. While a display name
+   *may* be derived from information in the source record, it has no
+   semantic relationship to the identifier itself -- the identifier is the
+   source of truth, and `displayName` should have no influence on it.
+   When multiple instances share a source identifier, deriving
+   `displayName` from it may be confusing for presentation (e.g., 30 doors
+   all displaying the same catalog number). `displayName` substitution
+   patterns -- as used for symmetry in rigging and for multiple instances of
+   character groups -- may be relevant if this is a needful pattern.
+
+7. **Relationship to authorship traceability.**
+   Authorship traceability (tracking who created or modified content) is a
+   related but distinct concern that could build on the same domain identifier
+   pattern. Under either candidate approach, authorship could be one
+   domain-specific use case among many. How should the design accommodate
+   this without conflating authorship metadata with source identification?
+
+8. **Interaction with transcoding.**
+   If source identifiers contain characters invalid in USD, they should be
+   stored verbatim (not transcoded) in whatever mechanism is chosen. Transcoding
+   is relevant when external identifiers need to be *embedded in prim names*,
+   which is a separate concern. The source identifier mechanism should
+   eliminate the need to encode external identifiers into prim names in most
+   workflows.
+
+### Likely direction
+
+#### Emerging consensus
+
+Discussion and review feedback have converged on several points:
+
+- **Multi-field, not single-value.** Source identifiers are metadata
+  packages, not atomic strings. Part numbers, revisions, serial numbers,
+  and navigation criteria serve different roles and must be separable.
+  Every domain that has contributed feedback confirms this.
+- **Multiple systems per prim.** A single prim may carry identifiers from
+  more than one external system (e.g., Windchill and SAP). The mechanism
+  must support this without collision.
+- **Any prim, with cost-aware discovery.** Identifiers are needed below
+  model roots, but discovery must not require full stage traversal on
+  large scenes (see [open question 4](#open-questions-for-discussion)).
+- **Type-vs-instance scoping.** External feedback from the AAS community
+  suggests that source identifiers should distinguish between type-level
+  identifiers (part families, product designations) and instance-level
+  identifiers (serial numbers, deployed unit IDs), potentially through
+  an explicit scope qualifier. This aligns with the type/instance
+  discussion in [Key questions](#instance-identity-vs-source-identity)
+  but has not yet been debated across domains.
+- **Explicit identifier typing.** The same feedback recommends that each
+  identifier carry a type label naming its source system or ontology,
+  which would enable deterministic round-tripping, filtering, and
+  collision prevention across systems.
+
+An independent proof-of-concept
+([PR](https://github.com/asluk/OpenUSD-proposals/pull/2), Michael
+Wagner, SyncTwin) has explored the approach with a bidirectional AAS
+Digital Battery Passport ↔ OpenUSD mapping. The sample defines USD API
+schema classes alongside `sourceId:dpp:` custom attributes,
+demonstrates `assetInfo` fallback for legacy tools, and includes
+encodings under both Approach A and Approach B -- providing a concrete
+artifact for evaluating the mechanism choice. AAS community review of
+the proof-of-concept confirmed that the identifier handling aligns well
+with AAS conventions, but noted that a Digital Product Passport is a
+broader concept than identity alone -- it includes structured lifecycle,
+compliance, and sustainability information realized through multiple AAS
+submodels. Those additional semantic requirements depend on a
+standardized identifier mechanism as a foundation, but are out of scope
+for this proposal.
+
+#### Remaining design choice: mechanism
+
+TAC discussion has identified two candidate approaches. The next phase
+will evaluate both before committing to one.
+
+**Approach A: Extend `assetInfo` with stratified sub-dictionaries.**
+Domains register source identifiers as sub-dictionaries within `assetInfo`,
+with applied API schemas providing convenience access (following the
+`UsdMediaAssetPreviewsAPI` precedent).
+
+**Approach B: Applied schema (likely multi-apply) with typed properties.**
+Source identifiers are expressed as properties on an applied API schema,
+with each external system represented as a schema instance (e.g.,
+`sourceId:windchill`, `sourceId:ifc`). Each instance carries typed fields
+(part number, revision, etc.) with fallback values.
+
+| | Approach A (`assetInfo` dictionary) | Approach B (applied schema) |
+|---|---|---|
+| **Pros** | <ul><li>Builds on existing composition semantics (element-wise composed, nestable).</li><li>Low barrier to adoption -- `assetInfo` already exists and is familiar.</li><li>Freeform dictionaries accommodate heterogeneous identifier packages; domains can move independently and converge on conventions over time.</li></ul> | <ul><li>Identifier schemes become part of `UsdPrimDefinition` and `UsdTypeInfo`, enabling discoverability and GUI presentation of unauthored properties.</li><li>Schema versioning and validation are built in.</li><li>More rigorous structure may reduce adoption fragmentation across domains.</li></ul> |
+| **Cons** | <ul><li>Convenience API only -- not true data type definitions in `UsdPrimDefinition`; no fallback values, no automatic GUI presentation, limited validation.</li><li>Without active governance, `assetInfo` becomes a dumping ground of ad-hoc keys. (Both approaches require curation, but the risk is more acute here -- dictionaries impose no structural guardrails.)</li></ul> | <ul><li>Domains have different identifier fields; a single schema must carry the common subset or accumulate rarely-used properties, slowing adoption.</li><li>Requires distributing schema plugins -- though tools already ship their own domain plugins and unrecognized schema data roundtrips without loss.</li><li>Without active governance, schema proliferation creates its own discoverability burden.</li></ul> |
+
+A possible variant of Approach B is a single-apply base schema in the core
+(empty or with only common properties), with domain-specific single-apply
+schemas that include the base and add their own extensions. This encodes
+systems in concrete schemas rather than multi-apply instance names, but
+requires `UsdSchemaRegistry` query enhancements.
+
+A third option -- encoding vendor and structure inside a single string or
+array field (e.g., `identifier=["windchill:x","sap:y"]`) -- has been
+raised. This trades schema structure for simplicity and is attractive for
+ad-hoc adoption, but collapses the per-system typed fields that both
+approaches above preserve. It may be useful as a lightweight fallback but
+is unlikely to serve as the primary mechanism given the multi-field
+consensus.
+
+The remaining open questions above are intended to resolve which approach
+best serves the community, including namespacing conventions and how
+adjacent use cases (including authorship traceability) should be
+accommodated.
+
+### Risks
+
+1. **Uncurated proliferation.** Both approaches are vulnerable to
+   unmanaged growth. Under Approach A, ad-hoc keys accumulate in `assetInfo`
+   without structure. Under Approach B, a proliferation of domain-specific
+   schema plugins creates its own discoverability and distribution burden.
+   The mechanism alone does not prevent this -- either approach requires
+   clear governance and curation. But curation itself introduces friction:
+   teams building production pipelines cannot wait for cross-industry
+   consensus before shipping something that works for their domain. The
+   design must find a balance that lets domains move independently while
+   still converging on interoperable conventions over time.
+
+2. **Premature standardization.** Locking in a pattern before enough domains
+   have exercised it risks discovering too late that it doesn't generalize.
+   The baseline example should be validated against at least two or three
+   distinct domain use cases before being promoted as a standard.
+
+3. **Adoption fragmentation.** If the mechanism is too generic, domains may
+   still build incompatible conventions on top of it, defeating the
+   interoperability goal. The design must balance flexibility with enough
+   structure to ensure cross-domain discoverability.
+
+4. **Scope creep.** Source identifiers shade into broader metadata concerns
+   -- authorship, semantic meaning, lifecycle state, compliance
+   frameworks (e.g., Digital Product Passports) -- and the mechanism
+   tries to solve everything. The scope should remain focused on
+   identification and linking; adjacent concerns should build on the pattern
+   as separate extensions, not expand the core.
+
+## Relationship to other proposals
+
+The distinction between a name's role as a structural address within a
+system and its role as an identifier for an external entity is
+well-established in the knowledge representation literature. The
+[W3C RDF 1.1 Semantics](https://www.w3.org/TR/rdf11-mt/) specification
+formalizes this as the difference between *denotation* (the mapping from
+a name to a resource within an interpretation) and *identification* (an
+externally-defined naming relationship). This proposal addresses the same
+separation of concerns in a domain-specific context: USD namespace paths
+are the denotation mechanism; source identifiers are the identification
+mechanism. The design does not seek to reimplement RDF semantics -- USD's
+composition engine, real-time performance requirements, and
+scene-description data model impose fundamentally different constraints --
+but the conceptual alignment is intentional. The Semantic Web's
+[open world assumption](https://www.w3.org/TR/sw-oosd-primer/) --
+that the absence of a statement does not imply its negation -- also
+underpins several design principles here: the mechanism cannot assume
+a closed set of identifier systems, and a prim's lack of a source
+identifier does not mean no external identity exists.
+
+This proposal is also conceptually upstream of several related efforts
+within the USD ecosystem:
+
+- **[Unicode Identifiers in USD](../tf_utf8_identifiers/README.md)**
+  (Implemented, v24.03) -- Expanded USD's prim name grammar to support Unicode
+  XID characters. This broadens what can be expressed *as a prim name* but
+  does not address the separation of concerns between prim names and external
+  identifiers.
+
+- **[Extended Unicode Identifiers](https://github.com/NVIDIA-Omniverse/USD-proposals/tree/extended_unicode_identifiers/proposals/extended_unicode_identifiers)**
+  -- Explores further extensions to prim name grammar (leading digits, medial
+  hyphens). This addresses the second problem identified above -- improved
+  ergonomics of path identifiers -- and is a complementary effort. This
+  proposal does not foreclose or deprioritize that work; rather, by
+  establishing a dedicated source identifier mechanism, it reduces the
+  pressure on prim name grammar to accommodate every external naming
+  convention, allowing grammar extensions to be evaluated on their own merits.
+
+- **[Bi-Directional Transcoding of Invalid Identifiers](../_notPublished/draft/transcoding_invalid_identifiers/README.md)**
+  -- Proposes a Bootstring-based algorithm for round-trip encoding of arbitrary
+  UTF-8 strings into valid USD identifiers. Transcoding remains valuable for
+  generating readable prim names from external strings, but a dedicated source
+  identifier mechanism reduces the reliance on transcoding as the *only* way
+  to preserve external identifiers in USD.
+
+- **[Revise Use of Layer Metadata](../revise_use_of_layer_metadata/README.md)**
+  -- Proposes migrating stage metadata to applied schemas. The analysis of
+  `assetInfo`'s prim-based design in that proposal is directly relevant:
+  the same reasoning that led to `assetInfo` being prim-based (persistence
+  through flattening, composability in referenced assets) applies to source
+  identifiers.
+
+- **[UI Hints in USD](../ui-hints/README.md)**
+  ([Implemented](https://github.com/PixarAnimationStudios/OpenUSD/tree/dev/pxr/usd/usdUI))
+  -- Has migrated `displayName`, `hidden`, and `displayGroup` into a `uiHints`
+  dictionary, with deprecation of the existing top-level fields. This cements
+  `displayName` as a presentation concern and creates urgency for a dedicated
+  source identifier mechanism, since pipelines currently using `displayName`
+  as a workaround now face active API and content compatibility costs.
+
+## Next steps
+
+1. **~~Submit as pull request.~~** ✅ Submitted as
+   [PR #105](https://github.com/PixarAnimationStudios/OpenUSD-proposals/pull/105).
+   Community feedback and discussion on the open questions is welcome there.
+
+2. **Align on the problem statement.** Confirm among TAC members and
+   industry stakeholders that the problem is understood consistently and
+   that the framing resonates across industries. The `displayName`
+   deprecation path makes this time-sensitive: every month without a
+   standardized alternative adds to the technical debt accumulating on
+   ad-hoc workarounds.
+
+3. **Gather additional use cases.** Solicit concrete examples from
+   manufacturing, product lifecycle, digital engineering, M&E, and other
+   domains to ensure the framing is not inadvertently biased toward any
+   single industry. Steps 2 and 3 can proceed in parallel.
+
+4. **Evaluate and design the mechanism.** Based on the open questions,
+   evaluate the two candidate approaches -- extending `assetInfo` with
+   stratified domain sub-dictionaries (Approach A) vs. applied schemas
+   with typed properties (Approach B) -- or determine whether a hybrid or
+   alternative mechanism is warranted. Define concrete guidelines and a
+   baseline example in the OpenUSD codebase.
+
+5. **Draft a solution proposal.** Based on alignment from steps 2-4, draft a
+   concrete proposal specifying the mechanism, its composition semantics,
+   and its API -- including how adjacent use cases like authorship
+   traceability fit into the pattern. This should also include or be
+   accompanied by a vendor extensibility model: prefix conventions, naming
+   rules, registration process, and promotion criteria. As established in
+   the design requirements, vendor extensions operate at the data model
+   level and are independent of any particular plugin architecture; the
+   solution proposal should define the concrete conventions and governance
+   that make this practical.
+
+Stakeholders who want to accelerate this work are encouraged to engage
+directly on any of the steps above. The pace is determined by the breadth
+of consensus achieved at each step -- and that consensus is what ensures the
+solution serves the full community rather than a single use case.
+
+---
+
+## Appendix A: AI-Assisted Drafting
+
+This proposal was drafted with the assistance of an AI language model (Claude,
+Anthropic) operating within Cursor IDE, under the direction of Aaron Luk. All
+conceptual framing, editorial decisions, and technical judgment are the
+responsibility of the human author. The AI was used as a drafting tool to
+accelerate the writing process based on context and direction provided by the
+author.
+
+The context provided to the AI was itself the product of extensive preceding
+discussion among stakeholders and subject matter experts across AOUSD working
+groups, industry partners, and internal reviewers. The AI did not participate
+in those discussions; it received their outputs as input for drafting.
+
+### Context provided to the AI
+
+The following materials were provided as input context for drafting:
+
+1. **Meeting discussion notes** -- Summary of an AOUSD TAC discussion from
+   2026-02-20 covering the core problem statement (separating USD identifiers
+   from external identifiers), key questions (instance vs. source, single
+   value vs. package), existing USD concepts (`assetInfo`), the desired
+   approach (conceptual separation first, implementation details later,
+   cross-industry alignment), and timeline.
+
+2. **[Extended Unicode Identifiers proposal](https://github.com/NVIDIA-Omniverse/USD-proposals/tree/extended_unicode_identifiers/proposals/extended_unicode_identifiers)**
+   -- Referenced as related but noted as an implementation detail regarding
+   prim name syntax expansion.
+
+3. **[Bi-Directional Transcoding of Invalid Identifiers proposal](../_notPublished/draft/transcoding_invalid_identifiers/README.md)**
+   -- A draft proposal for Bootstring-based encoding of arbitrary UTF-8
+   strings into valid USD identifiers. Referenced as a related implementation
+   technique.
+
+4. **AOUSD AECO Interest Group Prim Name Grammar Use Case**
+   (DRAFT v0.0, dated 2025-04-05) -- AECO domain requirements including
+   leading digits, medial hyphens, slashes, GUIDs, regional characters,
+   bi-directional transcoding, and semantically meaningful naming conventions.
+
+5. **Existing proposals in this repository** -- The AI reviewed the structure
+   and conventions of published proposals (e.g., `semantic_schema`,
+   `tf_utf8_identifiers`, `revise_use_of_layer_metadata`) and the
+   `UsdModelAPI` / `assetInfo` documentation to inform the analysis of
+   existing mechanisms.
+
+6. **[UI Hints in USD](../ui-hints/README.md)
+   ([Implemented](https://github.com/PixarAnimationStudios/OpenUSD/tree/dev/pxr/usd/usdUI))**
+   -- The migration of `displayName`, `hidden`, and `displayGroup` into a
+   `uiHints` dictionary with deprecation of the existing top-level fields.
+   Already implemented in OpenUSD `dev`. Identified as creating urgency due
+   to API and content compatibility implications for pipelines using
+   `displayName` as a workaround for source identifiers.
+
+7. **[Composable Bindings: Simplified System Integration](https://aka.ms/ComposableBindings)**
+   (Microsoft and NVIDIA, November 2025) -- Whitepaper describing an
+   integration pattern for connecting industrial data systems (data lakes,
+   telemetry, OTEL, CloudEvents) to visualization/simulation engines
+   (OpenUSD/Omniverse). Object identifiers from external systems are the
+   binding key to USD scene objects. Illustrates the digital engineering
+   and operational telemetry use case for source identifiers.
+
+8. **Association for Manufacturing Technology (AMT) materials** -- GTC
+   working session proposal "Asset Identity & Geometry-Anchored Semantics
+   for Manufacturing" (AOUSD / AMT / NVIDIA), accompanying notes on
+   identity layers from AMT collaborators, and Feature ID Flowchart
+   (Matt McCormick, AMT). Describes identity continuity as the requirement
+   that source identifiers survive manufacturing state transitions
+   (destructive geometry changes, re-parenting, assembly changes) and
+   extends to feature-level identifiers that may appear, disappear, or
+   deform across process steps. Explicitly aligns with "ongoing AOUSD
+   discussions on decoupling USD identifiers from external system
+   identifiers."
+
+9. **AOUSD IEDT Interest Group presentation (PTC)** -- Steve Ghee (PTC)
+   presented CAD/PLM integration with USD: direct USD export from Creo
+   and Onshape, automatic USD generation from Windchill PLM on CAD
+   check-in, configuration-driven on-demand USD generation,
+   bidirectional traceability via asset resolvers, and access control
+   flowing through the resolver. Demonstrated with a ~6,000-part tractor
+   from Creo rendered in Omniverse.
+
+10. **PLM identifier architecture (PTC/Windchill)** -- Discussion with
+    Steve Ghee on how PLM identifiers work in practice: Windchill OIDs
+    are intentionally opaque URIs (e.g., `VR:wt.part.WTPart:23639563`);
+    the object identifier, display name, assembly occurrence ID, and
+    system-unique "number" are all distinct concepts; multiple OIDs per
+    item (PLM part, CAD document, navigation context); the asset resolver
+    URI is the real external reference. Part numbers don't scale in
+    complex parametric/configuration use cases -- the real identifier is
+    a composite URI meaningful only to the originating system. Motivated
+    the addition of vendor extensibility as a design principle.
+
+11. **[OpenUSD Conventions for Simulation Asset Interoperability
+    REP](https://github.com/RobotecAI/wip-openusd-interoperability-rep)**
+    -- A community-driven ROS Enhancement Proposal defining schemas for
+    ROS interfaces, physics layering, and asset composition across
+    robotics simulators (Gazebo, Isaac Sim, MuJoCo, O3DE). A review of
+    the REP against the [NVIDIA Asset Structure
+    Principles](https://docs.omniverse.nvidia.com/usd/latest/learn-openusd/independent/asset-structure-principles.html)
+    identified the absence of `assetInfo` or introspection guidance as a
+    high-severity gap. Robotics identifier needs include source format
+    provenance (URDF/SDF/MJCF round-trip), ROS package identity, fleet
+    composition (shared design ID vs. per-instance namespace), sensor
+    catalog part numbers, and operational telemetry binding (equipment
+    tags, OPC UA NodeIds). Motivated the addition of the Robotics and
+    Simulation industry use case.
+
+12. **AAS community feedback (Prof. Dr. Bernd Lüdemann-Ravit, Pooja
+    Gupta, University of Applied Sciences Kempten)** -- Three concrete
+    suggestions for the proposal: (a) distinguish asset type vs. asset
+    instance identifiers, with an explicit `kind`/`scope` field;
+    (b) natively support multiple identifiers per prim as a list, each
+    associated with its source system; (c) introduce explicit identifier
+    typing (PLM, IFC, ERP, CAD, ECLASS, etc.) for deterministic
+    round-tripping, filtering, and collision prevention. Accompanied by
+    AAS reference materials: the Digital Nameplate submodel specification
+    (IDTA 02006, v3.0.1), worked examples of `globalAssetId` and
+    `specificAssetIds` multi-identifier patterns, and reference to the
+    IDTA submodel catalog.
+
+13. **AAS DPP ↔ OpenUSD bidirectional mapping (Michael Wagner,
+    SyncTwin)** -- Independent proof-of-concept mapping between AAS
+    Digital Battery Passport (IDTA 02035-1) and OpenUSD
+    ([PR](https://github.com/asluk/OpenUSD-proposals/pull/2)).
+    Includes a sample `.usda` with USD API schema classes and
+    `sourceId:dpp:` custom attributes, a bidirectional mapping document
+    with field-by-field round-trip fidelity analysis, and encodings
+    under both Approach A (`assetInfo` sub-dictionaries) and Approach B
+    (`sourceId:` attributes). Exercises the `sourceId:<system>:<field>`
+    naming pattern and identification/presentation distinction.
+
+14. **[W3C RDF 1.1 Semantics](https://www.w3.org/TR/rdf11-mt/)** --
+    The RDF Model Theory formalizes the distinction between *denotation*
+    (a name's mapping to a resource within an interpretation) and
+    *identification* (an externally-defined naming relationship). The
+    proposal's separation of USD namespace paths from source identifiers
+    is a domain-specific instance of this established knowledge
+    representation principle. RDF's layered semantics (simple
+    interpretation → RDF vocabulary → RDFS → OWL / domain ontologies)
+    also informed the vendor extensibility lifecycle model.
+
+15. **[A Semantic Web Primer for Object-Oriented Software
+    Developers](https://www.w3.org/TR/sw-oosd-primer/)** (W3C Working
+    Group Note) -- Defines the *open world assumption* (OWA): "if
+    there is not enough information to prove a statement true, then it
+    may be true or false," contrasted with the *closed world assumption*
+    (CWA) of object-oriented and relational systems. The OWA underpins
+    this proposal's industry agnosticism and vendor extensibility
+    principles: the set of external identifier systems is not closed,
+    and the absence of a source identifier on a prim does not imply
+    the absence of external identity.
+
+### Review and refinement
+
+The draft was refined through multiple rounds of internal review. Key
+editorial decisions included:
+
+- **Two-problem framing** -- named source-identifier and prim-name-ergonomics
+  as distinct problems; positioned this proposal on the first without
+  foreclosing the second.
+- **GUIDs discussion** -- reframed as a symptom of missing separation of
+  concerns, not a defensive digression.
+- **`assetInfo` analysis** -- added `UsdModelAPI` and
+  `UsdMediaAssetPreviewsAPI` as prototype precedents.
+- **IFC GlobalId correction** -- GlobalIds are per-instance, not per-type.
+- **External queryability** -- added as a design principle and open question:
+  - Consumer-side indexing; mechanism must make this tractable.
+- **TAC feedback (authorship, next steps)** -- authorship traceability as a
+  related use case; consensus-driven next steps; PR submission step.
+- **TAC feedback (applied schemas)** -- tempered `UsdMediaAssetPreviewsAPI`
+  characterization; restructured "Likely direction" to compare dictionary
+  vs. applied-schema approaches with trade-offs.
+- **Vendor extensibility** -- added as a design principle:
+  - Cross-industry precedent: Khronos (glTF, OpenGL/Vulkan), W3C, IETF.
+  - glTF `extensions`/`extras` parallels schema vs. `customData`.
+  - W3C staged maturity path; `data-*` vs. governed attributes.
+  - Governance details deferred to solution proposal.
+- **Vendor extension vs. plugin** -- clarified as specification-level vs.
+  runtime distinction, citing AOUSD Core Spec 1.0 precedent.
+- **PR feedback (perfectproducts)** -- added Mercedes-Benz part numbering
+  (base number + ES1/ES2 extension codes) as a concrete example of
+  identifier schemes with internal structural rules. Clarified the
+  distinction between USD's built-in schema validation and domain-specific
+  validation, which applies equally to dictionaries or schemas.
+- **PLM feedback (Steve Ghee, PTC)** -- expanded manufacturing section:
+  - Part number separated from revision; opaque handles; alternative
+    identifiers (OEM, replacement, service).
+  - New subsection: configurable products and composite keys.
+  - Scope open question: sub-model-root use cases + discoverability cost.
+  - Namespacing open question: vendor-in-value vs. key-level namespacing;
+    tension with schema enforceability.
+  - `displayName` open question: asserted independence from identifiers.
+- **Robotics REP review** -- added Robotics and Simulation industry use
+  case. Surfaced by reviewing the RobotecAI interoperability REP against
+  NVIDIA Asset Structure Principles: source format provenance
+  (URDF/SDF/MJCF), ROS package identity, multi-robot fleet composition,
+  sensor/actuator catalog identifiers, operational telemetry binding.
+- **AAS community feedback (Lüdemann-Ravit, Gupta)** -- incorporated
+  three suggestions: type-vs-instance distinction with explicit
+  `kind`/`scope` qualifier (into Key Questions and Emerging Consensus);
+  multiple identifiers per prim with explicit typing (into Single Value
+  vs. Metadata Package); AAS Digital Nameplate submodel as reference
+  design (into Manufacturing section and Key Questions). AAS
+  `globalAssetId` / `specificAssetIds` pattern cited as direct precedent.
+- **AAS DPP mapping (Wagner, SyncTwin)** -- incorporated independent
+  proof-of-concept (PR linked) exercising both Approach A and B with
+  a concrete AAS Digital Battery Passport ↔ OpenUSD mapping. Added to
+  Emerging Consensus.
+- **AAS community review of DPP proof-of-concept (Pooja Gupta,
+  HS Kempten)** -- confirmed identifier handling aligns with AAS
+  conventions; noted that DPP encompasses structured lifecycle,
+  compliance, and sustainability information beyond identity alone.
+  Acknowledged in Emerging Consensus as a dependent but out-of-scope
+  concern; named in Scope Creep risk.
+- **RDF 1.1 Model Theory cross-reference** -- cited the W3C RDF 1.1
+  Semantics specification as formal precedent for the
+  denotation/identification distinction. Added to "Relationship to
+  other proposals" and to the vendor extensibility precedent list
+  (RDF's layered semantics as a fourth example alongside Khronos, W3C
+  web platform, and IETF). Explicit disclaimer against reimplementation
+  of RDF semantics.
+- **Open world assumption** -- cited the W3C Semantic Web Primer for
+  Object-Oriented Software Developers. Added OWA as theoretical basis
+  for the industry agnosticism and vendor extensibility principles:
+  the set of external identifier systems is not closed, and absence
+  of a source identifier does not imply absence of external identity.
+
+A prompt-level drafting log has been archived separately.
