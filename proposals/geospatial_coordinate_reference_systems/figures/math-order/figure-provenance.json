@@ -1,0 +1,142 @@
+{
+  "purpose": "Documentation illustration of contributions and ordering, not a conformance run or sealed model decision.",
+  "geometry": {
+    "source_sha256": "281c7948daee88dce89218a4d0b55a9ab99a5391899fb1313964cbc616f129b9",
+    "vertices": 163416,
+    "triangles": 147604,
+    "conformed_stage": {
+      "metersPerUnit": 1,
+      "upAxis": "Z"
+    },
+    "source_model": "https://sketchfab.com/3d-models/free-la-tour-eiffel-8553f94d06e24cb4b0fde1080f281674",
+    "author": "SDC PERFORMANCE",
+    "license": "https://creativecommons.org/licenses/by/4.0/"
+  },
+  "authored_geospatial_inputs": {
+    "crs:position": [
+      2.2945,
+      48.8584,
+      80.0
+    ],
+    "illustrative_authored_crs:orientation": [
+      0.9659258262890683,
+      0.0,
+      0.0,
+      -0.25881904510252074
+    ],
+    "attitude_heading_degrees": 30.0,
+    "attitude_pitch_roll_degrees": [
+      0,
+      0
+    ]
+  },
+  "source_crs_wkt": "GEOGCRS[\"RGF93 v2b (lon-lat)\",DATUM[\"Reseau Geodesique Francais 1993 v2b\",ELLIPSOID[\"GRS 1980\",6378137,298.257222101,LENGTHUNIT[\"metre\",1]]],PRIMEM[\"Greenwich\",0,ANGLEUNIT[\"degree\",0.0174532925199433]],CS[ellipsoidal,3],AXIS[\"geodetic longitude (Lon)\",east,ORDER[1],ANGLEUNIT[\"degree\",0.0174532925199433]],AXIS[\"geodetic latitude (Lat)\",north,ORDER[2],ANGLEUNIT[\"degree\",0.0174532925199433]],AXIS[\"ellipsoidal height (h)\",up,ORDER[3],LENGTHUNIT[\"metre\",1]],USAGE[SCOPE[\"GIS.\"],AREA[\"France - onshore and offshore, mainland and Corsica (France m\u00e9tropolitaine including Corsica).\"],BBOX[41.15,-9.86,51.56,10.38]],ID[\"EPSG\",9783],REMARK[\"Replaces RGF93 v2 (lon-lat) (CRS code 9778) from 2021-01-05. See CRS code 9781 for system with horizontal axes in sequence lat-lon to be used for air, land and sea navigation and safety of life purposes.\"]]",
+  "consumer_output_crs_wkt": "PROJCRS[\"RGF93 v2b / Lambert-93\",BASEGEOGCRS[\"RGF93 v2b\",DATUM[\"Reseau Geodesique Francais 1993 v2b\",ELLIPSOID[\"GRS 1980\",6378137,298.257222101,LENGTHUNIT[\"metre\",1]]],PRIMEM[\"Greenwich\",0,ANGLEUNIT[\"degree\",0.0174532925199433]],ID[\"EPSG\",9781]],CONVERSION[\"Lambert-93\",METHOD[\"Lambert Conic Conformal (2SP)\",ID[\"EPSG\",9802]],PARAMETER[\"Latitude of false origin\",46.5,ANGLEUNIT[\"degree\",0.0174532925199433],ID[\"EPSG\",8821]],PARAMETER[\"Longitude of false origin\",3,ANGLEUNIT[\"degree\",0.0174532925199433],ID[\"EPSG\",8822]],PARAMETER[\"Latitude of 1st standard parallel\",49,ANGLEUNIT[\"degree\",0.0174532925199433],ID[\"EPSG\",8823]],PARAMETER[\"Latitude of 2nd standard parallel\",44,ANGLEUNIT[\"degree\",0.0174532925199433],ID[\"EPSG\",8824]],PARAMETER[\"Easting at false origin\",700000,LENGTHUNIT[\"metre\",1],ID[\"EPSG\",8826]],PARAMETER[\"Northing at false origin\",6600000,LENGTHUNIT[\"metre\",1],ID[\"EPSG\",8827]],ID[\"EPSG\",18085]],CS[Cartesian,3],AXIS[\"easting (X)\",east,ORDER[1],LENGTHUNIT[\"metre\",1,ID[\"EPSG\",9001]]],AXIS[\"northing (Y)\",north,ORDER[2],LENGTHUNIT[\"metre\",1,ID[\"EPSG\",9001]]],AXIS[\"ellipsoidal height (h)\",up,ORDER[3],LENGTHUNIT[\"metre\",1,ID[\"EPSG\",9001]]],USAGE[SCOPE[\"unknown\"],AREA[\"France - onshore and offshore, mainland and Corsica (France m\u00e9tropolitaine including Corsica).\"],BBOX[41.15,-9.86,51.56,10.38]],REMARK[\"Promoted to 3D from EPSG:9794\"]]",
+  "computed_results_not_usd_properties": {
+    "resolved_anchor": [
+      648237.3015492002,
+      6862271.681553578,
+      80.0
+    ],
+    "projection_meridian_convergence_degrees": -0.5119162782452813,
+    "projection_meridional_scale": 0.9998938936529371,
+    "projection_parallel_scale": 0.9998938936465761,
+    "local_enu_to_projected_jacobian_at_anchor": [
+      [
+        0.9998414665460587,
+        0.008933444041758776,
+        0.0
+      ],
+      [
+        -0.008933432400226593,
+        0.9998412802815437,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.9999996982514858
+      ]
+    ]
+  },
+  "ordinary_usd_inputs": {
+    "working_context": "Placement-centred Lambert-93 adjustment chart, stage metres and Z-up; chart zero is the resolved model origin.",
+    "explicit_authored_pivot": [
+      0,
+      0,
+      0
+    ],
+    "xformOp:scale:adjust": [
+      1.15,
+      1.15,
+      1.15
+    ],
+    "xformOp:rotateZ:adjust": 20.0,
+    "xformOp:translate:adjust": [
+      120.0,
+      -60.0,
+      0.0
+    ],
+    "xformOpOrder": [
+      "xformOp:translate:adjust",
+      "xformOp:translate:pivot",
+      "xformOp:rotateZ:adjust",
+      "xformOp:scale:adjust",
+      "!invert!xformOp:translate:pivot"
+    ],
+    "equivalent_absolute_coordinate_pivot": [
+      648237.3015492002,
+      6862271.681553578,
+      80.0
+    ]
+  },
+  "final_anchor": [
+    648357.3015492002,
+    6862211.681553578,
+    80.0
+  ],
+  "view_origin_not_authored_placement": [
+    648377.3015492002,
+    6862271.681553578,
+    80.0
+  ],
+  "panels": [
+    "01-local-model",
+    "02-authored-attitude",
+    "03-crs-resolved",
+    "03b-usd-scale",
+    "04-usd-rotate-scale",
+    "05-usd-translate"
+  ],
+  "limits": [
+    "Height, attitude and adjustments are illustrative, not surveyed Eiffel Tower placement.",
+    "Authored attitude encoding remains under review; the source geographic quaternion illustrates the current candidate.",
+    "Panels show mathematical contributions, not prescribed intermediate authoring or an animation of geographic travel.",
+    "The CRS is static and uses ellipsoidal height; this does not demonstrate an NGF-IGN69 conversion or an epoch transformation.",
+    "The example authors zero as the ordinary pivot in the placement-centred chart; absolute illustration coordinates show the equivalent resolved base.",
+    "No finite-extent affine certificate is inferred from the displayed local projection factors."
+  ],
+  "verification": {
+    "ordinary_snapshots_compared_with_UsdGeom": true,
+    "display_points_sampled": 432,
+    "max_float_display_difference_metres_by_panel": {
+      "03b-usd-scale": 2.7465820267025265e-05,
+      "04-usd-rotate-scale": 2.7465820267025265e-05,
+      "05-usd-translate": 2.7465820267025265e-05
+    },
+    "scope": "Figure arithmetic and presentation only; not a proposal-completeness audit or conformance result."
+  },
+  "visual_conventions": {
+    "camera": "Fixed across snapshots.",
+    "blue_outline": "Exact alpha silhouette of previous mathematical contribution.",
+    "height_guides": "Rounded illustrative model height in metres.",
+    "front_markers": "Plan-view direction guide; local +Y chosen as model front only for this example.",
+    "translation_components": "East and south components of one authored translation, not separately authored operations.",
+    "crs_conversion": "Coordinate representation changes; no geographic travel is implied."
+  },
+  "crs_association": {
+    "applied_schema": "GeospatialCRSBindingAPI",
+    "composition": "Reference the CRS definition onto the anchor; no crs:binding relationship."
+  },
+  "layout_source_sha256": "d182c1806b9d34091513a59f08d76052fa48e7ba060d2285a3f3d9a8ca2e4b35"
+}
