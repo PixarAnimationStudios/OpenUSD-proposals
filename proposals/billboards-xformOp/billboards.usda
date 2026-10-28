@@ -1,0 +1,55 @@
+#usda 1.0
+
+def Cone "DefaultCone"
+{
+    double3 xformOp:translate = (0, 0, 0)
+    uniform token[] xformOpOrder = ["xformOp:translate"]
+
+    double radius = 1.0
+    double height = 2.0
+    color3f[] primvars:displayColor = [(0.6, 0.6, 0.6)]
+}
+
+def Cone "billboardPosition"
+{
+    token xformOp:affixPosition = "ndc" # supported tokens: "off", "screen", "view", "ndc"
+    float3 xformOp:affixPosition:anchor = (0.0, 0.0, 0.0) # anchor location in the model space
+    float3 xformOp:affixPosition:anchorage = (0.5, 0.2, 0) # anchored location in the clip space ("ndc" mode), z component is ignored.
+
+    uniform token[] xformOpOrder = ["xformOp:affixPosition"]
+
+    double radius = 1.0
+    double height = 2.0
+    color3f[] primvars:displayColor = [(1.0, 0.6, 0.0)]
+}
+
+def Cone "billboardScale"
+{
+    double3 xformOp:translate = (-10, 0, 0)
+
+    token xformOp:affixScale = "ndc" # supported tokens: "off", "screen", "view", "ndc"
+    float xformOp:affixScale:baseSize = 1.0 # unit size in the model space that is scaled to match `scaleSize` in the designated space
+    float xformOp:affixScale:scaleSize = 0.2 # uint size in clip space ("ndc" mode in this example)
+    float3 xformOp:affixScale:pivot = (0.0, 0.0, 0.0) # center position of the scale transformation in the model space
+
+    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:affixScale"]
+
+    double radius = 1.0
+    double height = 2.0
+    color3f[] primvars:displayColor = [(0.1, 0.3, 1.0)]
+}
+
+def Cone "billboardFacing"
+{
+    double3 xformOp:translate = (0, -10, 0)
+
+    token xformOp:align = "screen" # supported tokens: "off", "screen", "viewer", "plane"
+    float3 xformOp:align:plane = (-1.0, -5.5, 60.0) # plane normal in the world space (optional field - "plane" mode only).
+
+    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:align"]
+
+    double radius = 1.0
+    double height = 2.0
+    color3f[] primvars:displayColor = [(0.1, 0.6, 0.05)]
+}
+
