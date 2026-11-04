@@ -112,7 +112,7 @@ It is also possible to support infinite looping utilizing the same technique in 
 
 Finally, inspired by WDAS’ recent work of [`UsdSkelPointInstancer`](https://dl.acm.org/doi/full/10.1145/3799818.3812104), we want to note that if decoupling skeletons proves compelling for reusability in a production environment, we are entirely open to expanding the API schema with a new skeleton relationship to support it in the future.
 
-# Risks/Concerns/Todos {#risks/concerns/todos}
+# Risks/Concerns/Todos
 
 ### API v.s. Derived Schema
 
