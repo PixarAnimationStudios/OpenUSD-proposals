@@ -122,10 +122,6 @@ While WDAS utilized a derived schema for their [`UsdSkelPointInstancer`](https:/
 
 UsdSkelBakeSkinning should warn if asked to bake animation for a SkelRoot that is driven by this schema on an ancestor PI. We will address this in the next iteration **\[TODO\]**.
 
-### PupSkel, PcfCrowd and other downstream client code
-
-Currently, no modifications are required for PupSkel, PcfCrowd or related downstream client code. As this feature is not yet in active use, existing workflows remain unaffected. Although out of scope for this proposal, we plan to integrate this compact encoding into PcfCrowd in the future. Presto will utilize this format via PcfCrowd for both editing and intermediate caching within the Pcf workflow. PcfCrowd will also be configurable to export this format as either intermediate cache or final shot convert, while Luna will natively support it through Hydra.
-
 ### Extents computation
 
 This new feature raises concerns regarding the calculation of tight bounds—since it essentially makes the extent for each instance unique. Also, the per-instance extent for skelRoot prototypes will be computed without the overrides applied and thus incorrect (could be a series of entirely different poses). We propose the following for next iteration **\[TODO\]**: 
@@ -137,7 +133,7 @@ This new feature raises concerns regarding the calculation of tight bounds—sin
 However an architectural conflict arises when deferred skinning is active. Because this mode bypasses skinning computations entirely by deferring them to the vertex shader, attempting to calculate precise bounds would counteract the primary efficiency gains of utilizing deferred skinning.
 
 Following a 6/18 discussion with spiff regarding authored v.s. computed extents:  
-Pixar's current methodology involves precomputing and authoring extents on the SkelRoot during the asset build process. Rather than per-frame calculation, we decouple root motion from skelAnim; this allows for a single approximate bounds computation at the rest pose, with subsequent frames relying on the root transform. This workflow is executed via [CgExportClipTask.py\#105](https://grok.pixar.com/xref/mainline/ext/prestopkg/common/core/tomatorTasks/CgExportClipTask.py?r=2329316#105), which invokes the SkelRoot [\_ComputeExtent()](https://grok.pixar.com/xref/mainline/pxr/usd/usdSkel/root.cpp?a=true&r=2329280&h=140#140) function through [usdoptimize/extents.cpp\#121](https://grok.pixar.com/xref/mainline/ext/lava/general/usdoptimize/extents.cpp?r=2162936#121).  
+Pixar's current methodology involves precomputing and authoring extents on the SkelRoot during the asset build process. Rather than per-frame calculation, we decouple root motion from skelAnim; this allows for a single approximate bounds computation at the rest pose, with subsequent frames relying on the root transform. This workflow is executed via an export task, which invokes the SkelRoot [\_ComputeExtent()](https://github.com/PixarAnimationStudios/OpenUSD/blob/2d39590aac6dde875507d2a334ff6e5b9dc05fe1/pxr/usd/usdSkel/root.cpp#L142) function.  
 In contrast, external clients typically do not decouple root motion from skelAnim, instead relying on *\_ComputeExtent()* to yield results that include applied root motion. We are awaiting a repro case to investigate reports that this function may currently be failing to provide accurate results in these scenarios.  
 The following enhancements are discussed to refine extent accuracy:
 
