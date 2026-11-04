@@ -14,7 +14,7 @@ This is phase 2 of the larger deferred skinning project. Which utilizes modern G
 
 # Proposal
 
-We propose creating a new single-application API schema `SkelInstancedAnimationSourcesAPI` (see the [Risks/Concerns](#risks/concerns/todos) section for rationales behind the design choice) for PointInstancer to supply instance-varying attributes and a relationship to drive animation binding and time offsets. This enables a compact definition where a single PointInstancer manages thousands (or orders of magnitude more) of skeletal instances, each with unique animation states, as demonstrated below:
+We propose creating a new single-application API schema `SkelInstancedAnimationSourcesAPI` (see the [Risks/Concerns](#risksconcernstodos-risksconcernstodos) section for rationales behind the design choice) for PointInstancer to supply instance-varying attributes and a relationship to drive animation binding and time offsets. This enables a compact definition where a single PointInstancer manages thousands (or orders of magnitude more) of skeletal instances, each with unique animation states, as demonstrated below:
 
 ```usda
 def Scope "World"
