@@ -62,7 +62,7 @@ def Scope "World"
 ```
 
 Note that skel:animationOffsets has a new `duration` SdfValueType.  
-Such values need to be mapped during value resolution to pick up time-scaling due to authored SdfLayerOffsets and timecodesPerSecond scaling, but encoding them as timecode valued is incorrect because skel:animationOffsets must be insensitive to any offsets (i.e. the translation component) specified in SdfLayerOffsets, i.e. they must only be affected by the scaling component. More details in the internal jira ticket here: [USD-12021 \- Time duration value type needed New](https://jira.pixar.com/browse/USD-12021)
+Such values need to be mapped during value resolution to pick up time-scaling due to authored SdfLayerOffsets and timecodesPerSecond scaling, but encoding them as timecode valued is incorrect because skel:animationOffsets must be insensitive to any offsets (i.e. the translation component) specified in SdfLayerOffsets, i.e. they must only be affected by the scaling component. More details in the commit here: [fee8b47 \- Add GfDuration, a scalable time-difference value type](https://github.com/PixarAnimationStudios/OpenUSD/commit/fee8b47357830922a124a5671f78d3473b7eb5b6)
 
 The hydra `instancedAnimationSources` schema will replace the original instance primvars used for native instances, acting as the unified interface for instance overrides across both point and native instancing.
 
