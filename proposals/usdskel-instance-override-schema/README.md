@@ -1,4 +1,4 @@
-# SkelInstancedAnimationSourcesAPI Schema Proposal [HYD-3589](https://jira.pixar.com/browse/HYD-3589)
+# SkelInstancedAnimationSourcesAPI Schema Proposal
 
 # Abstract
 
