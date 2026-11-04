@@ -10,7 +10,7 @@ Currently, the only supported method for achieving pose variation is by overridi
 
 Hydra 2.0 introduces support for `UsdGeomPointInstancer` with `UsdSkel` prototypes—a workflow that was fundamentally impossible in Hydra 1.0. Previously, using a UsdSkelRoot as a prototype caused conflicts between the PointInstancer and SkelImaging adapters, leading to validation errors and render failures. Consequently, the Crowds department relies on native instancing for large-scale assets. To achieve variation, artists were forced to duplicate `SkelAnimation` prims with reference or layer offsets—a workaround that significantly bloated prim counts. PointInstancer, however, offers more compact semantics than native instancing, resulting in smaller file size, faster load times and improved editability.
 
-This is phase 2 of the larger [deferred skinning](https://wiki.pixar.com/pages/viewpage.action?pageId=1109354450) project. Which utilizes modern GPU to solve one of the main challenges of instancing animated assets by decoupling posing from the prototypes. The feature was introduced to native instancing first in phase 1 (because historically we’ve only been able to utilize native instancing) and now we’d like to extend the same interface to point instancing to align with the unified hydra instancing paradigm.
+This is phase 2 of the larger deferred skinning project. Which utilizes modern GPU to solve one of the main challenges of instancing animated assets by decoupling posing from the prototypes. The feature was introduced to native instancing first in phase 1 (because historically we’ve only been able to utilize native instancing) and now we’d like to extend the same interface to point instancing to align with the unified hydra instancing paradigm.
 
 # Proposal
 
