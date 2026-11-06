@@ -1,0 +1,12 @@
+#usda 1.0
+
+class "class_Prop"
+{
+}
+
+def "Prop"  (
+    inherits = </class_Prop>
+)
+{
+    string color = "red"
+}

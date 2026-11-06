@@ -1,0 +1,22 @@
+#usda 1.0
+
+over "class_Prop"
+{
+    string color = "blue"
+}
+
+def "BluePointInstancerAsset"
+{
+    def "Prototypes"
+    {
+        def "Prop" (
+            references = @./prop.usda@</Prop>
+        )
+        {
+        }
+    }
+
+    def "PointInstancer"
+    {
+    }
+}
