@@ -119,14 +119,12 @@ uiHints = {
 
 The following renders show and object which has an emissive blue Material bound and a Magenta colored LightAPI applied.
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-
-| | |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br>**Camera Visible Geometry** | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
+| | | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <br>**Camera Visible Geometry**<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 | :---: | :---: | :---: | :---: | :---: |
 | | | Material | Material x LightAPI | LightAPI |
-| | Material | ![Reference](noLightAPI.png)<br>**Reference**<br>No LightAPI | No Option | No Option |
-| **Lighting Output** | Material x LightAPI | ![Override Geometry and Tint Light](materialGlowTintsLight.png)<br>**Override Geometry and Tint Light**<br>materialGlowTintsLight | ![Tint Geometry and Tint Light](materialGlowTints.png)<br>**Tint Geometry and Tint Light**<br>materialGlowTints (NEW) | No Option |
-| | LightAPI | ![Override Geometry](independent.png)<br>**Override Geometry**<br>independent | ![Tint Geometry](materialGlowTintsGeometry.png)<br>**Tint Geometry**<br>materialGlowTintsGeometry (NEW) | ![Disabled](noMaterialResponse.png)<br>**Disabled**<br>noMaterialResponse |
+| | Material | ![Reference](noLightAPI.png)<br>**Reference**<br>No LightAPI<br>&nbsp; | No Option | No Option |
+| **Lighting Output** | Material x LightAPI | ![Override Geometry and Tint Light](materialGlowTintsLight.png)<br>**Override&nbsp;Geometry&nbsp;and&nbsp;Tint&nbsp;Light**<br>materialGlowTintsLight<br>&nbsp; | ![Tint Geometry and Tint Light](materialGlowTints.png)<br>**Tint&nbsp;Geometry&nbsp;and&nbsp;Tint&nbsp;Light**<br>materialGlowTints<br>[NEW] | No Option |
+| | LightAPI | ![Override Geometry](independent.png)<br>**Override Geometry**<br>independent<br>&nbsp; | ![Tint Geometry](materialGlowTintsGeometry.png)<br>**Tint Geometry**<br>materialGlowTintsGeometry<br>[NEW] | ![Disabled](noMaterialResponse.png)<br>**Disabled**<br>noMaterialResponse<br>&nbsp; |
 
 ### Example DCC UI
 
