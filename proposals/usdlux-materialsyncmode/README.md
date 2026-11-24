@@ -17,19 +17,41 @@ displayName = "Material Sync Mode"
 
 doc = """
 
-For a LightAPI applied to geometry that has a bound Material,which is entirely or partly emissive, this specifies the relationship of the Material response to the lighting response.
+    For a LightAPI applied to geometry that has a bound Material,which is entirely
+    or partly emissive, this specifies the relationship of the Material response to
+    the lighting response.
 
-Valid values are:
+    Valid values are:
 
-materialGlowTintsLight: All primary and secondary rays see the emissive/glow response as dictated by the bound Material while the base color seen by light rays (which is then modulated by all of the other LightAPI controls) is the multiplication of the color feeding the emission/glow input of the Material (i.e. its surface or volume shader) with the scalar or pattern input to *inputs:color*. This allows the light's color to tint the geometry's glow color while preserving access to intensity and other light controls as ways to further modulate the illumination.
+    materialGlowTintsLight: All primary and secondary rays see the emissive/glow
+    response as dictated by the bound Material while the base color seen by light
+    rays (which is then modulated by all of the other LightAPI controls) is the
+    multiplication of the color feeding the emission/glow input of the Material
+    (i.e. its surface or volume shader) with the scalar or pattern input to
+    *inputs:color*. This allows the light's color to tint the geometry's glow color
+    while preserving access to intensity and other light controls as ways to further
+    modulate the illumination.
 
-independent: All primary and secondary rays see the emissive/glow response as dictated by the bound Material, while the base color seen by light rays is determined solely by *inputs:color*. Note that for partially emissive geometry (in which some parts are reflective rather than emissive), a suitable pattern must be connected to the light's color input, or else the light will radiate uniformly from the geometry.
+    independent: All primary and secondary rays see the emissive/glow response as
+    dictated by the bound Material, while the base color seen by light rays is
+    determined solely by *inputs:color*. Note that for partially emissive geometry
+    (in which some parts are reflective rather than emissive), a suitable pattern
+    must be connected to the light's color input, or else the light will radiate
+    uniformly from the geometry.
 
-noMaterialResponse: The geometry behaves as if there is no Material bound at all, i.e. there is no diffuse, specular, or transmissive response. The base color of light rays is entirely controlled by the *inputs:color*. This is the standard mode for "canonical" lights in UsdLux and indicates to renderers that a Material will either never be bound or can always be ignored.
+    noMaterialResponse: The geometry behaves as if there is no Material bound at
+    all, i.e. there is no diffuse, specular, or transmissive response. The base
+    color of light rays is entirely controlled by the *inputs:color*. This is the
+    standard mode for "canonical" lights in UsdLux and indicates to renderers that a
+    Material will either never be bound or can always be ignored.
 
 """
 
-allowedTokens = ["materialGlowTintsLight", "independent", "noMaterialResponse"]
+allowedTokens = [
+    "materialGlowTintsLight", 
+    "independent", 
+    "noMaterialResponse"
+]
 
 )
 ```
@@ -55,29 +77,53 @@ displayName = "Material Visibility"
 
 doc = """
 
-When a LightAPI is applied to Prim that has a bound Material (which is entirely or partly emissive) this attribute specifies how the Material appearance should be combined with the LightAPI appearance.
+    When a LightAPI is applied to Prim that has a bound Material (which is entirely
+    or partly emissive) this attribute specifies how the Material appearance should
+    be combined with the LightAPI appearance.
 
-If no Material is bound this setting can be ignored.
+    If no Material is bound this setting can be ignored.
 
-The relationship can be applied differently to the camera visible geometry and the lighting output on the rest of the scene.
+    The relationship can be applied differently to the camera visible geometry and
+    the lighting output on the rest of the scene.
 
-"Camera Visible Geometry" refers to the directly visible object in an image generated via camera ray hits or rasterizing geometry.
+    "Camera Visible Geometry" refers to the directly visible object in an image
+    generated via camera ray hits or rasterizing geometry.
 
-"Lighting Output" refers to the emission from this object which illuminates other objects in the scene via direct illumination, global illumination or indirect rays.
+    "Lighting Output" refers to the emission from this object which illuminates
+    other objects in the scene via direct illumination, global illumination or
+    indirect rays.
 
-There is some flexibility in how a renderer may decide what is "Camera Visible", for example it may determine that a reflection in a mirror or refraction through glass is "Camera Visible" and should therefore use the "Camera Visible" Material response.
+    There is some flexibility in how a renderer may decide what is "Camera Visible",
+    for example it may determine that a reflection in a mirror or refraction through
+    glass is "Camera Visible" and should therefore use the "Camera Visible" Material
+    response.
 
-Valid values are:
+    Valid values are:
 
-Disabled (noMaterialResponse): The appearance of both the camera visible geometry and lighting output is determined only by the LightAPI. This is the standard mode for "canonical" lights in UsdLux and indicates to renderers that any bound Material can be ignored.
+    Disabled (noMaterialResponse): The appearance of both the camera visible
+    geometry and lighting output is determined only by the LightAPI. This is the
+    standard mode for "canonical" lights in UsdLux and indicates to renderers that
+    any bound Material can be ignored.
 
-Override Geometry (independent): The appearance of the camera visible geometry is determined only by the bound Material. The lighting output is determined only by the LightAPI.
+    Override Geometry (independent): The appearance of the camera visible geometry
+    is determined only by the bound Material. The lighting output is determined only
+    by the LightAPI.
 
-Tint Geometry (materialGlowTintsGeometry): The appearance of the camera visible geometry is the bound Material emission multiplied by the emission of the LightAPI. Any non-emissive component (e.g. diffuse/specular surface) should not be affected by the LightAPI. The lighting output is determined only by the LightAPI.
+    Tint Geometry (materialGlowTintsGeometry): The appearance of the camera visible
+    geometry is the bound Material emission multiplied by the emission of the
+    LightAPI. Any non-emissive component (e.g. diffuse/specular surface) should not
+    be affected by the LightAPI. The lighting output is determined only by the
+    LightAPI.
 
-Override Geometry and Tint Light (materialGlowTintsLight): The appearance of the camera visible geometry is determined only by the bound Material. The lighting output is the bound Material emission multiplied by the emission of the LightAPI.
+    Override Geometry and Tint Light (materialGlowTintsLight): The appearance of the
+    camera visible geometry is determined only by the bound Material. The lighting
+    output is the bound Material emission multiplied by the emission of the
+    LightAPI.
 
-Tint Geometry and Tint Light (materialGlowTints): The appearance of both the camera visible geometry and lighting output is the bound Material emission multiplied by the emission of the LightAPI. Any non-emissive component (e.g. diffuse/specular surface) should not be affected by the LightAPI.
+    Tint Geometry and Tint Light (materialGlowTints): The appearance of both the
+    camera visible geometry and lighting output is the bound Material emission
+    multiplied by the emission of the LightAPI. Any non-emissive component (e.g.
+    diffuse/specular surface) should not be affected by the LightAPI.
 
 """
 
@@ -119,7 +165,7 @@ uiHints = {
 
 The following renders show and object which has an emissive blue Material bound and a Magenta colored LightAPI applied.
 
-| | | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <br>**Camera Visible Geometry**<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
+| | | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <br>**Camera Visible Geometry**<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 | :---: | :---: | :---: | :---: | :---: |
 | | | Material | Material x LightAPI | LightAPI |
 | | Material | ![Reference](noLightAPI.png)<br>**Reference**<br>No LightAPI<br>&nbsp; | No Option | No Option |
